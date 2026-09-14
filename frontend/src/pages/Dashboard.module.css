@@ -1,0 +1,150 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap);
+}
+
+.header {
+  max-width: 720px;
+}
+
+.subtitle {
+  margin-top: 6px;
+  color: var(--ink-soft);
+  font-size: 15px;
+}
+
+.kpiGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--gap);
+}
+
+@media (max-width: 1439px) {
+  .kpiGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.mainGrid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: var(--gap);
+  align-items: start;
+}
+
+@media (max-width: 1279px) {
+  .mainGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.tableCard {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.tableWrap {
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table th {
+  text-align: left;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ink-soft);
+  padding: 0 12px 10px;
+  border-bottom: 1px solid var(--shadow-dark);
+}
+
+.table td {
+  padding: 12px;
+  font-size: 14px;
+  color: var(--ink-mid);
+  border-bottom: 1px solid var(--bg-sunken);
+  white-space: nowrap;
+}
+
+.row:last-child td {
+  border-bottom: none;
+}
+
+.rowClickable {
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.rowClickable:hover,
+.rowClickable:focus-visible {
+  background: var(--bg-sunken);
+  outline: none;
+}
+
+.riskDash {
+  color: var(--ink-soft);
+}
+
+.campaignCard {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  position: relative;
+  overflow: hidden;
+}
+
+.campaignCard::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 4px;
+  background: var(--vermillion);
+}
+
+.campaignIcon {
+  composes: raised-sm from '../styles/surfaces.css';
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--vermillion);
+}
+
+.campaignBody {
+  font-size: 14px;
+  color: var(--ink-mid);
+}
+
+.campaignLink {
+  margin-top: 4px;
+}
+
+.chartCard {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.loadingCard {
+  max-width: 420px;
+  margin: 64px auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  color: var(--ink-soft);
+}

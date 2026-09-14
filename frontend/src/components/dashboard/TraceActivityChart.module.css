@@ -1,0 +1,24 @@
+.well {
+  composes: pressed from '../../styles/surfaces.css';
+  padding: 20px 16px 8px;
+}
+
+.tooltip {
+  composes: raised-sm from '../../styles/surfaces.css';
+  padding: 8px 14px;
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.tooltipValue {
+  font-family: var(--font-mono);
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.tooltipLabel {
+  font-size: 12px;
+  color: var(--ink-soft);
+}
