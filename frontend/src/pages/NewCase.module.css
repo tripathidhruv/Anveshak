@@ -88,7 +88,7 @@
 }
 
 .amountField {
-  composes: pressed-sm from '../styles/surfaces.css';
+  composes: raised-sm from '../styles/surfaces.css';
   display: flex;
   align-items: center;
   gap: 6px;
@@ -136,7 +136,7 @@
 }
 
 .select {
-  composes: pressed-sm from '../styles/surfaces.css';
+  composes: raised-sm from '../styles/surfaces.css';
   border: none;
   outline: none;
   padding: 12px 16px;
@@ -169,7 +169,7 @@
 }
 
 .walletWell {
-  composes: pressed from '../styles/surfaces.css';
+  composes: raised-sm from '../styles/surfaces.css';
   min-height: 64px;
   padding: 12px 18px;
   display: flex;

@@ -23,7 +23,7 @@
 }
 
 .field {
-  composes: pressed-sm from '../../../styles/surfaces.css';
+  composes: raised-sm from '../../../styles/surfaces.css';
   border: none;
   outline: none;
   padding: 12px 16px;
