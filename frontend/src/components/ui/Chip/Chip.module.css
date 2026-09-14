@@ -19,7 +19,7 @@
 }
 
 .selected {
-  composes: pressed from '../../../styles/surfaces.css';
+  composes: pressed-sm from '../../../styles/surfaces.css';
   color: var(--indigo);
 }
 

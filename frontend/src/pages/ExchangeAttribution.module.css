@@ -177,7 +177,7 @@
 }
 
 .confTrack {
-  composes: pressed from '../styles/surfaces.css';
+  composes: pressed-sm from '../styles/surfaces.css';
   height: 8px;
   border-radius: var(--r-pill);
   overflow: hidden;

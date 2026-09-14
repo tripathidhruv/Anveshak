@@ -126,7 +126,7 @@ export function RouteCard({
       <div className={styles.stats}>
         <span className={styles.statValue}>{formatINR(route.valueINR)}</span>
         <span className={styles.dot}>·</span>
-        <span className={styles.statValue}>
+        <span className={styles.statValueCrypto}>
           {cryptoFormatter.format(route.valueCrypto)} {assetShort}
         </span>
         <span className={styles.dot}>·</span>

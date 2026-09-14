@@ -6,6 +6,10 @@
   --shadow-raised: 9px 9px 18px var(--shadow-dark), -9px -9px 18px var(--shadow-light);
   --shadow-raised-sm: 5px 5px 10px var(--shadow-dark), -5px -5px 10px var(--shadow-light);
   --shadow-pressed: inset 5px 5px 10px var(--shadow-dark), inset -5px -5px 10px var(--shadow-light);
+  /* Scaled-down pressed recipe for short wells (~< 50px tall), e.g. text inputs and
+     selects — the full-size --shadow-pressed's 10px blur is disproportionate at that
+     height and reads as a muddy smear instead of a crisp recessed groove. */
+  --shadow-pressed-sm: inset 3px 3px 6px var(--shadow-dark), inset -3px -3px 6px var(--shadow-light);
   --shadow-clickable-hover: 7px 7px 14px var(--shadow-dark), -7px -7px 14px var(--shadow-light);
 }
 
@@ -25,6 +29,12 @@
   background: var(--bg);
   border-radius: var(--r-md);
   box-shadow: var(--shadow-pressed);
+}
+
+.pressed-sm {
+  background: var(--bg);
+  border-radius: var(--r-sm);
+  box-shadow: var(--shadow-pressed-sm);
 }
 
 .flat {

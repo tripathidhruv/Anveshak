@@ -111,7 +111,7 @@
 .sweepPill {
   composes: chip from '../components/ui/Chip/Chip.module.css';
   background: var(--vermillion);
-  color: #fff;
+  color: var(--on-accent);
   font-size: 11px;
   padding: 3px 10px;
   white-space: nowrap;

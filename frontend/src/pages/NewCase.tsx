@@ -131,7 +131,7 @@ export default function NewCase() {
 
   return (
     <div className={styles.page}>
-      <Card>
+      <Card className={styles.sections}>
         <div className={styles.header}>
           <button
             type="button"

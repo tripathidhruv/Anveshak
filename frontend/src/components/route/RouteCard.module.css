@@ -65,6 +65,13 @@
   font-weight: 600;
 }
 
+.statValueCrypto {
+  font-family: var(--font-mono);
+  color: var(--ink-soft);
+  font-weight: 500;
+  font-size: 12px;
+}
+
 .dot {
   color: var(--ink-soft);
 }
@@ -135,12 +142,12 @@
 }
 
 .sweptBody {
-  background: rgba(185, 62, 40, 0.08);
+  background: color-mix(in srgb, var(--vermillion) 8%, var(--bg));
   box-shadow: var(--shadow-pressed);
 }
 
 .exchangeBody {
-  background: rgba(184, 145, 47, 0.12);
+  background: color-mix(in srgb, var(--gold) 12%, var(--bg));
   box-shadow: var(--shadow-raised-sm);
 }
 

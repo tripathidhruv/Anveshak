@@ -18,16 +18,25 @@
 }
 
 .primary {
-  composes: raised-sm from '../../../styles/surfaces.css';
+  /* Primary needs a distinct solid-indigo fill, not the shared raised-sm
+     surface background — composing raised-sm here previously lost the
+     cascade in the bundled output because raised-sm also sets `background`
+     and CSS Modules doesn't guarantee compose-then-own-rule ordering across
+     files. Take just the shadow recipe instead. */
+  border-radius: var(--r-sm);
+  box-shadow: var(--shadow-raised-sm);
+  transition: box-shadow 0.18s ease, transform 0.18s ease;
   background: var(--indigo);
-  color: #fff;
+  color: var(--on-accent);
 }
 
 .primary:hover {
+  box-shadow: var(--shadow-clickable-hover);
   filter: brightness(1.08);
 }
 
 .primary:active {
+  box-shadow: var(--shadow-pressed);
   transform: translateY(1px);
 }
 
