@@ -19,7 +19,7 @@
 }
 
 .searchWell {
-  composes: pressed from '../../styles/surfaces.css';
+  composes: raised-sm from '../../styles/surfaces.css';
   flex: 1;
   max-width: 420px;
   display: flex;

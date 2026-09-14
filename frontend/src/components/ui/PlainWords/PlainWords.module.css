@@ -1,5 +1,5 @@
 .strip {
-  composes: pressed from '../../../styles/surfaces.css';
+  composes: raised from '../../../styles/surfaces.css';
   display: flex;
   align-items: center;
   gap: 14px;

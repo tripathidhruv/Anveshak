@@ -1,5 +1,5 @@
 .well {
-  composes: pressed from '../../styles/surfaces.css';
+  composes: raised-sm from '../../styles/surfaces.css';
   padding: 20px 16px 8px;
 }
 

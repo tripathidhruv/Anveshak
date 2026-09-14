@@ -15,7 +15,7 @@
 }
 
 .checkWell {
-  composes: pressed from '../styles/surfaces.css';
+  composes: raised-sm from '../styles/surfaces.css';
   width: 104px;
   height: 104px;
   border-radius: var(--r-pill);
