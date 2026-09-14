@@ -32,9 +32,12 @@
 }
 
 .button:disabled {
+  /* `composes` can't target a compound selector like `.button:disabled`, so this
+     references the shared --shadow-raised-sm recipe from surfaces.css instead of
+     retyping it — surfaces.css stays the single source of truth. */
   cursor: not-allowed;
   opacity: 0.5;
   filter: none;
   transform: none;
-  box-shadow: 5px 5px 10px var(--shadow-dark), -5px -5px 10px var(--shadow-light);
+  box-shadow: var(--shadow-raised-sm);
 }

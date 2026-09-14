@@ -23,10 +23,13 @@
   color: var(--indigo);
 }
 
-/* Status-pill style: a tinted pill, colour keyed to the colour-semantics map. */
+/* Status-pill style: a solid-fill pill, colour keyed to the colour-semantics map.
+   Solid fill + white text (matches Badge) instead of colour-on-tint, so every
+   semantic colour — including --gold, which is lighter than --ink-soft, the
+   project's text-contrast floor — stays fully legible. */
 .status {
-  background: color-mix(in srgb, var(--chip-colour) 14%, var(--bg));
-  color: var(--chip-colour);
+  background: var(--chip-colour, var(--ink-soft));
+  color: #fff;
 }
 
 .chip[data-accent='vermillion'] {
