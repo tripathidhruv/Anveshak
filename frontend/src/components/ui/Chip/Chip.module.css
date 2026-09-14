@@ -1,0 +1,49 @@
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 600;
+  padding: 6px 14px;
+  border-radius: var(--r-pill);
+  line-height: 1.4;
+}
+
+/* Segmented-control style: a row of raised-sm options, the selected one presses in. */
+.segmented {
+  composes: raised-sm from '../../../styles/surfaces.css';
+  composes: clickable from '../../../styles/surfaces.css';
+  border-radius: var(--r-sm);
+  color: var(--ink-mid);
+}
+
+.selected {
+  composes: pressed from '../../../styles/surfaces.css';
+  color: var(--indigo);
+}
+
+/* Status-pill style: a tinted pill, colour keyed to the colour-semantics map. */
+.status {
+  background: color-mix(in srgb, var(--chip-colour) 14%, var(--bg));
+  color: var(--chip-colour);
+}
+
+.chip[data-accent='vermillion'] {
+  --chip-colour: var(--vermillion);
+}
+.chip[data-accent='gold'] {
+  --chip-colour: var(--gold);
+}
+.chip[data-accent='teal'] {
+  --chip-colour: var(--teal);
+}
+.chip[data-accent='violet'] {
+  --chip-colour: var(--violet);
+}
+.chip[data-accent='moss'] {
+  --chip-colour: var(--moss);
+}
+.chip[data-accent='sky'] {
+  --chip-colour: var(--sky);
+}

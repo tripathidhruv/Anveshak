@@ -1,0 +1,4 @@
+.well {
+  composes: pressed from '../../../styles/surfaces.css';
+  padding: 16px 20px;
+}

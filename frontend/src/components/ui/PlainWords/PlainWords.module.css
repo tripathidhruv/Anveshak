@@ -1,0 +1,28 @@
+.strip {
+  composes: pressed from '../../../styles/surfaces.css';
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 20px;
+  width: 100%;
+}
+
+.iconTile {
+  composes: raised-sm from '../../../styles/surfaces.css';
+  flex: none;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--gold);
+}
+
+.text {
+  font-size: 14px;
+  color: var(--ink-mid);
+}
+
+.text strong {
+  color: var(--ink);
+}

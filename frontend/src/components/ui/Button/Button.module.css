@@ -1,0 +1,40 @@
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-family: var(--font-body);
+  font-size: 15px;
+  font-weight: 600;
+  padding: 12px 22px;
+  border-radius: var(--r-sm);
+  white-space: nowrap;
+}
+
+.default {
+  composes: raised-sm from '../../../styles/surfaces.css';
+  composes: clickable from '../../../styles/surfaces.css';
+  color: var(--ink-mid);
+}
+
+.primary {
+  composes: raised-sm from '../../../styles/surfaces.css';
+  background: var(--indigo);
+  color: #fff;
+}
+
+.primary:hover {
+  filter: brightness(1.08);
+}
+
+.primary:active {
+  transform: translateY(1px);
+}
+
+.button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+  filter: none;
+  transform: none;
+  box-shadow: 5px 5px 10px var(--shadow-dark), -5px -5px 10px var(--shadow-light);
+}
