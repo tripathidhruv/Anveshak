@@ -26,18 +26,33 @@ See `docs/PROGRESS.md` for the work log and `docs/TASKS.md` for what's open.
 **Always read both before starting work.**
 
 ## Repo map
-- `prototype/index.html` — single-file demo. No build step. Open in a browser.
+- `frontend/` — React 19 + TypeScript + Vite. The real app. Build here now.
+- `backend/` — FastAPI + SQLAlchemy + Redis + Celery. Phase 2, functional but not blocking the demo.
+- `prototype/index.html` — single-file fallback demo. **Keep until frontend/ reaches full 8-screen parity, then delete in its own commit.** Do not build new features here.
 - `docs/` — scope, progress, tasks, decisions, handoff.
 - `deck/` — SIH presentation + diagram HTML sources.
 - `research/` — dataset sources and links.
 
 ## Tech stack
-- **Prototype:** vanilla JS, single HTML file, CDN libraries only, no build step.
-  Cytoscape.js (graph), Chart.js (charts), html2pdf.js (PDF), Lucide (icons).
-- **Planned backend:** FastAPI · PostgreSQL 16 · Redis · Celery · rustworkx.
+- **Frontend:** React 19 + TypeScript + Vite. CSS Modules + a `tokens.css`/`surfaces.css`
+  pair for the neumorphic design system (no Tailwind — the shadow values need to live in
+  one editable place). react-router-dom, zustand, cytoscape (wrapped by hand, not
+  react-cytoscapejs), recharts, lucide-react, html2pdf.js.
+- **Backend:** FastAPI · PostgreSQL 16 · Redis · Celery · rustworkx.
 - **Planned ML:** LightGBM (risk scoring) · PyTorch Geometric / GraphSAGE
   (entity clustering) · SHAP (explainability).
 - **Deployment target:** Docker Compose, single host, fully offline-capable.
+
+## Architecture rules — not negotiable
+1. Every screen gets its data through an async function in `frontend/src/api/`. No
+   component ever imports the DEMO data directly.
+2. `src/api/index.ts` switches mock vs. real HTTP on `VITE_USE_MOCK` — one env var,
+   nothing in any component changes between Phase 1 and Phase 2.
+3. No hard-coded colour or box-shadow outside `tokens.css` / `surfaces.css`.
+4. Cytoscape instances must be destroyed on unmount (`cy.destroy()` in the `useEffect`
+   cleanup) — skipping this leaks a canvas per navigation.
+5. Pydantic schemas (backend) and TypeScript types (frontend) describe the same shapes —
+   write the schema, mirror it in TS, keep them adjacent in commits.
 
 ## Design system — do not deviate
 Neumorphic soft UI. Base `#E0E5EC`, light shadow `#FFFFFF`,
