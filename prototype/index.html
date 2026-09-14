@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KAIZEN — Cyber Cell Console</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/lucide@0.544.0/dist/umd/lucide.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.34.3/cytoscape.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.5.1/chart.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.14.0/html2pdf.bundle.min.js"></script>
+
+<style>
+  /* ===================== Design tokens ===================== */
+  :root{
+    --bg: #E0E5EC; --bg-sunken: #DCE1E8;
+    --shadow-dark: #A3B1C6; --shadow-light: #FFFFFF;
+    --ink: #2E3440; --ink-mid: #4A5568; --ink-soft: #7A879B;
+    --indigo: #1E3A5C; --vermillion: #B93E28; --teal: #0E6E6B;
+    --violet: #6A4C93; --moss: #4C7A3F; --gold: #B8912F; --sky: #2F7DBF;
+    --r-lg: 22px; --r-md: 16px; --r-sm: 12px; --r-pill: 999px; --gap: 24px;
+  }
+
+  *{ box-sizing: border-box; }
+  html, body{
+    margin: 0; padding: 0; height: 100%;
+    background: var(--bg);
+    color: var(--ink-mid);
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    font-weight: 400;
+    font-size: 15px;
+    -webkit-font-smoothing: antialiased;
+  }
+  h1,h2,h3,h4,h5{
+    font-family: 'Outfit', 'Plus Jakarta Sans', system-ui, sans-serif;
+    color: var(--ink);
+    margin: 0;
+  }
+  button, input, select, textarea{ font-family: inherit; color: inherit; }
+  a{ color: var(--sky); text-decoration: none; }
+  ::selection{ background: var(--indigo); color: #fff; }
+
+  code, .mono, .kpi-number, .addr{
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-weight: 400;
+  }
+
+  /* ===================== Typography scale ===================== */
+  .page-title{ font-size: 30px; font-weight: 700; }
+  .card-title{ font-size: 18px; font-weight: 600; }
+  .kpi-number{ font-size: 34px; font-weight: 700; }
+  .body-text{ font-size: 15px; font-weight: 400; }
+  .label{ font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; color: var(--ink-soft); }
+  .caption{ font-size: 13px; color: var(--ink-soft); }
+
+  /* ===================== Surface recipes ===================== */
+  .raised{
+    background: var(--bg); border-radius: var(--r-lg);
+    box-shadow: 9px 9px 18px var(--shadow-dark), -9px -9px 18px var(--shadow-light);
+  }
+  .raised-sm{
+    background: var(--bg); border-radius: var(--r-sm);
+    box-shadow: 5px 5px 10px var(--shadow-dark), -5px -5px 10px var(--shadow-light);
+  }
+  .pressed{
+    background: var(--bg); border-radius: var(--r-md);
+    box-shadow: inset 5px 5px 10px var(--shadow-dark), inset -5px -5px 10px var(--shadow-light);
+  }
+  .flat{ background: var(--bg); box-shadow: none; }
+  .raised-sm, .raised{ transition: box-shadow .18s ease, transform .18s ease; }
+  .clickable{ cursor: pointer; }
+  .clickable:hover{ box-shadow: 7px 7px 14px var(--shadow-dark), -7px -7px 14px var(--shadow-light); }
+  .clickable:active{
+    box-shadow: inset 5px 5px 10px var(--shadow-dark), inset -5px -5px 10px var(--shadow-light);
+    transform: translateY(1px);
+  }
+
+  /* ===================== App shell ===================== */
+  #app{ display: flex; min-height: 100vh; align-items: flex-start; }
+
+  /* Sidebar */
+  #sidebar{
+    width: 248px; flex: 0 0 248px;
+    margin: 20px; margin-right: 0;
+    border-radius: var(--r-lg);
+    padding: 20px 16px;
+    display: flex; flex-direction: column;
+    position: sticky; top: 20px;
+    height: calc(100vh - 40px);
+  }
+  .logo-block{ display: flex; align-items: center; gap: 12px; padding: 4px 6px 20px 6px; }
+  .logo-mark{
+    width: 44px; height: 44px; flex: 0 0 44px;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--indigo); font-size: 20px;
+  }
+  .logo-text-wrap{ display: flex; flex-direction: column; line-height: 1.25; }
+  .logo-text{ font-size: 20px; font-weight: 700; color: var(--ink); }
+  .logo-sub{ font-size: 11px; color: var(--ink-soft); }
+
+  .nav-section{ flex: 1; display: flex; flex-direction: column; gap: 6px; margin-top: 8px; }
+  .nav-item{
+    height: 44px; border-radius: var(--r-sm);
+    display: flex; align-items: center; gap: 12px;
+    padding: 0 12px; position: relative;
+    color: var(--ink-mid); font-size: 14px; font-weight: 500;
+    cursor: pointer; background: var(--bg);
+  }
+  .nav-item:hover:not(.active){ box-shadow: 5px 5px 10px var(--shadow-dark), -5px -5px 10px var(--shadow-light); }
+  .nav-item .nav-icon{ width: 20px; height: 20px; flex: 0 0 20px; display:flex; align-items:center; justify-content:center; color: var(--ink-mid); }
+  .nav-item .nav-icon i{ width: 18px; height: 18px; }
+  .nav-item .badge{
+    margin-left: auto; font-size: 11px; font-weight: 600; color: var(--ink-soft);
+    background: var(--bg-sunken); border-radius: var(--r-pill); padding: 1px 7px;
+  }
+  .nav-item.active{
+    box-shadow: inset 5px 5px 10px var(--shadow-dark), inset -5px -5px 10px var(--shadow-light);
+    color: var(--indigo); font-weight: 600;
+  }
+  .nav-item.active::before{
+    content: ""; position: absolute; left: -16px; top: 8px; bottom: 8px; width: 3px;
+    background: var(--indigo); border-radius: 3px;
+  }
+  .nav-item.active .nav-icon{ color: var(--indigo); }
+
+  .btn-new-case{
+    width: 100%; height: 44px; border: none; border-radius: var(--r-sm);
+    background: var(--indigo); color: #fff; font-weight: 600; font-size: 14px;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    cursor: pointer; margin: 14px 0 10px 0;
+    box-shadow: 5px 5px 10px var(--shadow-dark), -5px -5px 10px var(--shadow-light);
+  }
+  .btn-new-case:active{ transform: translateY(1px); }
+
+  .sidebar-footer{
+    border-top: 1px solid rgba(163,177,198,0.35);
+    padding-top: 12px; margin-top: 4px;
+    display: flex; align-items: center; gap: 8px;
+    font-size: 13px; color: var(--ink-soft); cursor: pointer;
+  }
+  .sidebar-footer i{ width: 16px; height: 16px; }
+
+  /* Main column */
+  #main{ flex: 1; min-width: 0; padding: 20px; display: flex; flex-direction: column; gap: 20px; }
+
+  /* Top bar */
+  #topbar{
+    height: 72px; border-radius: var(--r-lg);
+    display: flex; align-items: center; padding: 0 22px; gap: 20px;
+  }
+  #topbar .page-title{ flex: 0 0 auto; white-space: nowrap; }
+  .search-well{
+    flex: 1; max-width: 420px; height: 40px; border-radius: var(--r-md);
+    display: flex; align-items: center; gap: 10px; padding: 0 14px; margin: 0 auto;
+  }
+  .search-well i{ width: 16px; height: 16px; color: var(--ink-soft); flex: 0 0 16px; }
+  .search-well input{
+    border: none; background: transparent; outline: none; width: 100%;
+    font-size: 14px; color: var(--ink-mid);
+  }
+  .search-well input::placeholder{ color: var(--ink-soft); }
+
+  .topbar-right{ display: flex; align-items: center; gap: 14px; flex: 0 0 auto; margin-left: auto; }
+  .demo-chip{
+    font-size: 11px; font-weight: 700; letter-spacing: .06em;
+    color: #fff; background: var(--vermillion);
+    padding: 5px 10px; border-radius: var(--r-pill);
+    white-space: nowrap;
+  }
+  .judge-toggle{
+    display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 600; color: var(--ink-mid);
+    cursor: pointer; user-select: none;
+  }
+  .toggle-track{
+    width: 38px; height: 22px; border-radius: var(--r-pill);
+    box-shadow: inset 4px 4px 8px var(--shadow-dark), inset -4px -4px 8px var(--shadow-light);
+    position: relative; transition: background .15s ease;
+  }
+  .toggle-track .toggle-knob{
+    position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 50%;
+    background: var(--bg); box-shadow: 2px 2px 5px var(--shadow-dark), -2px -2px 5px var(--shadow-light);
+    transition: left .18s ease, background .18s ease;
+  }
+  .judge-toggle.on .toggle-track{ background: var(--bg); }
+  .judge-toggle.on .toggle-knob{ left: 19px; background: var(--moss); box-shadow: 2px 2px 5px var(--shadow-dark), -2px -2px 5px var(--shadow-light); }
+
+  .btn-reset{
+    height: 36px; padding: 0 14px; border-radius: var(--r-sm); border: none;
+    background: var(--bg); font-size: 13px; font-weight: 600; color: var(--ink-mid);
+    cursor: pointer; display: flex; align-items: center; gap: 6px;
+    box-shadow: 5px 5px 10px var(--shadow-dark), -5px -5px 10px var(--shadow-light);
+  }
+  .btn-reset:active{ box-shadow: inset 5px 5px 10px var(--shadow-dark), inset -5px -5px 10px var(--shadow-light); transform: translateY(1px); }
+  .btn-reset i{ width: 14px; height: 14px; }
+
+  .icon-btn{
+    width: 40px; height: 40px; border-radius: var(--r-sm); flex: 0 0 40px;
+    display: flex; align-items: center; justify-content: center; cursor: pointer;
+    box-shadow: 5px 5px 10px var(--shadow-dark), -5px -5px 10px var(--shadow-light);
+  }
+  .icon-btn i{ width: 18px; height: 18px; color: var(--ink-mid); }
+  .icon-btn:active{ box-shadow: inset 5px 5px 10px var(--shadow-dark), inset -5px -5px 10px var(--shadow-light); }
+
+  .avatar{
+    width: 40px; height: 40px; border-radius: 50%; flex: 0 0 40px;
+    background: linear-gradient(135deg, var(--indigo), var(--sky));
+    color: #fff; font-weight: 700; font-size: 14px;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 3px 3px 7px var(--shadow-dark), -3px -3px 7px var(--shadow-light);
+  }
+
+  /* Progress rail */
+  #progress-rail{
+    border-radius: var(--r-lg);
+    padding: 18px 28px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .rail-step{ display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; }
+  .rail-step:last-child{ flex: 0 0 auto; }
+  .rail-node{
+    width: 34px; height: 34px; border-radius: 50%; flex: 0 0 34px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 700; color: var(--ink-soft);
+  }
+  .rail-node.done{ background: var(--moss); color: #fff; box-shadow: 3px 3px 7px var(--shadow-dark), -3px -3px 7px var(--shadow-light); }
+  .rail-node.current{
+    background: var(--indigo); color: #fff; width: 40px; height: 40px; flex-basis: 40px; font-size: 14px;
+    box-shadow: 3px 3px 7px var(--shadow-dark), -3px -3px 7px var(--shadow-light);
+  }
+  .rail-node.future{
+    box-shadow: inset 4px 4px 8px var(--shadow-dark), inset -4px -4px 8px var(--shadow-light);
+  }
+  .rail-label{ font-size: 13px; font-weight: 600; color: var(--ink-soft); white-space: nowrap; }
+  .rail-step.done .rail-label{ color: var(--moss); }
+  .rail-step.current .rail-label{ color: var(--indigo); }
+  .rail-connector{ height: 2px; flex: 1; background: var(--bg-sunken); margin: 0 10px; border-radius: 2px; }
+  .rail-connector.done{ background: var(--moss); }
+
+  /* Content area */
+  #content{ flex: 1; min-height: 0; }
+  .screen{
+    animation: screen-in .26s ease both;
+  }
+  @keyframes screen-in{
+    from{ opacity: 0; transform: translateY(12px); }
+    to{ opacity: 1; transform: translateY(0); }
+  }
+  .stagger > *{ animation: screen-in .26s ease both; }
+  .stagger > *:nth-child(1){ animation-delay: 0ms; }
+  .stagger > *:nth-child(2){ animation-delay: 40ms; }
+  .stagger > *:nth-child(3){ animation-delay: 80ms; }
+  .stagger > *:nth-child(4){ animation-delay: 120ms; }
+  .stagger > *:nth-child(5){ animation-delay: 160ms; }
+  .stagger > *:nth-child(6){ animation-delay: 200ms; }
+
+  .placeholder-screen{
+    border-radius: var(--r-lg);
+    min-height: 520px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 14px; text-align: center; padding: 40px;
+  }
+  .placeholder-screen .ph-icon{
+    width: 64px; height: 64px; border-radius: var(--r-md);
+    display: flex; align-items: center; justify-content: center; margin-bottom: 6px;
+  }
+  .placeholder-screen .ph-icon i{ width: 28px; height: 28px; color: var(--indigo); }
+
+  /* Generic bits reused by later tasks */
+  .pill{ display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: var(--r-pill); font-size: 12px; font-weight: 700; }
+  .pill-moss{ background: var(--moss); color: #fff; }
+  .pill-vermillion{ background: var(--vermillion); color: #fff; }
+  .pill-gold{ background: var(--gold); color: #fff; }
+  .pill-sky{ background: var(--sky); color: #fff; }
+  .pill-teal{ background: var(--teal); color: #fff; }
+  .pill-violet{ background: var(--violet); color: #fff; }
+
+  .primary-action{
+    display: flex; justify-content: flex-end; margin-top: 8px;
+  }
+  .btn-primary{
+    border: none; background: var(--indigo); color: #fff; font-weight: 600; font-size: 15px;
+    padding: 14px 24px; border-radius: var(--r-md); cursor: pointer;
+    box-shadow: 7px 7px 14px var(--shadow-dark), -7px -7px 14px var(--shadow-light);
+    display: inline-flex; align-items: center; gap: 8px;
+  }
+  .btn-primary:active{ transform: translateY(1px); box-shadow: inset 5px 5px 10px var(--shadow-dark), inset -5px -5px 10px var(--shadow-light); }
+
+  .plain-words-strip{
+    border-radius: var(--r-md); padding: 14px 18px;
+    display: flex; align-items: center; gap: 12px;
+    font-size: 14px; color: var(--ink-mid);
+  }
+  .plain-words-strip i{ width: 18px; height: 18px; color: var(--gold); flex: 0 0 18px; }
+  .plain-words-strip b{ color: var(--ink); }
+
+  /* Toast for "coming in v2" */
+  #toast-host{ position: fixed; bottom: 24px; right: 24px; display: flex; flex-direction: column; gap: 10px; z-index: 999; }
+  .toast{
+    border-radius: var(--r-pill); padding: 10px 18px; font-size: 13px; font-weight: 600; color: var(--ink-mid);
+    animation: toast-in .22s ease both;
+  }
+  @keyframes toast-in{ from{ opacity:0; transform: translateX(24px);} to{opacity:1; transform: translateX(0);} }
+  .toast.leaving{ animation: toast-out .22s ease both; }
+  @keyframes toast-out{ to{ opacity:0; transform: translateX(24px);} }
+
+  /* Small-viewport notice */
+  #small-screen-notice{ display: none; }
+  @media (max-width: 999px){
+    #app{ display: none; }
+    #small-screen-notice{
+      display: flex; min-height: 100vh; align-items: center; justify-content: center;
+      padding: 40px; text-align: center;
+    }
+    #small-screen-notice .box{
+      border-radius: var(--r-lg); padding: 40px; max-width: 420px;
+    }
+    #small-screen-notice i{ width: 40px; height: 40px; color: var(--indigo); margin-bottom: 12px; }
+    #small-screen-notice h2{ margin-bottom: 8px; }
+    #small-screen-notice p{ color: var(--ink-soft); font-size: 14px; }
+  }
+
+  /* Reduced motion */
+  @media (prefers-reduced-motion: reduce){
+    *, *::before, *::after{
+      animation-duration: .001ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: .001ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+</style>
+</head>
+<body>
+
+<div id="small-screen-notice">
+  <div class="box raised">
+    <i data-lucide="monitor"></i>
+    <h2>Best viewed on desktop</h2>
+    <p>KAIZEN's console is designed for a 1920×1080 (or at minimum 1440×900) desktop display. Please reopen this on a larger screen.</p>
+  </div>
+</div>
+
+<div id="app">
+  <aside id="sidebar" class="raised">
+    <div class="logo-block">
+      <div class="logo-mark raised-sm">◆</div>
+      <div class="logo-text-wrap">
+        <div class="logo-text">KAIZEN</div>
+        <div class="logo-sub">Cyber Cell Console</div>
+      </div>
+    </div>
+
+    <nav class="nav-section" id="nav-section"></nav>
+
+    <button class="btn-new-case" id="btn-new-case" type="button">
+      <i data-lucide="plus" style="width:16px;height:16px;"></i> New Case
+    </button>
+
+    <div class="sidebar-footer clickable" id="help-support">
+      <i data-lucide="life-buoy"></i> Help &amp; Support
+    </div>
+  </aside>
+
+  <main id="main">
+    <div id="topbar" class="raised">
+      <div class="page-title" id="page-title-el">Dashboard</div>
+      <div class="search-well pressed">
+        <i data-lucide="search"></i>
+        <input type="text" placeholder="Search cases, wallets, exchanges…" id="topbar-search">
+      </div>
+      <div class="topbar-right">
+        <span class="demo-chip">DEMO DATA</span>
+        <div class="judge-toggle on" id="judge-toggle">
+          <span>Judge Mode</span>
+          <div class="toggle-track"><div class="toggle-knob"></div></div>
+        </div>
+        <button class="btn-reset" id="btn-reset" type="button">
+          <i data-lucide="rotate-ccw"></i> Reset demo
+        </button>
+        <div class="icon-btn" id="btn-bell"><i data-lucide="bell"></i></div>
+        <div class="avatar" title="Investigating Officer">IO</div>
+      </div>
+    </div>
+
+    <div id="progress-rail-host"></div>
+
+    <div id="content"></div>
+  </main>
+</div>
+
+<div id="toast-host"></div>
+
+<script>
+/* =====================================================================
+   DEMO DATA — single source of truth. Every screen reads from this.
+   ===================================================================== */
+const DEMO = {
+  case: {
+    id: "KZN-2026-0417", ncrp: "31402260041789", complainant: "Rekha Sharma",
+    location: "Jaipur, Rajasthan", phone: "+91 98XXX XXX41",
+    incidentAt: "02 Sep 2026, 19:42 IST", reportedAt: "04 Sep 2026, 11:05 IST",
+    fraudType: "Task-based job scam (Telegram)",
+    amountINR: 1240000, amountCrypto: 14850, asset: "USDT (TRC-20)", chain: "TRON",
+    suspectWallet: "TXk9mR4pQ2vL8nW3sD6fH1jK5bQ2aZ"
+  },
+  routeA: {
+    label: "Same blockchain", chain: "TRON", accent: "teal",
+    valueINR: 1090000, valueCrypto: 13050, durationMin: 32, hops: 5,
+    trail: [
+      { n:1, addr:"TVc2hL8sN4dR7gY1mX5wQ", role:"Victim's wallet", amt:14850, at:"19:42:04", flag:null },
+      { n:2, addr:"TXk9mR4pQ2vL8nW3sD6fH", role:"Scammer's wallet", amt:14850, at:"19:42:11", flag:"SUSPECT" },
+      { n:3, addr:"TQm7bK3xF9jH2nL6pV4sD", role:"Wallet 2", amt:14835, at:"19:42:53", flag:"SWEPT", gapSec:42 },
+      { n:4, addr:"TPd4wS8cM1kR5tY9nB3gH", role:"Wallet 3", amt:14820, at:"19:43:38", flag:"SWEPT", gapSec:45 },
+      { n:5, addr:"TNh8yW5vC2mQ7fL4xK9pR", role:"Collection wallet", amt:412900, at:"19:51:02", flag:"HUB · 38 victims" },
+      { n:6, addr:"TBx1eM9nT7hG3sV5cW2kL", role:"Exchange deposit", amt:412900, at:"20:14:27", flag:"EXCHANGE" }
+    ]
+  },
+  routeB: {
+    label: "Through a bridge", chainFrom: "TRON", chainTo: "Ethereum", accent: "violet",
+    valueINR: 150000, valueCrypto: 1800, durationMin: 49, hops: 6,
+    trail: [
+      { n:1, addr:"TXk9mR4pQ2vL8nW3sD6fH", role:"Scammer's wallet", amt:1800, at:"19:42:11", chain:"TRON", flag:"SUSPECT" },
+      { n:2, addr:"TQm7bK3xF9jH2nL6pV4sD", role:"Wallet 2", amt:1795, at:"19:44:20", chain:"TRON", flag:"SWEPT", gapSec:129 },
+      { n:3, addr:"TKb5nP6rJ8dF2mX7qL4wC", role:"Bridge contract", amt:1795, at:"19:58:41", chain:"TRON", flag:"BRIDGE IN" },
+      { n:4, addr:"0x7a3fd21c9b4e8a5f2071", role:"Emerges here", amt:1782, at:"20:03:19", chain:"Ethereum", flag:"BRIDGE OUT" },
+      { n:5, addr:"0x9e4b8f07a2c6d13e5b", role:"Wallet 4", amt:1776, at:"20:09:55", chain:"Ethereum", flag:"SWEPT", gapSec:396 },
+      { n:6, addr:"0x2c8da154fe37b09c42", role:"Exchange deposit", amt:1776, at:"20:31:08", chain:"Ethereum", flag:"EXCHANGE" }
+    ]
+  },
+  exchange: {
+    name: "Meridian Digital Exchange", monogram: "MD", depositAddr: "TBx1eM9nT7hG3sV5cW2kL",
+    jurisdiction: "Seychelles", fiuRegistered: false, indianUsers: "~2.1 lakh",
+    evidence: [
+      { label:"Address appears in 340 deposit-like transactions", conf:0.94 },
+      { label:"Matches known exchange wallet pattern", conf:0.89 },
+      { label:"Public blockchain-explorer tag", conf:0.81 },
+      { label:"Consolidation behaviour typical of hot wallets", conf:0.77 }
+    ]
+  },
+  risk: {
+    score: 0.87, band: "HIGH",
+    factors: [
+      { plain:"Money moved out in 42 seconds", tech:"sweep latency", w:0.31 },
+      { plain:"38 victims' money in one wallet", tech:"consolidation hub", w:0.24 },
+      { plain:"99.9% of the amount kept", tech:"value preservation", w:0.15 },
+      { plain:"Exchange not registered in India", tech:"VASP compliance", w:0.12 },
+      { plain:"No money ever came back", tech:"no counter-flow", w:0.05 }
+    ]
+  },
+  campaign: { cases:38, totalINR:47000000, states:11, sharedWallet:"TNh8yW5vC2mQ7fL4xK9pR" },
+  dashboard: {
+    kpis:[
+      { label:"Active cases", value:"147", delta:"+12 this week", dir:"up" },
+      { label:"Traced to an exchange", value:"112", delta:"76% success rate", dir:"up" },
+      { label:"Value traced", value:"₹18.4 Cr", delta:"+₹3.1 Cr this quarter", dir:"up" },
+      { label:"Median trace time", value:"41 s", delta:"was 4-6 weeks", dir:"down" }
+    ],
+    recentCases:[
+      { id:"KZN-2026-0417", who:"Rekha Sharma", amt:1240000, chain:"TRON", status:"New", risk:null },
+      { id:"KZN-2026-0416", who:"Arun Menon", amt:860000, chain:"TRON", status:"Traced", risk:"HIGH" },
+      { id:"KZN-2026-0415", who:"Fatima Qureshi", amt:2150000, chain:"Ethereum", status:"Traced", risk:"HIGH" },
+      { id:"KZN-2026-0414", who:"S. Balaji", amt:430000, chain:"Bitcoin", status:"Notice sent", risk:"MEDIUM" },
+      { id:"KZN-2026-0413", who:"Priya Nair", amt:1780000, chain:"TRON", status:"Closed", risk:"HIGH" }
+    ]
+  }
+};
+
+/* =====================================================================
+   App state + router
+   ===================================================================== */
+const APP = { screen: 'dashboard', judgeMode: true };
+
+const NAV_ITEMS = [
+  { key: 'dashboard', label: 'Dashboard', icon: 'layout-dashboard' },
+  { key: 'cases',     label: 'Cases',     icon: 'folder-open', badge: '3' },
+  { key: 'trace',     label: 'Trace',     icon: 'route' },
+  { key: 'campaigns', label: 'Campaigns', icon: 'network', badge: '1' },
+  { key: 'reports',   label: 'Reports',   icon: 'file-text' },
+  { key: 'exchanges', label: 'Exchanges', icon: 'landmark' }
+];
+
+/* Screens that participate in the 7-step workflow rail, in order. */
+const RAIL_STEPS = [
+  { key: 'newcase',  label: 'New Case' },
+  { key: 'trace',    label: 'Trace' },
+  { key: 'route',    label: 'Route' },
+  { key: 'exchange', label: 'Exchange' },
+  { key: 'risk',     label: 'Risk' },
+  { key: 'evidence', label: 'Evidence' },
+  { key: 'closed',   label: 'Action' }
+];
+
+/* Human-readable page titles per screen, for the top bar. */
+const PAGE_TITLES = {
+  dashboard: 'Dashboard',
+  newcase: 'New Case',
+  trace: 'Tracing the money',
+  route: 'Route',
+  exchange: 'Exchange attribution',
+  risk: 'Risk score',
+  evidence: 'Evidence & action',
+  closed: 'Case closed'
+};
+
+function fmtINR(n){
+  return '₹' + new Intl.NumberFormat('en-IN').format(Math.round(n));
+}
+function fmtNum(n){
+  return new Intl.NumberFormat('en-IN').format(n);
+}
+function truncAddr(addr){
+  if(!addr || addr.length <= 10) return addr || '';
+  return addr.slice(0,4) + '…' + addr.slice(-4);
+}
+/* Renders a truncated mono address span with copy-on-hover + title attribute. */
+function addrEl(addr){
+  const safe = addr.replace(/"/g, '&quot;');
+  return `<span class="addr" title="${safe}" data-full-addr="${safe}" style="cursor:pointer;" onclick="copyAddr(this)">${truncAddr(addr)}</span>`;
+}
+function copyAddr(el){
+  const full = el.getAttribute('data-full-addr');
+  try{
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(full).then(()=>showToast('Address copied')).catch(()=>{});
+    }
+  }catch(e){ /* clipboard unavailable — no-op, never throw */ }
+}
+
+function showToast(msg){
+  const host = document.getElementById('toast-host');
+  const t = document.createElement('div');
+  t.className = 'toast raised';
+  t.textContent = msg;
+  host.appendChild(t);
+  setTimeout(()=>{
+    t.classList.add('leaving');
+    setTimeout(()=> t.remove(), 240);
+  }, 3000);
+}
+/* Global helper for "out-of-scope button" per UX law #6 — never silently fail. */
+function comingInV2(){ showToast('Coming in v2'); }
+
+function setScreen(name){
+  APP.screen = name;
+  render(name);
+  window.scrollTo({ top: 0, behavior: 'auto' });
+}
+
+/* ---------------- Sidebar ---------------- */
+function renderSidebar(){
+  const nav = document.getElementById('nav-section');
+  nav.innerHTML = NAV_ITEMS.map(item => {
+    const active = APP.screen === item.key || (item.key === 'dashboard' && APP.screen === 'dashboard');
+    return `
+      <div class="nav-item${active ? ' active' : ''}" data-nav="${item.key}">
+        <span class="nav-icon"><i data-lucide="${item.icon}"></i></span>
+        <span>${item.label}</span>
+        ${item.badge ? `<span class="badge">${item.badge}</span>` : ''}
+      </div>`;
+  }).join('');
+
+  nav.querySelectorAll('.nav-item').forEach(el => {
+    el.addEventListener('click', () => {
+      const key = el.getAttribute('data-nav');
+      if(key === 'dashboard'){ setScreen('dashboard'); }
+      else if(NAV_SCREEN_MAP[key]){ setScreen(NAV_SCREEN_MAP[key]); }
+      else { comingInV2(); }
+    });
+  });
+}
+/* Only a subset of nav items map to screens built in this prototype;
+   the rest are legitimately out of scope and get the "Coming in v2" toast. */
+const NAV_SCREEN_MAP = {
+  dashboard: 'dashboard',
+  trace: 'trace'
+};
+
+/* ---------------- Top bar ---------------- */
+function renderTopbar(){
+  document.getElementById('page-title-el').textContent = PAGE_TITLES[APP.screen] || 'KAIZEN';
+
+  const toggle = document.getElementById('judge-toggle');
+  toggle.classList.toggle('on', APP.judgeMode);
+}
+
+function wireTopbarOnce(){
+  document.getElementById('judge-toggle').addEventListener('click', () => {
+    APP.judgeMode = !APP.judgeMode;
+    renderTopbar();
+  });
+  document.getElementById('btn-reset').addEventListener('click', () => {
+    setScreen('dashboard');
+    showToast('Demo reset');
+  });
+  document.getElementById('btn-bell').addEventListener('click', comingInV2);
+  document.getElementById('btn-new-case').addEventListener('click', () => setScreen('newcase'));
+  document.getElementById('help-support').addEventListener('click', comingInV2);
+}
+
+/* ---------------- Progress rail ---------------- */
+function renderProgressRail(){
+  const host = document.getElementById('progress-rail-host');
+  const idx = RAIL_STEPS.findIndex(s => s.key === APP.screen);
+
+  if(idx === -1){
+    host.innerHTML = '';
+    return;
+  }
+
+  host.innerHTML = `
+    <div id="progress-rail" class="raised">
+      ${RAIL_STEPS.map((step, i) => {
+        let state = 'future';
+        if(i < idx) state = 'done';
+        else if(i === idx) state = 'current';
+        const nodeInner = state === 'done' ? '<i data-lucide="check" style="width:16px;height:16px;"></i>' : (i+1);
+        const connector = i < RAIL_STEPS.length - 1
+          ? `<div class="rail-connector${i < idx ? ' done' : ''}"></div>` : '';
+        return `
+          <div class="rail-step ${state}">
+            <div class="rail-node ${state}">${nodeInner}</div>
+            <span class="rail-label">${step.label}</span>
+          </div>
+          ${connector}`;
+      }).join('')}
+    </div>`;
+}
+
+/* ---------------- Screen content ---------------- */
+const PLACEHOLDER_META = {
+  dashboard: { icon: 'layout-dashboard', title: 'Dashboard', note: 'Built in Task 2 — KPIs, recent cases, campaign alert, trace-activity chart.' },
+  newcase:   { icon: 'file-plus-2',      title: 'New Case',  note: 'Built in Task 3 — pre-filled complaint intake form.' },
+  trace:     { icon: 'route',            title: 'Trace',     note: 'Built in Task 4 — the animated tracing sequence.' },
+  route:     { icon: 'git-fork',         title: 'Route',     note: 'Built in Task 5 — Route A / Route B fork with hop timelines.' },
+  exchange:  { icon: 'landmark',         title: 'Exchange',  note: 'Built in Task 6 — exchange attribution and evidence.' },
+  risk:      { icon: 'gauge',            title: 'Risk',      note: 'Built in Task 7 — the risk score gauge and factors.' },
+  evidence:  { icon: 'folder-check',     title: 'Evidence',  note: 'Built in Task 8 — fund-flow graph, report, lawful action.' },
+  closed:    { icon: 'badge-check',      title: 'Case closed', note: 'Built in Task 9 — case summary and comparison strip.' }
+};
+
+function placeholderScreen(name){
+  const meta = PLACEHOLDER_META[name] || { icon: 'circle', title: name, note: '' };
+  return `
+    <div class="placeholder-screen raised">
+      <div class="ph-icon raised-sm"><i data-lucide="${meta.icon}"></i></div>
+      <h2>${meta.title}</h2>
+      <p class="caption" style="max-width:420px;">${meta.note}</p>
+    </div>`;
+}
+
+function render(screenName){
+  APP.screen = screenName;
+
+  renderSidebar();
+  renderTopbar();
+  renderProgressRail();
+
+  const content = document.getElementById('content');
+  content.innerHTML = `<div class="screen" id="screen-${screenName}">${placeholderScreen(screenName)}</div>`;
+
+  if(window.lucide && typeof lucide.createIcons === 'function'){
+    lucide.createIcons();
+  }
+}
+
+/* ---------------- Boot ---------------- */
+document.addEventListener('DOMContentLoaded', () => {
+  wireTopbarOnce();
+  render(APP.screen);
+});
+</script>
+</body>
+</html>
