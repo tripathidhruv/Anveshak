@@ -28,7 +28,7 @@ export function delay(ms: number): Promise<void> {
  * invented, or paraphrased. See `.superpowers/sdd/task-3-report.md` for the field-by-field
  * cross-check.
  */
-export const DEMO = {
+const DEMO = {
   case: {
     id: 'KZN-2026-0417',
     ncrp: '31402260041789',
@@ -159,7 +159,7 @@ function buildGraph(): GraphData {
       label: hop.role,
       sublabel: 'Money passed through here',
       kind: 'wallet' as const,
-      accent: 'sky' as const,
+      accent: 'teal' as const,
       addr: hop.addr,
       amt: hop.amt,
       at: hop.at,
