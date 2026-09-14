@@ -1,0 +1,215 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap);
+}
+
+.header {
+  max-width: 720px;
+}
+
+.subtitle {
+  margin-top: 6px;
+  color: var(--ink-soft);
+  font-size: 15px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr;
+  gap: var(--gap);
+  align-items: start;
+}
+
+@media (max-width: 1279px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Hero card — gold-accented per the spec: a slim gold rule along the top edge, clipped to
+   the card's own radius, plus a gold-tinted monogram tile. Kept subtle (a 4px rule, not a
+   full gold fill) so it reads as an accent rather than competing with the vermillion
+   compliance finding below it. */
+.heroCard {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.heroCard::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 4px;
+  background: var(--gold);
+}
+
+.heroTop {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.monogram {
+  composes: raised-sm from '../styles/surfaces.css';
+  flex: none;
+  width: 64px;
+  height: 64px;
+  border-radius: var(--r-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--gold);
+}
+
+.heroIdentity {
+  min-width: 0;
+}
+
+.exchangeName {
+  font-size: 28px;
+  font-weight: 700;
+}
+
+.depositAddr {
+  margin-top: 4px;
+  font-size: 14px;
+  color: var(--ink-soft);
+}
+
+.depositAddrValue {
+  color: var(--ink-mid);
+}
+
+.statRow {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+}
+
+.statWell {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.statValue {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.complianceStrip {
+  /* Deliberately not `composes: raised-sm` — that surface's own `background: var(--bg)`
+     rule would win the cascade over this class's background (same specificity, source
+     order), which silently killed the vermillion fill. Box-shadow is copied by value
+     instead so the strip still reads as a raised neumorphic surface. */
+  box-shadow: var(--shadow-raised-sm);
+  border-radius: var(--r-sm);
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 16px 20px;
+  background: var(--vermillion);
+  color: #fff;
+}
+
+.complianceIcon {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+}
+
+.complianceHeading {
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.complianceBody {
+  margin-top: 2px;
+  font-size: 13px;
+  opacity: 0.92;
+}
+
+.evidenceCard {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.evidenceList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.evidenceItem {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.checkIcon {
+  flex: none;
+  color: var(--moss);
+}
+
+.evidenceBody {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.evidenceLabel {
+  font-size: 14px;
+  color: var(--ink-mid);
+}
+
+.confTrack {
+  composes: pressed from '../styles/surfaces.css';
+  height: 8px;
+  border-radius: var(--r-pill);
+  overflow: hidden;
+}
+
+.confFill {
+  height: 100%;
+  border-radius: var(--r-pill);
+  background: linear-gradient(90deg, var(--gold), var(--vermillion));
+  transition: width 700ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.confValue {
+  flex: none;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink);
+  width: 44px;
+  text-align: right;
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.loadingCard {
+  max-width: 420px;
+  margin: 64px auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  color: var(--ink-soft);
+}
