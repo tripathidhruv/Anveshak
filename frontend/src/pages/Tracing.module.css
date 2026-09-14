@@ -1,0 +1,125 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  min-height: 560px;
+}
+
+.stage {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 72px;
+  width: 100%;
+  padding: 48px 24px 24px;
+}
+
+.ringColumn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+}
+
+.ringWell {
+  composes: pressed from '../styles/surfaces.css';
+  width: 292px;
+  height: 292px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.statusLine {
+  min-height: 24px;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--ink);
+  text-align: center;
+  animation: fadeIn 240ms ease both;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.checklist {
+  composes: raised-sm from '../styles/surfaces.css';
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 20px 24px;
+  min-width: 340px;
+}
+
+.checklistTitle {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink-soft);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 8px;
+}
+
+.checkItem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0;
+  animation: popIn 220ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes popIn {
+  from {
+    opacity: 0;
+    transform: scale(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.checkDot {
+  composes: flat from '../styles/surfaces.css';
+  width: 24px;
+  height: 24px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--moss);
+  color: var(--on-accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.checkLabel {
+  font-size: 14px;
+  color: var(--ink-mid);
+  flex: 1;
+}
+
+.sweepPill {
+  composes: chip from '../components/ui/Chip/Chip.module.css';
+  background: var(--vermillion);
+  color: #fff;
+  font-size: 11px;
+  padding: 3px 10px;
+  white-space: nowrap;
+}
+
+.footer {
+  display: flex;
+  justify-content: flex-end;
+  width: 100%;
+  padding: 0 24px 8px;
+}
