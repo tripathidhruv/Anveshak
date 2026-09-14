@@ -153,6 +153,16 @@ function buildGraph(): GraphData {
       amt: hop.amt,
       at: hop.at,
     })),
+    {
+      id: 'b-2',
+      label: DEMO.routeB.trail[1].role,
+      sublabel: 'Money passed through here',
+      kind: 'wallet',
+      accent: 'teal',
+      addr: DEMO.routeB.trail[1].addr,
+      amt: DEMO.routeB.trail[1].amt,
+      at: DEMO.routeB.trail[1].at,
+    },
     { id: 'bridge', label: 'Bridge contract', sublabel: 'Currency exchange between blockchains', kind: 'bridge', accent: 'violet', addr: bridge.addr, amt: bridge.amt, at: bridge.at },
     ...DEMO.routeB.trail.slice(3, 5).map((hop) => ({
       id: `b-${hop.n}`,

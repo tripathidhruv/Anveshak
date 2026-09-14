@@ -2,6 +2,7 @@ import { LifeBuoy, Plus } from 'lucide-react'
 import { NavLink, useNavigate } from 'react-router-dom'
 import clsx from 'clsx'
 import { Button } from '../ui'
+import { LogoMark } from '../../assets/logoMark'
 import { useUIStore } from '../../store/uiStore'
 import { ROUTES } from '../../utils/constants'
 import { NAV_ITEMS } from './navConfig'
@@ -15,7 +16,9 @@ export function Sidebar() {
   return (
     <aside className={styles.sidebar}>
       <div className={styles.logoBlock}>
-        <div className={styles.logoMark}>◆</div>
+        <div className={styles.logoMark}>
+          <LogoMark size={22} />
+        </div>
         <div>
           <div className={styles.logoText}>KAIZEN</div>
           <div className={styles.logoSub}>Cyber Cell Console</div>

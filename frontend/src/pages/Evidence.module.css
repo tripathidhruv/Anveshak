@@ -1,0 +1,89 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap);
+}
+
+.header {
+  max-width: 720px;
+}
+
+.subtitle {
+  margin-top: 6px;
+  color: var(--ink-soft);
+  font-size: 15px;
+}
+
+.panel {
+  display: flex;
+  flex-direction: column;
+}
+
+.tabRow {
+  display: flex;
+  gap: 10px;
+  padding: var(--gap) var(--gap) 0;
+}
+
+.tabChip {
+  composes: raised-sm from '../styles/surfaces.css';
+  composes: clickable from '../styles/surfaces.css';
+  border: none;
+  border-radius: var(--r-sm);
+  padding: 12px 20px;
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink-mid);
+  cursor: pointer;
+}
+
+.tabChipActive {
+  composes: pressed from '../styles/surfaces.css';
+  color: var(--indigo);
+}
+
+.tabContent {
+  padding: var(--gap);
+  min-height: 560px;
+}
+
+.loadingInner,
+.loadingCard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  color: var(--ink-soft);
+  min-height: 400px;
+}
+
+.loadingCard {
+  max-width: 420px;
+  margin: 64px auto;
+  min-height: 0;
+}
+
+.graphLayout {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--gap);
+}
+
+.graphLayout > :first-child {
+  flex: 1;
+  min-width: 0;
+}
+
+.footerRow {
+  display: flex;
+  justify-content: flex-end;
+  padding: 0 var(--gap) var(--gap);
+}
+
+@media (max-width: 1279px) {
+  .graphLayout {
+    flex-direction: column;
+  }
+}

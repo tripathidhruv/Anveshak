@@ -1,0 +1,144 @@
+.wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap);
+}
+
+.toolbar {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.well {
+  composes: raised from '../../styles/surfaces.css';
+  padding: var(--gap);
+  max-height: 720px;
+  overflow-y: auto;
+  display: flex;
+  justify-content: center;
+}
+
+.page {
+  background: #ffffff;
+  width: 794px;
+  max-width: 100%;
+  min-height: 1050px;
+  padding: 48px 56px 40px;
+  border-radius: var(--r-sm);
+  box-shadow: var(--shadow-raised-sm);
+  color: var(--ink);
+  font-family: var(--font-body);
+  display: flex;
+  flex-direction: column;
+  gap: 26px;
+}
+
+.masthead {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding-bottom: 18px;
+  border-bottom: 2px solid var(--indigo);
+}
+
+.wordmark {
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: var(--indigo);
+}
+
+.docType {
+  margin-top: 2px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ink-soft);
+}
+
+.mastheadMeta {
+  text-align: right;
+  font-size: 12px;
+  color: var(--ink-mid);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--bg-sunken);
+}
+
+.heading {
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--indigo);
+}
+
+.factGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px 28px;
+  font-size: 13px;
+}
+
+.factGrid dt {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--ink-soft);
+}
+
+.factGrid dd {
+  margin-top: 2px;
+  color: var(--ink);
+}
+
+.evidenceList {
+  list-style: disc;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--ink-mid);
+}
+
+.methodology {
+  font-size: 13px;
+  line-height: 1.65;
+  color: var(--ink-mid);
+}
+
+.integrityBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-top: 16px;
+  border-top: 2px solid var(--indigo);
+  font-size: 11px;
+  color: var(--ink-soft);
+}
+
+.integrityBlock .heading {
+  color: var(--indigo);
+}
+
+.hashValue {
+  word-break: break-all;
+}
+
+.footerLine {
+  font-style: italic;
+  margin-top: 2px;
+}
