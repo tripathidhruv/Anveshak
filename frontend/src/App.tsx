@@ -1,4 +1,4 @@
-import { BrowserRouter, Route, Routes } from 'react-router-dom'
+import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { PageShell } from './components/layout'
 import { ROUTES } from './utils/constants'
 import Dashboard from './pages/Dashboard'
@@ -10,14 +10,16 @@ import RiskScore from './pages/RiskScore'
 import Evidence from './pages/Evidence'
 import CaseClosed from './pages/CaseClosed'
 import Campaign from './pages/Campaign'
-import { NavStub } from './pages/NavStub'
-import NotFound from './pages/NotFound'
-import PrimitivesPreview from './pages/_PrimitivesPreview'
 
 /**
- * Route tree per the Global Constraints route list (`docs/plans/react-migration-plan.md`).
- * `PageShell` is the layout route wrapping every real page; each page is a Task 2
- * placeholder — Tasks 4-7 replace their contents in place, same file, same route.
+ * Route tree per the Global Constraints route list (`docs/plans/react-migration-plan.md`) —
+ * exactly these 9 routes, nothing else. `PageShell` is the layout route wrapping every real
+ * page; each page is a Task 2 placeholder — Tasks 4-7 replace their contents in place, same
+ * file, same route. Sidebar nav items with no destination in this list (Cases, Trace,
+ * Campaigns, Reports, Exchanges) render a "Coming in v2" toast instead of routing anywhere —
+ * see `components/layout/Sidebar.tsx`/`navConfig.ts`. Any other URL redirects to the
+ * dashboard rather than rendering as a route, so refreshing on a bad/stale URL never
+ * white-screens without adding to the canonical route list.
  */
 function App() {
   return (
@@ -34,18 +36,8 @@ function App() {
           <Route path={ROUTES.closed(':id')} element={<CaseClosed />} />
           <Route path={ROUTES.campaign(':id')} element={<Campaign />} />
 
-          {/* Sidebar demo chrome — not covered by any of the 8 build tasks, see NavStub. */}
-          <Route path="/cases" element={<NavStub screenName="Cases" />} />
-          <Route path="/trace" element={<NavStub screenName="Trace" />} />
-          <Route path="/campaigns" element={<NavStub screenName="Campaigns" />} />
-          <Route path="/reports" element={<NavStub screenName="Reports" />} />
-          <Route path="/exchanges" element={<NavStub screenName="Exchanges" />} />
-
-          <Route path="*" element={<NotFound />} />
+          <Route path="*" element={<Navigate to={ROUTES.dashboard} replace />} />
         </Route>
-
-        {/* Dev-only scratch page from Task 1 — not linked from any nav, kept reachable for QA. */}
-        <Route path="/dev/primitives" element={<PrimitivesPreview />} />
       </Routes>
     </BrowserRouter>
   )

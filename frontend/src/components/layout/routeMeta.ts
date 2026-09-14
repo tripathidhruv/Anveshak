@@ -38,11 +38,6 @@ const PAGE_TITLES: Array<{ pattern: string; title: string }> = [
   { pattern: ROUTES.evidence(':id'), title: 'Evidence & action' },
   { pattern: ROUTES.closed(':id'), title: 'Case closed' },
   { pattern: ROUTES.campaign(':id'), title: 'Campaign' },
-  { pattern: '/cases', title: 'Cases' },
-  { pattern: '/trace', title: 'Trace' },
-  { pattern: '/campaigns', title: 'Campaigns' },
-  { pattern: '/reports', title: 'Reports' },
-  { pattern: '/exchanges', title: 'Exchanges' },
 ]
 
 export function isRailVisible(pathname: string): boolean {

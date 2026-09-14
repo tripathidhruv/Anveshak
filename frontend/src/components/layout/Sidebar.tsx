@@ -25,6 +25,24 @@ export function Sidebar() {
       <nav className={styles.navSection}>
         {NAV_ITEMS.map((item) => {
           const Icon = item.icon
+
+          if (!item.to) {
+            return (
+              <button
+                key={item.key}
+                type="button"
+                className={styles.navItem}
+                onClick={() => showToast('Coming in v2')}
+              >
+                <span className={styles.navIcon}>
+                  <Icon size={18} />
+                </span>
+                <span className={styles.navLabel}>{item.label}</span>
+                {item.badge ? <span className={styles.navBadge}>{item.badge}</span> : null}
+              </button>
+            )
+          }
+
           return (
             <NavLink
               key={item.key}
