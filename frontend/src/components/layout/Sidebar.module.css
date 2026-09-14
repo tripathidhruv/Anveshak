@@ -2,9 +2,10 @@
   composes: raised from '../../styles/surfaces.css';
   width: 248px;
   flex: 0 0 248px;
-  height: 100vh;
+  height: calc(100vh - 40px);
   position: sticky;
-  top: 0;
+  top: 20px;
+  margin: 20px 0 20px 20px;
   display: flex;
   flex-direction: column;
   padding: 24px 18px;
