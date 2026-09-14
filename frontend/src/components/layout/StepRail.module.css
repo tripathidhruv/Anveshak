@@ -1,0 +1,76 @@
+.rail {
+  composes: raised-sm from '../../styles/surfaces.css';
+  display: flex;
+  align-items: center;
+  padding: 16px 28px;
+  margin-bottom: var(--gap);
+}
+
+.step {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+}
+
+.step:last-child {
+  flex: 0 0 auto;
+}
+
+.dot {
+  composes: flat from '../../styles/surfaces.css';
+  width: 28px;
+  height: 28px;
+  flex: 0 0 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink-soft);
+  box-shadow: var(--shadow-pressed);
+  transition: background 0.18s ease, color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink-soft);
+  white-space: nowrap;
+  transition: color 0.18s ease;
+}
+
+.connector {
+  flex: 1;
+  height: 2px;
+  background: var(--bg-sunken);
+  margin: 0 10px;
+  border-radius: var(--r-pill);
+  transition: background 0.18s ease;
+}
+
+.completed .dot {
+  background: var(--moss);
+  color: #fff;
+  box-shadow: none;
+}
+
+.completed .label {
+  color: var(--ink-mid);
+}
+
+.completed .connector {
+  background: var(--moss);
+}
+
+.current .dot {
+  background: var(--indigo);
+  color: #fff;
+  box-shadow: none;
+}
+
+.current .label {
+  color: var(--indigo);
+}
