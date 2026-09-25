@@ -1,5 +1,12 @@
 # Progress log
 
+## 2026-09-26 (fix pass, cont'd 5) · Dhruv + Claude · Task F8 landed (asset/contract filtering)
+**Did:** TRON and Ethereum adapters now filter fetched transfers by the token's real CONTRACT ADDRESS, not its symbol string — a spoofed spam/poisoned-address token can name itself "USDT" but can't be the real USDT contract, so filtering on address (not symbol) is what actually defeats that attack. New `backend/app/chains/known_assets.py` holds the canonical (chain, asset) → real contract address lookup plus a bridge from the frontend's actual display labels ("USDT (TRC-20)", "BTC", "ETH") — verified against `NewCase.tsx`'s real `CRYPTO_OPTIONS` so the filter isn't silently dead against real cases. Bitcoin is untouched (no smart-contract token attack surface on that chain). The implementer had no WebFetch/WebSearch access and flagged the ERC-20 USDT contract address as unverified; the reviewer did have that access and independently confirmed it against Etherscan's own canonical token listing.
+**Decided:** Nothing new.
+**Next:** Task F9 (Bitcoin multi-input transactions inflate "distinct payer" counts, I5) — next independent adapter task.
+**Blocked on:** Nothing.
+**Note for whoever's next:** the ERC-20 USDT address is a real, public token contract identifier used here for its legitimate purpose (telling real USDT apart from a fake token) — this is a different category from CLAUDE.md rule 1's fake-exchange-wallet concern, not a violation of it.
+
 ## 2026-09-26 (fix pass, cont'd 4) · Dhruv + Claude · Task F7 landed (adapter pagination)
 **Did:** TRON and Bitcoin adapters no longer silently truncate history — both now paginate using their real API cursor mechanisms (TronGrid's `meta.fingerprint`, Esplora's `/txs/chain/:last_seen_txid`), bounded to 10 pages each to avoid an unbounded loop against a wallet with years of history. Both real API contracts were independently verified via WebFetch — once by the implementer before writing the code, once again by the reviewer from scratch rather than trusting the citation — and both landed on the same answer. TRON deliberately skipped a `since`-based early-stop optimization (ascending order + an opaque forward-only cursor means there's no safe early-stop point short of exhausting history or hitting the cap); Bitcoin's data is newest-first so an equivalent early-stop would actually be safe there, but wasn't requested — noted as a Minor future opportunity, not a gap in this task.
 **Decided:** Nothing new.
