@@ -27,7 +27,10 @@ function toRoute(trace: BackendTraceOut): Route {
     chain: trace.hops[0]?.chain,
     accent: trace.attribution.gatePassed ? 'moss' : 'gold',
     valueINR: 0, // provenance: live trace doesn't compute INR conversion yet — known gap, not hidden
-    valueCrypto: trace.hops.reduce((sum, h) => Math.max(sum, h.amt), 0),
+    // The victim's originally reported amount — not a max over hop amounts, which could
+    // pick up a consolidation-hub hop aggregating other victims' funds (see CLAUDE.md's
+    // "Consolidation" thesis and the hub hop in api/mock.ts).
+    valueCrypto: trace.conservation.incomingTotal,
     durationMin: 0,
     hops: trace.hops.length,
     trail: trace.hops.map((h) => ({
@@ -44,7 +47,19 @@ export const httpApiPartial: Partial<KaizenApi> = {
   getCase: (id: string) => request<Case>(`/api/v1/cases/${id}`),
   startTrace: async (caseId: string): Promise<TraceResult> => {
     const trace = await request<BackendTraceOut>(`/api/v1/cases/${caseId}/trace`, { method: 'POST' })
-    return { routeA: toRoute(trace), routeB: { ...toRoute(trace), label: 'Not yet computed', trail: [] } }
+    // routeB is an honest "not computed" placeholder — an independent literal, never a spread
+    // of the real trace, so no real hop count/value ever sits next to the "Not yet computed"
+    // label (see CLAUDE.md's "nothing is a black box" / honest-provenance rule).
+    const routeB: Route = {
+      label: 'Not yet computed',
+      accent: 'sky',
+      valueINR: 0,
+      valueCrypto: 0,
+      durationMin: 0,
+      hops: 0,
+      trail: [],
+    }
+    return { routeA: toRoute(trace), routeB }
   },
   getRoutes: (caseId: string) => (httpApiPartial.startTrace as (id: string) => Promise<TraceResult>)(caseId),
 }
