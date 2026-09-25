@@ -25,7 +25,7 @@ Read `docs/PROGRESS.md` top entry for full narrative.
 - [x] Task 4: Ethereum ERC-20 adapter over Etherscan @Claude
 - [x] Task 5: Bitcoin adapter over Blockstream Esplora, UTXO normalization @Claude
 - [x] Task 6: chain registry, causal FIFO tracer, conservation invariant @Claude
-- [ ] Task 7: vetted VASP label seeds, gated sweep + deposit-address detectors (correctness-guard checklist)
+- [x] Task 7: vetted VASP label seeds, gated sweep + deposit-address detectors (correctness-guard checklist) @Claude
 - [ ] Task 8: exculpatory/innocence scorer
 - [ ] Task 9: backward unreported-victim enumeration
 - [ ] Task 10: cross-chain bridge-hop linker (timing + amount correlation)
@@ -33,6 +33,10 @@ Read `docs/PROGRESS.md` top entry for full narrative.
 - [ ] Task 12: frontend `httpApi` wiring against the real endpoints
 
 Deferred past this plan, unchanged from the approved spec: VASP flagged-wallet broadcast feed, Tether freeze check + golden hour, OFAC/sanctions screening, reproducible evidence hashing + hash-chained audit log, calibration pass, legal templates + SAHYOG payload, ML risk scoring.
+
+**New standing rule (2026-09-25):** every backend-generated string meant for a human reader (risk-score reasons, attribution reasoning, innocence factors, flagged-exchange explanations) must be plain, non-technical English a 12-year-old could follow — extends CLAUDE.md rule 3 explicitly to backend prose, not just frontend copy. Task 7's `reasoning`/`limitations` fields follow this; carry it into Task 8 (innocence factors) and any later task that generates explanatory text.
+
+**Flagged for Task 11:** Task 7's `detect_sweep()` is not yet consumed anywhere — the spec's correctness-guard checklist implies deposit-address attribution should require "N-payers-and-sweep," but `evaluate_deposit_gate()` currently gates on distinct-payer count without checking the sweep signal. Task 11 (API layer) must wire `detect_sweep` into the attribution decision, or this checklist item goes unenforced.
 
 ## P0.5 — Sidebar registry screens (`docs/plans/stub-screens-plan.md`) — DONE
 - [x] Cases / Trace / Campaigns / Reports / Exchanges — all 5 built as real screens, reviewed, fixed @Claude
