@@ -30,7 +30,7 @@ Read `docs/PROGRESS.md` top entry for full narrative.
 - [x] Task 9: backward unreported-victim enumeration @Claude
 - [x] Task 10: cross-chain bridge-hop linker (timing + amount correlation) @Claude
 - [x] Task 11: API layer — cases/traces endpoints wiring everything together @Claude
-- [ ] Task 12: frontend `httpApi` wiring against the real endpoints
+- [~] Task 12: frontend `httpApi` wiring against the real endpoints @Claude
 
 Deferred past this plan, unchanged from the approved spec: VASP flagged-wallet broadcast feed, Tether freeze check + golden hour, OFAC/sanctions screening, reproducible evidence hashing + hash-chained audit log, calibration pass, legal templates + SAHYOG payload, ML risk scoring.
 
