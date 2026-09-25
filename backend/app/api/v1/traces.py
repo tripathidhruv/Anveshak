@@ -93,10 +93,23 @@ def run_trace(case_id: str, db: Session = Depends(get_db)) -> TraceOut:
             # whole endpoint -- fall back to an empty history for this one candidate rather than
             # crashing the request. Matches tracer.py's own `except Exception` pattern for the
             # same class of failure.
+            #
+            # F3-followup: a fetch failure must NOT be silently treated as "we checked and found
+            # zero payers" -- evaluate_deposit_gate has no way to distinguish a genuine
+            # distinct_payer_count of 0 from "we couldn't read this wallet's history at all", and
+            # reporting the former when the latter is true would tell an officer something false
+            # about the wallet (nothing-is-a-black-box honesty concern). So when the fetch fails,
+            # skip gate/sweep evaluation for this candidate entirely and record that fact instead.
+            history_read_failed = False
             try:
                 full_history = client.get_transfers(hop.wallet_address)
             except Exception:
                 full_history = []
+                history_read_failed = True
+
+            if history_read_failed:
+                evaluated.append((hop, None, None, False))
+                continue
 
             incoming_to_hop = [t for t in full_history if t.to_address == hop.wallet_address]
             outgoing_from_hop = [t for t in full_history if t.from_address == hop.wallet_address]
@@ -121,27 +134,43 @@ def run_trace(case_id: str, db: Session = Depends(get_db)) -> TraceOut:
         passed = next((e for e in evaluated if e[3]), None)
         hop, gate, sweep_signal, final_gate_passed = passed if passed is not None else evaluated[-1]
 
-        breakdown = {**gate.breakdown, "sweep_confirmed": sweep_signal.is_sweep}
-        if final_gate_passed:
-            reasoning, limitations = gate.reasoning, gate.limitations
-        elif gate.gate_passed and not sweep_signal.is_sweep:
+        if gate is None:
+            # F3-followup: this candidate's history couldn't be read at all -- there is nothing
+            # to report from a gate/sweep check that never ran, so say that plainly instead of
+            # letting an absent gate be mistaken for a passed or failed one.
+            breakdown = {"data_unavailable": True}
+            entity_name = "UNKNOWN"
             reasoning = (
-                "Enough different people sent money into this wallet, and the name we have on "
-                "file for it checks out. But the money that arrived here was not moved onward "
-                "quickly the way a real exchange collection wallet normally does, so we are not "
-                "confident enough yet to name the exchange."
+                "We could not check this wallet's transaction history right now, so we can't "
+                "tell whether it belongs to an exchange."
             )
             limitations = (
-                "We are not sure enough to name an exchange here, so we show 'UNKNOWN' instead "
-                "of guessing. This is a starting point for an investigation, not final proof — "
-                "an officer still needs to check it before acting on it."
+                "This wallet's data was unavailable when the trace ran. Try running the trace "
+                "again, or check this wallet manually."
             )
         else:
-            reasoning, limitations = gate.reasoning, gate.limitations
+            breakdown = {**gate.breakdown, "sweep_confirmed": sweep_signal.is_sweep}
+            entity_name = gate.entity_name if final_gate_passed else "UNKNOWN"
+            if final_gate_passed:
+                reasoning, limitations = gate.reasoning, gate.limitations
+            elif gate.gate_passed and not sweep_signal.is_sweep:
+                reasoning = (
+                    "Enough different people sent money into this wallet, and the name we have on "
+                    "file for it checks out. But the money that arrived here was not moved onward "
+                    "quickly the way a real exchange collection wallet normally does, so we are not "
+                    "confident enough yet to name the exchange."
+                )
+                limitations = (
+                    "We are not sure enough to name an exchange here, so we show 'UNKNOWN' instead "
+                    "of guessing. This is a starting point for an investigation, not final proof — "
+                    "an officer still needs to check it before acting on it."
+                )
+            else:
+                reasoning, limitations = gate.reasoning, gate.limitations
 
         attribution_out = AttributionOut(
             walletAddress=hop.wallet_address, chain=hop.chain, gatePassed=final_gate_passed,
-            entityName=gate.entity_name if final_gate_passed else "UNKNOWN",
+            entityName=entity_name,
             breakdown=breakdown, reasoning=reasoning, limitations=limitations,
         )
 

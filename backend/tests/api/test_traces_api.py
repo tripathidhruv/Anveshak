@@ -374,6 +374,12 @@ def test_candidate_history_refetch_failure_does_not_500():
     assert body["attribution"]["gatePassed"] is False
     assert body["attribution"]["entityName"] == "UNKNOWN"
     assert body["unreportedVictims"] == []
+    # F3-followup: a fetch failure must produce its own honest "couldn't check" reasoning,
+    # never the payer-gate's "0 people sent money into this wallet" phrasing -- that would
+    # read as a checked fact about the wallet rather than an infrastructure failure to read it.
+    assert "could not check" in body["attribution"]["reasoning"].lower()
+    assert "0" not in body["attribution"]["reasoning"]
+    assert body["attribution"]["breakdown"] == {"data_unavailable": True}
 
 
 def test_suspect_history_refetch_failure_does_not_500():
