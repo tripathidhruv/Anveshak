@@ -7,8 +7,8 @@ Owner: initials. Update the status **in the same commit** as the work.
 Read `docs/PROGRESS.md` top entry for full narrative.
 
 1. **Frontend, React app (`frontend/`)** — all 9 screens built and functionally complete against mock data (Phase 1 of the original migration plan, `docs/plans/react-migration-plan.md`, Tasks 1-8 all done).
-2. **Frontend, UI v2 visual redesign — COMPLETE.** Full migration from the neumorphic CSS-Modules system to a Tailwind v4 + shadcn-style flat/white-card system (light theme, aurora page background). All 6 tasks in `docs/plans/ui-v2-redesign-plan.md` done, reviewed clean, dead neumorphic system fully deleted. `npm run build` zero errors.
-3. **Backend (`backend/`)** — NOT STARTED. Full design spec exists and is approved: `docs/superpowers/specs/2026-09-25-backend-v2-competitive-design.md` (supersedes the earlier `2026-09-25-real-tracing-vasp-feed-design.md`). This is the next major track — needs a `writing-plans`-style task breakdown from the spec before subagent dispatch can start.
+2. **Frontend, UI v2 visual redesign — COMPLETE.** Full migration from the neumorphic CSS-Modules system to a Tailwind v4 + shadcn-style flat/white-card system (light theme, aurora page background). All 6 tasks in `docs/plans/ui-v2-redesign-plan.md` done, reviewed clean, dead neumorphic system fully deleted. `npm run build` zero errors. Since then, a pilot pass (primitives + Dashboard) pushed the visual language closer to a reference fintech dashboard: pill-shaped buttons/tabs, per-KPI multi-color icon tiles, recolored trace chart — not yet propagated to the other 12 screens.
+3. **Backend (`backend/`) — IN PROGRESS.** Design spec approved: `docs/superpowers/specs/2026-09-25-backend-v2-competitive-design.md`. Implementation plan written and in active execution: `docs/superpowers/plans/2026-09-25-backend-sprint1-multichain.md` (12 tasks — chain adapters, causal tracer, gated attribution, innocence scoring, backward victim enumeration, cross-chain bridge linking, API layer, frontend wiring). This plan amends the approved spec's sprint ordering at the user's explicit request: TRON+Ethereum+**Bitcoin** (3 chains, not 2) and **cross-chain bridge-hop linking** are pulled forward into this pass instead of staying Sprint 2/3. VASP feed, Tether freeze check, OFAC screening, evidence hashing, audit log, legal templates, and ML scoring remain deferred to later sprints, unchanged. See `docs/PROGRESS.md` top entry for exact task-by-task status.
 
 ## P0 — UI v2 redesign (`docs/plans/ui-v2-redesign-plan.md`) — DONE
 - [x] Task 1: remaining primitives (Input/Toast/Gauge/Spinner/Well/PlainWords) + layout shell restyle @Claude
@@ -18,11 +18,21 @@ Read `docs/PROGRESS.md` top entry for full narrative.
 - [x] Task 5: Evidence page (graph/report/lawful-action tabs) restyle @Claude
 - [x] Task 6: cleanup — dead neumorphic CSS deleted, imports normalized, full click-through QA @Claude
 
-## P1 — Backend (spec approved, plan not yet written)
-- [ ] Break `docs/superpowers/specs/2026-09-25-backend-v2-competitive-design.md` into a task-by-task implementation plan (writing-plans skill)
-- [ ] Sprint 1: chain HTTP client, TRON adapter, causal FIFO tracer, gated sweep+deposit detectors, vetted labels, OFAC screening, wire `httpApi`, probe tests
-- [ ] Sprint 2: Ethereum adapter, VASP flagged-wallet feed (pull API + push webhooks + demo VASP receiver), Tether freeze check + golden hour, bridge-hop linking, campaign clustering
-- [ ] Sprint 3: reproducible evidence hashing + hash-chained audit log, calibration pass, legal templates + SAHYOG payload, ML risk scoring (gated)
+## P1 — Backend (plan written, in active execution: `docs/superpowers/plans/2026-09-25-backend-sprint1-multichain.md`)
+- [x] Task 1: FastAPI scaffolding, config, SQLAlchemy DB models @Claude
+- [x] Task 2: adaptive HTTP client (per-host throttle, Retry-After honoring) + chain client base @Claude
+- [x] Task 3: TRON TRC-20 adapter over TronGrid @Claude
+- [x] Task 4: Ethereum ERC-20 adapter over Etherscan @Claude
+- [x] Task 5: Bitcoin adapter over Blockstream Esplora, UTXO normalization @Claude
+- [ ] Task 6: chain registry, causal FIFO tracer, conservation invariant
+- [ ] Task 7: vetted VASP label seeds, gated sweep + deposit-address detectors (correctness-guard checklist)
+- [ ] Task 8: exculpatory/innocence scorer
+- [ ] Task 9: backward unreported-victim enumeration
+- [ ] Task 10: cross-chain bridge-hop linker (timing + amount correlation)
+- [ ] Task 11: API layer — cases/traces endpoints wiring everything together
+- [ ] Task 12: frontend `httpApi` wiring against the real endpoints
+
+Deferred past this plan, unchanged from the approved spec: VASP flagged-wallet broadcast feed, Tether freeze check + golden hour, OFAC/sanctions screening, reproducible evidence hashing + hash-chained audit log, calibration pass, legal templates + SAHYOG payload, ML risk scoring.
 
 ## P0.5 — Sidebar registry screens (`docs/plans/stub-screens-plan.md`) — DONE
 - [x] Cases / Trace / Campaigns / Reports / Exchanges — all 5 built as real screens, reviewed, fixed @Claude
