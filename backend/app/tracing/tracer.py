@@ -45,24 +45,23 @@ def trace(chain_client: ChainClient, start_address: str, reported_amount: Decima
             continue
 
         try:
-            # Scope the fetch server-side to the causal window: real adapters paginate with a
-            # fixed page size, so an unscoped fetch on a high-activity wallet can silently
-            # truncate before the causally-relevant (since_ts-and-later) range is even reached.
-            causal = [t for t in chain_client.get_transfers(address, since=since_ts)
-                      if t.from_address == address and t.timestamp >= since_ts]
+            # Single unscoped fetch per hop: none of the current adapters (tron/evm/bitcoin)
+            # support genuine server-side time-window filtering — each one fetches an unscoped
+            # page and applies `since` as a client-side post-filter — so scoping this call
+            # client-side vs. server-side makes no difference to what's actually fetched over
+            # the network. If a future adapter adds real server-side windowing, revisit this.
+            transfers = chain_client.get_transfers(address)
         except Exception:
             result.hops.append(TraceHop(hop_index, address, chain_client.chain, funding_transfer,
                                          [], taint, "api_read_failure"))
             continue
 
+        causal = [t for t in transfers if t.from_address == address and t.timestamp >= since_ts]
+
         if not causal:
             # Distinguish "never had outgoing activity" from "had outgoing activity, but all of
-            # it predates the funding transfer" — only probe the unscoped history when we need
-            # to classify the stop reason, not on the hot path above.
-            try:
-                any_outgoing = any(t.from_address == address for t in chain_client.get_transfers(address))
-            except Exception:
-                any_outgoing = False
+            # it predates the funding transfer" — both derived from the same fetch above.
+            any_outgoing = any(t.from_address == address for t in transfers)
             stop_reason = "no_further_transfers" if any_outgoing else "no_outgoing_activity"
             result.hops.append(TraceHop(hop_index, address, chain_client.chain, funding_transfer,
                                          [], taint, stop_reason))
