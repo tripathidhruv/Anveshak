@@ -36,6 +36,7 @@ COLD = "TColdStorageDDDDDDDDDDDDDDDDDDDDDDD"
 VICTIM0 = "TOtherVictim0EEEEEEEEEEEEEEEEEEEEEE"
 VICTIM1 = "TOtherVictim1FFFFFFFFFFFFFFFFFFFFFF"
 VICTIM2 = "TOtherVictim2GGGGGGGGGGGGGGGGGGGGGG"
+UNRELATED = "TUnrelatedSenderHHHHHHHHHHHHHHHHHHHH"
 
 T0 = datetime(2026, 1, 1, 0, 0, 0, tzinfo=timezone.utc)
 
@@ -48,7 +49,17 @@ class FakeChainClient:
 
     def get_transfers(self, address, since=None):
         data = {
-            SUSPECT: [mk(SUSPECT, TERMINAL, 148.5, T0, "tx-suspect-to-terminal")],
+            # SUSPECT's own full history: the forward hand-off to TERMINAL, plus an inbound
+            # transfer from an unrelated address well before the incident (5 days before T0,
+            # clearing compute_innocence's `pre_existing` check of `timestamp < incident_at -
+            # timedelta(days=1)`). This inbound transfer is what fix #2 must be able to see --
+            # `h.outgoing_transfers` across the hops list never contains anything sent TO the
+            # suspect wallet, only what the trace followed forward FROM it.
+            SUSPECT: [
+                mk(SUSPECT, TERMINAL, 148.5, T0, "tx-suspect-to-terminal"),
+                mk(UNRELATED, SUSPECT, 10, T0.fromtimestamp(T0.timestamp() - 5 * 86400, tz=timezone.utc),
+                   "tx-suspect-pre-incident-inbound"),
+            ],
             # Terminal wallet's FULL history (both directions) -- this is what fix #1 and #2
             # must read from `client.get_transfers(TERMINAL)`, not from the single funding
             # transfer. 4 distinct payers (>= Task 7's MIN_DISTINCT_PAYERS=3). One outgoing
@@ -115,6 +126,15 @@ def test_trace_endpoint_confirms_attribution_when_payers_and_sweep_both_hold():
     assert "hops" in body and len(body["hops"]) >= 1
     assert "innocence" in body
     assert "bridgeLinks" in body
+
+    # Fix (innocence transfer set): compute_innocence must be given the suspect wallet's own
+    # FULL history (both directions), not just `h.outgoing_transfers` from the hops list --
+    # that never contains anything sent TO the suspect wallet. SUSPECT's fixture history now
+    # includes an inbound transfer from an unrelated address well before the incident, so
+    # "no_pre_incident_history" must NOT fire. Under the old buggy code (outgoing_transfers
+    # only), this inbound transfer would be invisible and that check would incorrectly fire.
+    innocence_checks = [f["check"] for f in body["innocence"]["factors"]]
+    assert "no_pre_incident_history" not in innocence_checks
 
 def test_trace_endpoint_withholds_attribution_when_sweep_does_not_hold():
     # Same payer count and label as above, but the "sweep" transfer predates every inbound

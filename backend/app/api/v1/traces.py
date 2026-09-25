@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 from app.api.deps import get_db
 from app.models import Case
 from app.chains.registry import get_chain_client
-from app.tracing.tracer import trace
+from app.tracing.tracer import trace, TraceHop
 from app.tracing.conservation import check_conservation
 from app.detectors.sweep import detect_sweep
 from app.detectors.deposit import evaluate_deposit_gate
@@ -19,6 +19,21 @@ from app.schemas import (
 )
 
 router = APIRouter(prefix="/api/v1/cases", tags=["traces"])
+
+
+def _verified_predecessor(hops: list[TraceHop], terminal: TraceHop) -> str | None:
+    """Cross-checks the terminal hop's recorded funding transfer against the trace's own
+    hop list, rather than trusting the funding transfer's own field in isolation -- this is
+    what actually catches a funding edge that isn't genuinely the immediate predecessor in
+    this trace's path (docs/.../backend-v2-competitive-design.md's correctness-guard
+    checklist, 'Himanshu-Harsh's bug'). Re-deriving the expected value from the same field
+    being checked would make this comparison a tautology."""
+    if terminal.funding_transfer is None:
+        return None
+    candidate = terminal.funding_transfer.from_address
+    parent_exists = any(h.hop_index == terminal.hop_index - 1 and h.wallet_address == candidate
+                         for h in hops)
+    return candidate if parent_exists else None
 
 @router.post("/{case_id}/trace", response_model=TraceOut)
 def run_trace(case_id: str, db: Session = Depends(get_db)) -> TraceOut:
@@ -60,7 +75,7 @@ def run_trace(case_id: str, db: Session = Depends(get_db)) -> TraceOut:
     if terminal_hops:
         terminal = terminal_hops[-1]
         label = lookup_label(terminal.wallet_address, terminal.chain)
-        predecessor = terminal.funding_transfer.from_address if terminal.funding_transfer else None
+        predecessor = _verified_predecessor(result.hops, terminal)
 
         # Corrections #1 and #2: one full-history fetch of the terminal wallet, reused for
         # both the payer count and the sweep check. A single funding transfer can never
@@ -108,7 +123,13 @@ def run_trace(case_id: str, db: Session = Depends(get_db)) -> TraceOut:
             for v in victims
         ]
 
-    innocence = compute_innocence(case.suspect_wallet, [t for h in result.hops for t in h.outgoing_transfers],
+    # The suspect wallet's own full transfer history (both directions), not just the
+    # forward-followed outgoing transfers the trace happened to walk -- compute_innocence
+    # needs incoming transfers too (t.to_address == wallet_address) to evaluate factors like
+    # counter-flow-to-payer and pre-existing history, and `outgoing_transfers` from the hops
+    # list never contains anything sent TO the suspect wallet.
+    suspect_history = client.get_transfers(case.suspect_wallet)
+    innocence = compute_innocence(case.suspect_wallet, suspect_history,
                                    incident_at=incident_at, victim_amount=reported_amount)
     innocence_out = InnocenceOut(
         innocenceScore=innocence.innocence_score,
