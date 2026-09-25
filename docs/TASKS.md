@@ -24,7 +24,7 @@ Read `docs/PROGRESS.md` top entry for full narrative.
 - [x] Task 3: TRON TRC-20 adapter over TronGrid @Claude
 - [x] Task 4: Ethereum ERC-20 adapter over Etherscan @Claude
 - [x] Task 5: Bitcoin adapter over Blockstream Esplora, UTXO normalization @Claude
-- [ ] Task 6: chain registry, causal FIFO tracer, conservation invariant
+- [x] Task 6: chain registry, causal FIFO tracer, conservation invariant @Claude
 - [ ] Task 7: vetted VASP label seeds, gated sweep + deposit-address detectors (correctness-guard checklist)
 - [ ] Task 8: exculpatory/innocence scorer
 - [ ] Task 9: backward unreported-victim enumeration
