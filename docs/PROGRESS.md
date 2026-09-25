@@ -1,5 +1,22 @@
 # Progress log
 
+## 2026-09-25 (backend, cont'd 3 — session end, account switch) · Dhruv + Claude · Task 11 not started, design corrections identified
+**Did:** Nothing landed this entry — session ended mid-prep for Task 11 (API layer). Extracted the Task 11 brief (`.superpowers/sdd/task-11-brief.md`, gitignored/local) but stopped before dispatching the implementer. Working tree is clean, all of Tasks 1-10 committed and pushed (`d617a30` is HEAD, matches `origin/main`).
+
+**Before dispatching Task 11, found 3 real bugs in the plan's own Task 11 reference code** (`docs/superpowers/plans/2026-09-25-backend-sprint1-multichain.md`, Task 11, Step 10) — do not implement it verbatim:
+
+1. **`distinct_payers` can never exceed 1.** The plan's draft computes `distinct_payers = len({t.from_address for t in incoming_to_terminal})` where `incoming_to_terminal = [terminal.funding_transfer]` — a list containing exactly one transfer. This can never satisfy Task 7's `MIN_DISTINCT_PAYERS = 3` gate, so no attribution could ever pass. **Fix:** fetch the terminal wallet's full transfer history (`client.get_transfers(terminal.wallet_address)`), filter to inbound (`to_address == terminal.wallet_address`), and count distinct `from_address` values from that full set — same underlying query Task 9's `enumerate_unreported_victims` already does.
+
+2. **`detect_sweep()` (Task 7) is never called anywhere.** The spec's correctness-guard checklist requires attribution to require "N-payers-**and-sweep**" — Task 11 must call `detect_sweep(terminal.wallet_address, terminal_incoming, terminal_outgoing)` (using the same full-history fetch from fix #1) and combine it with the existing gate: `final_gate_passed = gate.gate_passed and sweep_signal.is_sweep`. This was flagged in `docs/TASKS.md` after Task 7 landed — still unresolved, must land in Task 11.
+
+3. **Conservation math double-counts.** The plan's draft sums `h.funding_transfer.amount` across *every* hop as "incoming_total," which sums intermediate hop-to-hop transfers, not a real conservation check. **Fix:** use `incoming_total = reported_amount` (the victim's original reported amount) and `outgoing_total = sum(h.taint for h in terminal_hops)` — this correctly leverages the FIFO taint-capping invariant Task 6 already enforces (sibling branches can't sum above their parent's taint), so the remainder honestly reflects value that never reached a terminal wallet (e.g. hops that stopped on `api_read_failure`).
+
+**Also still open from Task 7:** the plain-English rule applies to any new reasoning strings Task 11 writes (e.g. a "gate passed but sweep not confirmed" message) — keep using the jargon-ban-word-list test pattern from Tasks 7-8.
+
+**Next:** Resume by reading `docs/superpowers/plans/2026-09-25-backend-sprint1-multichain.md` Task 11 for the base shapes (Pydantic schemas, router structure), but apply the 3 corrections above instead of the plan's literal Step 10 code before dispatching the implementer. Then Task 12 (frontend `httpApi` wiring) is the last task in this plan. subagent-driven-development ledger at `.superpowers/sdd/progress.md` (gitignored) has the exact commit range for every completed task if resuming needs to re-verify state — trust it and `git log` over any summary.
+
+**Blocked on:** Nothing — session ended for an account switch, not a blocker. New session should re-run `bash .../subagent-driven-development/scripts/task-brief docs/superpowers/plans/2026-09-25-backend-sprint1-multichain.md 11` to regenerate the (gitignored, local-only) brief file before dispatching.
+
 ## 2026-09-25 (backend, cont'd 2) · Dhruv + Claude · Tasks 7-10 landed, plain-English rule applied
 **Did:** Continued Sprint-1 execution via subagent-driven-development, sonnet-only per user's explicit request this round (no haiku). All four tasks needed at least one fix pass — none were rubber-stamped:
 - **Task 7** (vetted labels, sweep detector, gated deposit attribution): gating logic verified byte-for-byte correct against the correctness-guard checklist (hop-0 exclusion, immediate-predecessor-not-just-inbound-edge, vetted-label requirement, unresolved-never-defaults-to-real-name). Fix pass: applied the new plain-English rule to `reasoning`/`limitations` strings and added a jargon-regression test guard so future edits can't silently reintroduce technical language.

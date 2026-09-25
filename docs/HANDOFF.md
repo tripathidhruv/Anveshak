@@ -27,4 +27,4 @@ Types: feat · fix · docs · style · refactor · chore · data
 Dhruv Tripathi (@tripathidhruv), dhruv@carvelle.in.
 
 ## The single most important thing right now
-UI is priority. Backend must eventually be real and functional, but does not block the demo path — see `docs/DECISIONS.md` "UI-first build order". Screens 1–5 are the spine: get those right before anything else (dashboard, campaign view are the most expendable).
+UI is functionally complete (Phase 1 + v2 redesign done). **Backend is now the active track** — `docs/superpowers/plans/2026-09-25-backend-sprint1-multichain.md`, Tasks 1-10 of 12 done (chain adapters, causal tracer, gated attribution, innocence scoring, backward victim enum, cross-chain bridge linker). Task 11 (API layer) is next — read `docs/PROGRESS.md`'s top entry before touching it, it lists 3 real bugs already found in the plan's own Task 11 reference code that must be corrected, not implemented verbatim. Task 12 (frontend `httpApi` wiring) follows. Executed via subagent-driven-development — resume with that skill, not from scratch.
