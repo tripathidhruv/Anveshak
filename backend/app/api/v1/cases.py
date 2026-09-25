@@ -17,6 +17,19 @@ def _to_out(case: Case) -> CaseOut:
 
 @router.post("", response_model=CaseOut, status_code=201)
 def create_case(payload: CaseIn, db: Session = Depends(get_db)) -> CaseOut:
+    chain = payload.chain.lower()
+    suspect_wallet = payload.suspectWallet
+    # Ethereum addresses are hex and case-insensitive once EIP-55 checksumming is
+    # ignored, but Etherscan's own transfer records always come back lowercase — so a
+    # checksummed (mixed-case) address a user types into the form would never match
+    # anything downstream (tracer.py, traces.py, graph/backward.py, etc., all compare
+    # addresses case-sensitively). Normalized once here, at the same point `chain` is
+    # normalized, so every downstream reader sees canonical lowercase. This is
+    # conditional on chain — unlike `chain` itself, which is always lowercased — because
+    # TRON (base58) and Bitcoin (bech32/base58) addresses are genuinely case-sensitive;
+    # lowercasing those would corrupt them.
+    if chain == "ethereum":
+        suspect_wallet = suspect_wallet.lower()
     case = Case(
         id=str(uuid.uuid4()), ncrp=payload.ncrp, complainant=payload.complainant,
         location=payload.location, phone=payload.phone, incident_at=payload.incidentAt,
@@ -25,8 +38,8 @@ def create_case(payload: CaseIn, db: Session = Depends(get_db)) -> CaseOut:
         # Normalized once here so every downstream reader of `case.chain` (registry.py,
         # tracer, etc.) always sees the canonical lowercase form — don't add more
         # `.lower()` calls elsewhere for this.
-        chain=payload.chain.lower(),
-        suspect_wallet=payload.suspectWallet,
+        chain=chain,
+        suspect_wallet=suspect_wallet,
     )
     db.add(case)
     db.commit()

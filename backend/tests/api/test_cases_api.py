@@ -59,6 +59,40 @@ def test_create_case_accepts_chain_case_insensitively():
         assert fetched.status_code == 200
         assert fetched.json()["chain"] == "tron"
 
+def test_ethereum_suspect_wallet_is_lowercased_at_creation():
+    # Etherscan's own transfer records are always lowercase; a checksummed
+    # (mixed-case) address stored verbatim would never match them downstream.
+    payload = {
+        "ncrp": "NCRP-ETH-CASE", "complainant": "Test User", "location": "Delhi",
+        "phone": "9999999999", "incidentAt": "2026-01-01T00:00:00Z",
+        "fraudType": "investment_scam", "amountINR": 150000, "amountCrypto": 150.0,
+        "asset": "USDT-ERC20", "chain": "ethereum",
+        "suspectWallet": "0xScamMerAAAABBBBccccDDDDeeeeFFFF00001111",
+    }
+    created = client.post("/api/v1/cases", json=payload)
+    assert created.status_code == 201, created.text
+    assert created.json()["suspectWallet"] == payload["suspectWallet"].lower()
+
+    fetched = client.get(f"/api/v1/cases/{created.json()['id']}")
+    assert fetched.status_code == 200
+    assert fetched.json()["suspectWallet"] == payload["suspectWallet"].lower()
+
+def test_tron_suspect_wallet_is_not_lowercased():
+    # TRON addresses are base58 and genuinely case-sensitive — lowercasing would
+    # corrupt them. This guards against the ethereum-only normalization above ever
+    # being accidentally generalized to all chains.
+    mixed_case_wallet = "TScamWalletBBBBBBBBBBBBBBBBBBBBBBB"
+    payload = {
+        "ncrp": "NCRP-TRON-CASE", "complainant": "Test User", "location": "Delhi",
+        "phone": "9999999999", "incidentAt": "2026-01-01T00:00:00Z",
+        "fraudType": "investment_scam", "amountINR": 150000, "amountCrypto": 150.0,
+        "asset": "USDT-TRC20", "chain": "tron",
+        "suspectWallet": mixed_case_wallet,
+    }
+    created = client.post("/api/v1/cases", json=payload)
+    assert created.status_code == 201, created.text
+    assert created.json()["suspectWallet"] == mixed_case_wallet
+
 def test_cors_headers_present_for_dev_origin():
     response = client.options(
         "/api/v1/cases",
