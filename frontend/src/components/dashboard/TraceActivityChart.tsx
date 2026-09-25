@@ -18,22 +18,22 @@ function ChartTooltip({ active, payload }: TooltipContentProps<ValueType, NameTy
   if (!active || !payload?.length) return null
   const value = payload[0].value
   return (
-    <div className="rounded-xl border border-border bg-card px-3.5 py-2 shadow-md flex items-baseline gap-1.5">
-      <span className="font-[family-name:var(--font-mono)] text-base font-bold text-foreground">{value}</span>
-      <span className="text-xs text-muted-foreground">traces that day</span>
+    <div className="rounded-full bg-foreground px-3.5 py-1.5 shadow-md flex items-baseline gap-1.5">
+      <span className="font-[family-name:var(--font-mono)] text-sm font-bold text-card">{value}</span>
+      <span className="text-xs text-card/70">traces</span>
     </div>
   )
 }
 
-/** "Trace activity, last 14 days" — soft blue gradient-fill area chart on a plain white card. */
+/** "Trace activity, last 14 days" — dark line, soft blue gradient-fill area chart on a plain white card. */
 export function TraceActivityChart() {
   return (
     <ResponsiveContainer width="100%" height={200}>
       <AreaChart data={TRACE_ACTIVITY} margin={{ top: 8, right: 12, bottom: 0, left: -12 }}>
         <defs>
           <linearGradient id="traceActivityFill" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="var(--color-teal)" stopOpacity={0.28} />
-            <stop offset="100%" stopColor="var(--color-teal)" stopOpacity={0} />
+            <stop offset="0%" stopColor="var(--color-sky)" stopOpacity={0.3} />
+            <stop offset="100%" stopColor="var(--color-sky)" stopOpacity={0} />
           </linearGradient>
         </defs>
         <CartesianGrid stroke="var(--color-border)" vertical={false} />
@@ -45,15 +45,15 @@ export function TraceActivityChart() {
           interval={1}
         />
         <YAxis axisLine={false} tickLine={false} tick={{ fill: 'var(--color-muted-foreground)', fontSize: 12 }} width={28} />
-        <Tooltip content={ChartTooltip} cursor={{ stroke: 'var(--color-teal)', strokeWidth: 1, strokeDasharray: '3 3' }} />
+        <Tooltip content={ChartTooltip} cursor={{ stroke: 'var(--color-foreground)', strokeWidth: 1, strokeDasharray: '4 4' }} />
         <Area
           type="monotone"
           dataKey="traces"
-          stroke="var(--color-teal)"
+          stroke="var(--color-foreground)"
           strokeWidth={2.5}
           fill="url(#traceActivityFill)"
           dot={false}
-          activeDot={{ r: 5, fill: 'var(--color-teal)', stroke: 'var(--color-card)', strokeWidth: 2 }}
+          activeDot={{ r: 5, fill: 'var(--color-foreground)', stroke: 'var(--color-card)', strokeWidth: 2 }}
         />
       </AreaChart>
     </ResponsiveContainer>

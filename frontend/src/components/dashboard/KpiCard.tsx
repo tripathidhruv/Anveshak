@@ -26,22 +26,27 @@ export interface KpiCardProps {
   icon: ReactNode
   /** A short, hand-drawn decorative sparkline path (already scaled to the viewBox used below). */
   sparklinePath: string
+  /** Icon-tile + sparkline accent for this card -- varies per KPI, matching the reference dashboard's multi-colour icon circles. */
+  accent: 'indigo' | 'gold' | 'teal' | 'sky' | 'moss' | 'violet'
 }
 
 /** One KPI tile: colored icon tile, uppercase label, count-up number, delta badge, decorative sparkline. */
-export function KpiCard({ kpi, icon, sparklinePath }: KpiCardProps) {
+export function KpiCard({ kpi, icon, sparklinePath, accent }: KpiCardProps) {
   const parsed = parseKpiValue(kpi.value)
   const animated = useCountUp(parsed?.number ?? 0)
   const displayValue = parsed
     ? `${parsed.prefix}${animated.toFixed(parsed.decimals)}${parsed.suffix}`
     : kpi.value
+  const tileColor = accent === 'indigo' ? 'primary' : accent
+  const strokeVar = accent === 'indigo' ? 'var(--color-primary)' : `var(--color-${accent})`
+  const up = kpi.dir === 'up'
 
   return (
     <Card className="flex flex-col gap-3 p-6">
       <div className="flex items-center justify-between gap-3">
-        <IconTile color="teal">{icon}</IconTile>
-        <Badge variant="moss">
-          {kpi.dir === 'up' ? <ArrowUp size={12} /> : <ArrowDown size={12} />}
+        <IconTile color={tileColor}>{icon}</IconTile>
+        <Badge variant={up ? 'moss' : 'vermillion'}>
+          {up ? <ArrowUp size={12} /> : <ArrowDown size={12} />}
           {kpi.delta}
         </Badge>
       </div>
@@ -50,7 +55,7 @@ export function KpiCard({ kpi, icon, sparklinePath }: KpiCardProps) {
       <span className="font-[family-name:var(--font-mono)] text-3xl font-bold text-foreground">{displayValue}</span>
 
       <svg className="mt-0.5 h-8 w-full" viewBox="0 0 120 32" preserveAspectRatio="none" aria-hidden="true">
-        <path d={sparklinePath} fill="none" stroke="var(--color-teal)" strokeWidth="2" strokeLinecap="round" />
+        <path d={sparklinePath} fill="none" stroke={strokeVar} strokeWidth="2" strokeLinecap="round" />
       </svg>
     </Card>
   )

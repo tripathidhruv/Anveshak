@@ -21,6 +21,8 @@ const KPI_ICONS = [
   <Timer key="timer" size={20} />,
 ]
 
+const KPI_ACCENTS = ['indigo', 'moss', 'gold', 'sky'] as const
+
 /** Decorative, hand-drawn-looking sparklines — one per KPI card, purely illustrative. */
 const KPI_SPARKLINES = [
   'M2 22 L18 20 L34 16 L50 18 L66 12 L82 10 L98 6 L118 4',
@@ -91,7 +93,13 @@ export default function Dashboard() {
 
       <div className="grid grid-cols-2 gap-6 2xl:grid-cols-4">
         {data.kpis.map((kpi, index) => (
-          <KpiCard key={kpi.label} kpi={kpi} icon={KPI_ICONS[index % KPI_ICONS.length]} sparklinePath={KPI_SPARKLINES[index % KPI_SPARKLINES.length]} />
+          <KpiCard
+            key={kpi.label}
+            kpi={kpi}
+            icon={KPI_ICONS[index % KPI_ICONS.length]}
+            sparklinePath={KPI_SPARKLINES[index % KPI_SPARKLINES.length]}
+            accent={KPI_ACCENTS[index % KPI_ACCENTS.length]}
+          />
         ))}
       </div>
 
