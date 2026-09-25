@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from decimal import Decimal
 from app.chains.base import Transfer
 
 @dataclass(frozen=True)
@@ -25,16 +26,21 @@ def find_bridge_links(side_a_candidates: list[Transfer], side_b_candidates: list
     window_seconds = time_window_minutes * 60
 
     for a in side_a_candidates:
+        if a.amount == 0:
+            continue
         candidates = []
+        # A tiny epsilon absorbs float/Decimal rounding noise right at equality; it must not be
+        # large enough to let a genuinely-higher side-B amount slip through as a "fee".
+        equality_epsilon = a.amount * Decimal("1e-9")
         for b in side_b_candidates:
             if b.timestamp < a.timestamp:
                 continue
             time_delta = (b.timestamp - a.timestamp).total_seconds()
             if time_delta > window_seconds:
                 continue
-            if a.amount == 0:
-                continue
-            amount_delta_pct = float(abs(a.amount - b.amount) / a.amount)
+            if b.amount - a.amount > equality_epsilon:
+                continue  # a bridge withdrawal can't exceed the deposit that funded it
+            amount_delta_pct = float((a.amount - b.amount) / a.amount)
             if amount_delta_pct > amount_tolerance_pct:
                 continue
             candidates.append((b, amount_delta_pct, time_delta))

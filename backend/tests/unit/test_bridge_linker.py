@@ -30,6 +30,16 @@ def test_rejects_when_amount_correlation_too_weak():
     links = find_bridge_links(side_a, side_b, amount_tolerance_pct=0.02, time_window_minutes=60)
     assert links == []
 
+def test_rejects_when_side_b_amount_is_higher_than_side_a():
+    # A bridge withdrawal can't exceed the deposit that funded it (a bridge takes a fee, it
+    # doesn't add money). 1005 is only 0.5% above 1000 -- well within a symmetric 2% tolerance --
+    # so the old `abs(a - b) / a` check would have wrongly accepted this as a match.
+    t0 = datetime(2026, 1, 1, tzinfo=timezone.utc)
+    side_a = [mk("tron", "scammer", "bridge_tron_side", 1000, t0, tx="a1")]
+    side_b = [mk("ethereum", "bridge_eth_side", "hop_after_bridge", 1005, t0 + timedelta(minutes=8), tx="b1")]
+    links = find_bridge_links(side_a, side_b, amount_tolerance_pct=0.02, time_window_minutes=60)
+    assert links == []
+
 def test_picks_closest_time_match_when_multiple_candidates():
     t0 = datetime(2026, 1, 1, tzinfo=timezone.utc)
     side_a = [mk("tron", "scammer", "bridge_tron_side", 1000, t0, tx="a1")]
