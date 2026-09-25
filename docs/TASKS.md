@@ -28,7 +28,7 @@ Read `docs/PROGRESS.md` top entry for full narrative.
 - [x] Task 7: vetted VASP label seeds, gated sweep + deposit-address detectors (correctness-guard checklist) @Claude
 - [x] Task 8: exculpatory/innocence scorer @Claude
 - [x] Task 9: backward unreported-victim enumeration @Claude
-- [ ] Task 10: cross-chain bridge-hop linker (timing + amount correlation)
+- [x] Task 10: cross-chain bridge-hop linker (timing + amount correlation) @Claude
 - [ ] Task 11: API layer — cases/traces endpoints wiring everything together
 - [ ] Task 12: frontend `httpApi` wiring against the real endpoints
 
