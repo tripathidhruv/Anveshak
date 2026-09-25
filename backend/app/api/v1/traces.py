@@ -68,30 +68,60 @@ def run_trace(case_id: str, db: Session = Depends(get_db)) -> TraceOut:
     attribution_out = AttributionOut(
         walletAddress=case.suspect_wallet, chain=case.chain, gatePassed=False, entityName="UNKNOWN",
         breakdown={},
-        reasoning="The trace never reached a wallet where the money stopped moving, so there is nothing yet to check against an exchange.",
-        limitations="No stopping point was found to evaluate.",
+        reasoning="No wallet in this trace ever received any of the victim's traced money, so there is nothing yet to check against an exchange.",
+        limitations="No wallet holding the victim's money was found to evaluate.",
     )
     unreported_victims_out: list[UnreportedVictimOut] = []
-    if terminal_hops:
-        terminal = terminal_hops[-1]
-        label = lookup_label(terminal.wallet_address, terminal.chain)
-        predecessor = _verified_predecessor(result.hops, terminal)
 
-        # Corrections #1 and #2: one full-history fetch of the terminal wallet, reused for
-        # both the payer count and the sweep check. A single funding transfer can never
-        # show a real collection-point pattern.
-        full_history = client.get_transfers(terminal.wallet_address)
-        incoming_to_terminal = [t for t in full_history if t.to_address == terminal.wallet_address]
-        outgoing_from_terminal = [t for t in full_history if t.from_address == terminal.wallet_address]
-        distinct_payers = len({t.from_address for t in incoming_to_terminal})
+    # Attribution candidates: any hop past the suspect wallet that actually received some of
+    # the victim's traced money (taint > 0) -- not just wherever the BFS physically stopped.
+    # A hop with taint == 0 never qualifies: nothing the victim sent ever reached it, so naming
+    # an exchange there is never correct regardless of anything else about that wallet (fixes
+    # C2). Candidacy also does NOT require stop_reason to be set -- a wallet that swept the
+    # money onward (and so was followed further by the tracer) must still be evaluated, since a
+    # real deposit wallet sweeping a victim's own deposit is exactly what a wallet only stops
+    # the trace by NOT doing (fixes C3).
+    candidates = [h for h in result.hops if h.hop_index > 0 and h.taint > Decimal("0")]
 
-        sweep_signal = detect_sweep(terminal.wallet_address, incoming_to_terminal, outgoing_from_terminal)
+    if candidates:
+        evaluated = []
+        for hop in candidates:
+            label = lookup_label(hop.wallet_address, hop.chain)
+            predecessor = _verified_predecessor(result.hops, hop)
 
-        gate = evaluate_deposit_gate(terminal, distinct_payer_count=distinct_payers, label=label,
-                                      expected_predecessor=predecessor)
-        final_gate_passed = gate.gate_passed and sweep_signal.is_sweep
+            # Sub-fix 1/2 continued (I1, absorbed): a chain-API failure here must not 500 the
+            # whole endpoint -- fall back to an empty history for this one candidate rather than
+            # crashing the request. Matches tracer.py's own `except Exception` pattern for the
+            # same class of failure.
+            try:
+                full_history = client.get_transfers(hop.wallet_address)
+            except Exception:
+                full_history = []
+
+            incoming_to_hop = [t for t in full_history if t.to_address == hop.wallet_address]
+            outgoing_from_hop = [t for t in full_history if t.from_address == hop.wallet_address]
+            distinct_payers = len({t.from_address for t in incoming_to_hop})
+
+            # Sub-fix 3 (I9): anchor the sweep check on THIS hop's own funding transfer, not the
+            # wallet's globally-earliest-ever transfer -- we only care whether the money THIS
+            # trace followed into this wallet moved on quickly, not some unrelated, possibly much
+            # older, transfer to the same address.
+            sweep_incoming = [hop.funding_transfer] if hop.funding_transfer is not None else []
+            sweep_signal = detect_sweep(hop.wallet_address, sweep_incoming, outgoing_from_hop)
+
+            gate = evaluate_deposit_gate(hop, distinct_payer_count=distinct_payers, label=label,
+                                          expected_predecessor=predecessor)
+            final_gate_passed = gate.gate_passed and sweep_signal.is_sweep
+            evaluated.append((hop, gate, sweep_signal, final_gate_passed))
+
+        # Prefer the earliest (closest-to-suspect) candidate that passes every check -- the most
+        # directly implicated wallet in the causal chain. If none pass, report on the LAST
+        # candidate (closest to wherever the traceable money currently sits) so the failure
+        # reasoning still points at the most useful next place to look.
+        passed = next((e for e in evaluated if e[3]), None)
+        hop, gate, sweep_signal, final_gate_passed = passed if passed is not None else evaluated[-1]
+
         breakdown = {**gate.breakdown, "sweep_confirmed": sweep_signal.is_sweep}
-
         if final_gate_passed:
             reasoning, limitations = gate.reasoning, gate.limitations
         elif gate.gate_passed and not sweep_signal.is_sweep:
@@ -110,13 +140,20 @@ def run_trace(case_id: str, db: Session = Depends(get_db)) -> TraceOut:
             reasoning, limitations = gate.reasoning, gate.limitations
 
         attribution_out = AttributionOut(
-            walletAddress=terminal.wallet_address, chain=terminal.chain, gatePassed=final_gate_passed,
+            walletAddress=hop.wallet_address, chain=hop.chain, gatePassed=final_gate_passed,
             entityName=gate.entity_name if final_gate_passed else "UNKNOWN",
             breakdown=breakdown, reasoning=reasoning, limitations=limitations,
         )
 
-        victims = enumerate_unreported_victims(client, terminal.wallet_address,
-                                                known_victim_addresses={case.suspect_wallet})
+        # Sub-fix I6 (absorbed): exclude EVERY wallet already in this trace's own hop list from
+        # "unreported victims", not just the suspect wallet -- an intermediate hop in the causal
+        # path (e.g. a hub the money passed through) is part of the criminal's own flow, not a
+        # genuine additional victim.
+        try:
+            victims = enumerate_unreported_victims(client, hop.wallet_address,
+                                                    known_victim_addresses={h.wallet_address for h in result.hops})
+        except Exception:
+            victims = []
         unreported_victims_out = [
             UnreportedVictimOut(payerAddress=v.payer_address, chain=v.chain, totalAmount=float(v.total_amount),
                                  transferCount=v.transfer_count, firstSeenAt=v.first_seen_at)
@@ -127,8 +164,12 @@ def run_trace(case_id: str, db: Session = Depends(get_db)) -> TraceOut:
     # forward-followed outgoing transfers the trace happened to walk -- compute_innocence
     # needs incoming transfers too (t.to_address == wallet_address) to evaluate factors like
     # counter-flow-to-payer and pre-existing history, and `outgoing_transfers` from the hops
-    # list never contains anything sent TO the suspect wallet.
-    suspect_history = client.get_transfers(case.suspect_wallet)
+    # list never contains anything sent TO the suspect wallet. Sub-fix 4 (I1, absorbed): guard
+    # this refetch the same way -- a chain-API failure here must not 500 the whole endpoint.
+    try:
+        suspect_history = client.get_transfers(case.suspect_wallet)
+    except Exception:
+        suspect_history = []
     innocence = compute_innocence(case.suspect_wallet, suspect_history,
                                    incident_at=incident_at, victim_amount=reported_amount)
     innocence_out = InnocenceOut(

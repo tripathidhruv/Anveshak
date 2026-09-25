@@ -10,6 +10,10 @@ class SweepSignal:
 
 SWEEP_MAX_GAP_SECONDS = 300       # funds leave within 5 minutes
 SWEEP_MIN_VALUE_PRESERVED = 0.95  # ~99% value preserved per the sweep-signature thesis; 95% floor for fee slack
+SWEEP_MAX_VALUE_PRESERVED = 1.02  # allows small rounding/fee-inclusive slack above 100%;
+                                   # anything meaningfully over 100% means the wallet combined
+                                   # this money with other funds before forwarding, which is
+                                   # not "sweeping this deposit" on its own
 
 def detect_sweep(wallet_address: str, incoming: list[Transfer], outgoing: list[Transfer]) -> SweepSignal:
     """KAIZEN's core behavioural fingerprint: stolen funds leave a receiving wallet within
@@ -26,5 +30,6 @@ def detect_sweep(wallet_address: str, incoming: list[Transfer], outgoing: list[T
 
     gap = (next_out.timestamp - first_in.timestamp).total_seconds()
     preserved = float(next_out.amount / first_in.amount) if first_in.amount > Decimal("0") else 0.0
-    is_sweep = gap <= SWEEP_MAX_GAP_SECONDS and preserved >= SWEEP_MIN_VALUE_PRESERVED
+    is_sweep = (gap <= SWEEP_MAX_GAP_SECONDS
+                and SWEEP_MIN_VALUE_PRESERVED <= preserved <= SWEEP_MAX_VALUE_PRESERVED)
     return SweepSignal(is_sweep=is_sweep, gap_seconds=gap, value_preserved_pct=preserved)
