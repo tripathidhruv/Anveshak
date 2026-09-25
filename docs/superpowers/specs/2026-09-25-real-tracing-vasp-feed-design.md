@@ -1,7 +1,7 @@
 # Real tracing + VASP flagged-wallet feed — design
 
 **Date:** 2026-09-25
-**Status:** approved, ready for implementation planning
+**Status:** SUPERSEDED — see `2026-09-25-backend-v2-competitive-design.md`. Kept for history; the VASP feed section here is still accurate but the tracing/attribution/scoring sections below are superseded by stricter correctness rules learned from a 12-rival competitive review.
 
 ## Why
 
