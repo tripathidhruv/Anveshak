@@ -26,12 +26,12 @@ export function TopBar() {
   }
 
   return (
-    <header className="flex h-[72px] shrink-0 items-center gap-5 border-b border-border bg-card px-6">
+    <header className="flex h-18 shrink-0 items-center gap-5 border-b border-border bg-card px-6">
       <h1 className="whitespace-nowrap font-[family-name:var(--font-display)] text-xl font-bold text-foreground">
         {title}
       </h1>
 
-      <div className="flex max-w-[420px] flex-1 items-center gap-2.5 rounded-xl border border-border bg-muted px-4 py-2.5 text-muted-foreground">
+      <div className="flex max-w-md flex-1 items-center gap-2.5 rounded-xl border border-border bg-muted px-4 py-2.5 text-muted-foreground">
         <Search size={16} />
         <input
           type="text"
@@ -56,13 +56,13 @@ export function TopBar() {
           <span>Judge Mode</span>
           <span
             className={cn(
-              'relative h-[22px] w-[38px] rounded-full bg-muted transition-colors',
+              'relative h-5 w-9 rounded-full bg-muted transition-colors',
               judgeMode && 'bg-primary',
             )}
           >
             <span
               className={cn(
-                'absolute left-[3px] top-[3px] h-4 w-4 rounded-full bg-card shadow-sm transition-transform',
+                'absolute left-0.5 top-0.5 h-4 w-4 rounded-full bg-card shadow-sm transition-transform',
                 judgeMode && 'translate-x-4',
               )}
             />
@@ -77,14 +77,14 @@ export function TopBar() {
           type="button"
           aria-label="Notifications"
           onClick={() => showToast('Coming in v2')}
-          className="flex h-[38px] w-[38px] shrink-0 items-center justify-center rounded-full border border-border text-muted-foreground transition-colors hover:bg-muted"
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-border text-muted-foreground transition-colors hover:bg-muted"
         >
           <Bell size={16} />
         </button>
 
         <div
           title="Investigating Officer"
-          className="flex h-[38px] w-[38px] shrink-0 items-center justify-center rounded-full border border-border font-[family-name:var(--font-display)] text-xs font-bold text-primary"
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-border font-[family-name:var(--font-display)] text-xs font-bold text-primary"
         >
           IO
         </div>

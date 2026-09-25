@@ -13,7 +13,7 @@ export function Sidebar() {
   const showToast = useUIStore((state) => state.showToast)
 
   return (
-    <aside className="flex h-screen w-[248px] shrink-0 flex-col gap-6 border-r border-border bg-card p-4">
+    <aside className="flex h-screen w-62 shrink-0 flex-col gap-6 border-r border-border bg-card p-4">
       <div className="flex items-center gap-3 px-2 pt-2">
         <LogoMark size={22} />
         <div>
