@@ -36,6 +36,17 @@ def trace(chain_client: ChainClient, start_address: str, reported_amount: Decima
     while queue:
         address, taint, since_ts, hop_index, funding_transfer = queue.popleft()
         if address in visited:
+            # A second (or later) causal branch has converged on a wallet we already fully
+            # expanded once. Don't re-expand its outgoing edges again (that would double-count
+            # whatever it already forwarded downstream in its first expansion) — but don't
+            # silently drop this arrival's taint either, or a hub that consolidates multiple
+            # victims'/branches' funds would under-report exactly the value this project's
+            # "Consolidation" thesis is built on. Fold the newly-arrived taint into the
+            # existing hop for this wallet in place (there is exactly one, since `visited`
+            # guarantees a wallet is only ever appended to `result.hops` once).
+            existing_hop = next((h for h in result.hops if h.wallet_address == address), None)
+            if existing_hop is not None:
+                existing_hop.taint += taint
             continue
         visited.add(address)
 

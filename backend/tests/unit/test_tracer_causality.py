@@ -94,3 +94,37 @@ def test_stop_reason_no_further_transfers_when_outgoing_history_predates_since()
     client = FakeChainClient({"scammer": [stale_only]})
     result = trace(client, start_address="scammer", reported_amount=Decimal("150"), start_time=t0, max_hops=3)
     assert result.hops[0].stop_reason == "no_further_transfers"
+
+def test_converging_paths_accumulate_taint_instead_of_dropping():
+    # Two separate causal branches from the suspect wallet (a split payment) each carry 75 of
+    # the victim's 150 onward, then BOTH branches independently forward their 75 to the same
+    # hub wallet at different timestamps. The hub is a genuine consolidation point (project's
+    # own "Consolidation" thesis) — its recorded taint must be the sum of both arrivals (150),
+    # not just whichever arrival was processed first.
+    t0 = datetime(2026, 1, 1, tzinfo=timezone.utc)
+    branch_a_send = mk("scammer", "branch_a", 75, t0 + timedelta(seconds=1))
+    branch_b_send = mk("scammer", "branch_b", 75, t0 + timedelta(seconds=2))
+    branch_a_to_hub = mk("branch_a", "hub", 75, t0 + timedelta(seconds=10))
+    branch_b_to_hub = mk("branch_b", "hub", 75, t0 + timedelta(seconds=20))
+    client = FakeChainClient({
+        "scammer": [branch_a_send, branch_b_send],
+        "branch_a": [branch_a_to_hub],
+        "branch_b": [branch_b_to_hub],
+        "hub": [],
+    })
+
+    result = trace(client, start_address="scammer", reported_amount=Decimal("150"), start_time=t0, max_hops=4)
+
+    hub_hops = [h for h in result.hops if h.wallet_address == "hub"]
+    # Exactly one recorded hop for the converged wallet — not a duplicate, not dropped.
+    assert len(hub_hops) == 1
+    hub_hop = hub_hops[0]
+    assert hub_hop.taint == Decimal("150")
+    assert hub_hop.stop_reason == "no_outgoing_activity"
+
+    # Conservation-style check at the tracer level: since the hub is a genuine terminal point
+    # and both branches fully accounted for the reported amount, summing every terminal hop's
+    # taint must equal reported_amount exactly — not be short by whichever branch would have
+    # been dropped on merge under the old (buggy) behaviour.
+    total_terminal_taint = sum((h.taint for h in result.terminal_hops), Decimal("0"))
+    assert total_terminal_taint == Decimal("150")
