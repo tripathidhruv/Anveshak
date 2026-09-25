@@ -50,3 +50,54 @@ def test_picks_closest_time_match_when_multiple_candidates():
     links = find_bridge_links(side_a, side_b, amount_tolerance_pct=0.02, time_window_minutes=60)
     assert len(links) == 1
     assert links[0].side_b_tx_hash == "b_near"
+
+def test_never_matches_a_transfer_to_itself():
+    # This is traces.py's real call shape: find_bridge_links(all_outgoing, all_outgoing) -- the
+    # exact same transfer object appears as both a side-A and a side-B candidate.
+    t0 = datetime(2026, 1, 1, tzinfo=timezone.utc)
+    transfer = mk("tron", "scammer", "bridge_tron_side", 1000, t0, tx="a1")
+    links = find_bridge_links([transfer], [transfer], amount_tolerance_pct=0.02, time_window_minutes=60)
+    assert links == []
+
+def test_never_matches_same_chain_pairs_even_with_different_tx_hash():
+    # Two DIFFERENT transfers (different tx_hash) on the SAME chain, otherwise within every
+    # time/amount tolerance -- must not be linked. A bridge link is by definition cross-chain.
+    t0 = datetime(2026, 1, 1, tzinfo=timezone.utc)
+    side_a = [mk("tron", "scammer", "bridge_tron_side", 1000, t0, tx="a1")]
+    side_b = [mk("tron", "bridge_tron_side", "hop_after_bridge", 995, t0 + timedelta(minutes=8), tx="b1")]
+    links = find_bridge_links(side_a, side_b, amount_tolerance_pct=0.02, time_window_minutes=60)
+    assert links == []
+
+def test_genuine_cross_chain_different_tx_hash_still_matches():
+    # Regression guard for Task 10's fee-direction-asymmetry fix (side B must be <= side A in
+    # amount) while adding the chain/self exclusion.
+    t0 = datetime(2026, 1, 1, tzinfo=timezone.utc)
+    side_a = [mk("tron", "scammer", "bridge_tron_side", 1000, t0, tx="a1")]
+    side_b = [mk("ethereum", "bridge_eth_side", "hop_after_bridge", 995, t0 + timedelta(minutes=8), tx="b1")]
+    links = find_bridge_links(side_a, side_b, amount_tolerance_pct=0.02, time_window_minutes=60)
+    assert len(links) == 1
+    link = links[0]
+    assert link.side_a_tx_hash == "a1" and link.side_a_chain == "tron"
+    assert link.side_b_tx_hash == "b1" and link.side_b_chain == "ethereum"
+    assert link.confidence > 0.5
+
+def test_closest_in_time_same_chain_self_match_loses_to_farther_valid_cross_chain_candidate():
+    # Proves the exclusion happens INSIDE candidate-building, not as a later filter on the
+    # selection result. The CLOSEST-in-time candidate is the same transfer as side A (self,
+    # zero time delta) -- if the exclusion only ran as an after-the-fact filter on the winner
+    # of `min(...)`, this self-match would win the "closest in time" selection and the whole
+    # side-A transfer would then be filtered out entirely, discarding the genuinely valid,
+    # slightly-farther-in-time cross-chain candidate that should have been selected instead.
+    t0 = datetime(2026, 1, 1, tzinfo=timezone.utc)
+    a1 = mk("tron", "scammer", "bridge_tron_side", 1000, t0, tx="a1")
+    # Same-chain, same-tx_hash as side A -- zero time delta, would win on closeness alone.
+    self_match = a1
+    # Genuinely valid cross-chain candidate -- farther in time, but still within tolerance.
+    valid_cross_chain = mk("ethereum", "bridge_eth_side", "hop_after_bridge", 995,
+                           t0 + timedelta(minutes=8), tx="b1")
+    side_a = [a1]
+    side_b = [self_match, valid_cross_chain]
+    links = find_bridge_links(side_a, side_b, amount_tolerance_pct=0.02, time_window_minutes=60)
+    assert len(links) == 1
+    assert links[0].side_b_tx_hash == "b1"
+    assert links[0].side_b_chain == "ethereum"

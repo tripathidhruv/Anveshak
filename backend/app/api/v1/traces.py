@@ -209,6 +209,12 @@ def run_trace(case_id: str, db: Session = Depends(get_db)) -> TraceOut:
     )
 
     all_outgoing = [t for h in result.hops for t in h.outgoing_transfers]
+    # Bridge-hop linking (Task 10) is correct in isolation, but a single case only ever traces
+    # ONE chain in this architecture (Case.chain is one value; run_trace only ever constructs one
+    # ChainClient), so all_outgoing can never actually contain two different chains' transfers.
+    # This call is therefore currently always [], which is honest given the data available -- a
+    # real fix needs a case model that traces two chains and correlates between them (see
+    # docs/TASKS.md P3), not a change to this call site.
     bridge_links = find_bridge_links(all_outgoing, all_outgoing)
     bridge_links_out = [
         BridgeLinkOut(sideATxHash=b.side_a_tx_hash, sideAChain=b.side_a_chain,

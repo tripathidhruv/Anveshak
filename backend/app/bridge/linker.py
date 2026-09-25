@@ -33,6 +33,9 @@ def find_bridge_links(side_a_candidates: list[Transfer], side_b_candidates: list
         # large enough to let a genuinely-higher side-B amount slip through as a "fee".
         equality_epsilon = a.amount * Decimal("1e-9")
         for b in side_b_candidates:
+            if b.chain == a.chain or b.tx_hash == a.tx_hash:
+                continue  # never match a transfer to itself, or to another transfer on the same
+                          # chain -- a bridge link is by definition cross-chain
             if b.timestamp < a.timestamp:
                 continue
             time_delta = (b.timestamp - a.timestamp).total_seconds()

@@ -74,6 +74,7 @@ The mandatory post-plan whole-branch review (opus, with an executed probe script
 - [ ] BTC adapter
 - [ ] Full ML/SHAP risk model
 - [ ] Operator fingerprinting (Idea 2 from `THREE_BIG_IDEAS.md`) — own future design pass
+- [ ] Real cross-chain bridge-hop linking needs a case model that traces two chains simultaneously and correlates between them — deferred, not built despite Task 10 implementing the correlation logic (`find_bridge_links`) correctly in isolation (Task F10, 2026-09-26).
 
 ## Blocked
 - [!] (nothing currently)
