@@ -1,60 +1,30 @@
 .wrapper {
   display: flex;
   flex-direction: column;
-  gap: var(--gap);
+  gap: 24px;
   min-height: 0;
 }
 
-.controls {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 10px;
-}
-
-.fitChip {
-  composes: raised-sm from '../../styles/surfaces.css';
-  composes: clickable from '../../styles/surfaces.css';
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 7px 16px;
-  border-radius: var(--r-pill);
-  border: none;
-  font-family: var(--font-body);
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--ink-mid);
-  cursor: pointer;
-}
-
-.segmentGroup {
-  display: flex;
-  gap: 8px;
-}
-
-.animateChip {
-  margin-left: auto;
-}
-
 .canvasFrame {
-  composes: raised from '../../styles/surfaces.css';
   position: relative;
   padding: 8px;
   flex: 1;
   min-height: 480px;
+  border-radius: 20px;
+  border: 1px solid var(--color-border);
+  background: var(--color-muted);
 }
 
 .canvas {
-  composes: flat from '../../styles/surfaces.css';
   position: relative;
   width: 100%;
   height: 100%;
   min-height: 464px;
-  border-radius: var(--r-sm);
+  border-radius: 12px;
   overflow: hidden;
   cursor: grab;
   touch-action: none;
+  background: var(--color-muted);
 }
 
 .canvas[data-panning] {
@@ -102,7 +72,7 @@
   font-family: var(--font-mono);
   font-size: 11px;
   font-weight: 600;
-  fill: var(--ink-soft);
+  fill: var(--color-muted-foreground);
   pointer-events: none;
 }
 
@@ -132,7 +102,7 @@
   background: linear-gradient(155deg, color-mix(in srgb, var(--node-accent) 88%, white), var(--node-accent));
   box-shadow:
     0 10px 22px -8px color-mix(in srgb, var(--node-accent) 70%, transparent),
-    0 0 0 4px var(--bg),
+    0 0 0 4px var(--color-muted),
     0 0 0 5px color-mix(in srgb, var(--node-accent) 45%, transparent);
   animation: ffg-float var(--float-duration, 5s) ease-in-out infinite;
   animation-delay: var(--float-delay, 0s);
@@ -142,15 +112,15 @@
 .node:hover {
   box-shadow:
     0 14px 28px -8px color-mix(in srgb, var(--node-accent) 80%, transparent),
-    0 0 0 4px var(--bg),
+    0 0 0 4px var(--color-muted),
     0 0 0 6px color-mix(in srgb, var(--node-accent) 65%, transparent);
 }
 
 .nodeSelected {
   box-shadow:
     0 14px 28px -8px color-mix(in srgb, var(--node-accent) 80%, transparent),
-    0 0 0 4px var(--bg),
-    0 0 0 6px var(--indigo);
+    0 0 0 4px var(--color-muted),
+    0 0 0 6px var(--color-indigo);
 }
 
 @keyframes ffg-float {
@@ -189,7 +159,7 @@
 .nodeHub {
   box-shadow:
     0 12px 26px -6px color-mix(in srgb, var(--node-accent) 75%, transparent),
-    0 0 0 4px var(--bg),
+    0 0 0 4px var(--color-muted),
     0 0 0 5px color-mix(in srgb, var(--node-accent) 55%, transparent),
     0 0 34px 4px color-mix(in srgb, var(--node-accent) 45%, transparent);
 }
@@ -205,13 +175,13 @@
   font-family: var(--font-body);
   font-size: 11px;
   font-weight: 700;
-  color: var(--ink);
+  color: var(--color-foreground);
   line-height: 1.25;
 }
 
 .nodeLabelSecondary {
   font-size: 10px;
-  color: var(--ink-soft);
+  color: var(--color-muted-foreground);
   line-height: 1.25;
 }
 
@@ -229,6 +199,6 @@
   align-items: center;
   justify-content: center;
   gap: 10px;
-  color: var(--ink-soft);
+  color: var(--color-muted-foreground);
   pointer-events: none;
 }

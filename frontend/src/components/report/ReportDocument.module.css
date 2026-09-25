@@ -1,32 +1,12 @@
-.wrapper {
-  display: flex;
-  flex-direction: column;
-  gap: var(--gap);
-}
-
-.toolbar {
-  display: flex;
-  justify-content: flex-end;
-}
-
-.well {
-  composes: raised from '../../styles/surfaces.css';
-  padding: var(--gap);
-  max-height: 720px;
-  overflow-y: auto;
-  display: flex;
-  justify-content: center;
-}
-
 .page {
   background: #ffffff;
   width: 794px;
   max-width: 100%;
   min-height: 1050px;
   padding: 48px 56px 40px;
-  border-radius: var(--r-sm);
-  box-shadow: var(--shadow-raised-sm);
-  color: var(--ink);
+  border-radius: 12px;
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04), 0 1px 3px rgba(16, 24, 40, 0.06);
+  color: var(--color-foreground);
   font-family: var(--font-body);
   display: flex;
   flex-direction: column;
@@ -38,7 +18,7 @@
   justify-content: space-between;
   align-items: flex-start;
   padding-bottom: 18px;
-  border-bottom: 2px solid var(--indigo);
+  border-bottom: 2px solid var(--color-indigo);
 }
 
 .wordmark {
@@ -46,7 +26,7 @@
   font-size: 22px;
   font-weight: 800;
   letter-spacing: 0.08em;
-  color: var(--indigo);
+  color: var(--color-indigo);
 }
 
 .docType {
@@ -55,13 +35,13 @@
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  color: var(--ink-soft);
+  color: var(--color-muted-foreground);
 }
 
 .mastheadMeta {
   text-align: right;
   font-size: 12px;
-  color: var(--ink-mid);
+  color: var(--color-muted-foreground);
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -72,7 +52,7 @@
   flex-direction: column;
   gap: 10px;
   padding-bottom: 20px;
-  border-bottom: 1px solid var(--bg-sunken);
+  border-bottom: 1px solid var(--color-border);
 }
 
 .heading {
@@ -81,7 +61,7 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: var(--indigo);
+  color: var(--color-indigo);
 }
 
 .factGrid {
@@ -96,12 +76,12 @@
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: var(--ink-soft);
+  color: var(--color-muted-foreground);
 }
 
 .factGrid dd {
   margin-top: 2px;
-  color: var(--ink);
+  color: var(--color-foreground);
 }
 
 .evidenceList {
@@ -111,13 +91,13 @@
   flex-direction: column;
   gap: 6px;
   font-size: 13px;
-  color: var(--ink-mid);
+  color: var(--color-muted-foreground);
 }
 
 .methodology {
   font-size: 13px;
   line-height: 1.65;
-  color: var(--ink-mid);
+  color: var(--color-muted-foreground);
 }
 
 .integrityBlock {
@@ -125,13 +105,13 @@
   flex-direction: column;
   gap: 6px;
   padding-top: 16px;
-  border-top: 2px solid var(--indigo);
+  border-top: 2px solid var(--color-indigo);
   font-size: 11px;
-  color: var(--ink-soft);
+  color: var(--color-muted-foreground);
 }
 
 .integrityBlock .heading {
-  color: var(--indigo);
+  color: var(--color-indigo);
 }
 
 .hashValue {

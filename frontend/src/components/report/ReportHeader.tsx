@@ -21,7 +21,7 @@ export function ReportHeader({ caseData, generatedAt }: ReportHeaderProps) {
       </div>
       <div className={styles.mastheadMeta}>
         <p>
-          Case <span className="mono">{caseData.id}</span>
+          Case <span className="font-[family-name:var(--font-mono)]">{caseData.id}</span>
         </p>
         <p>Generated {generatedLabel}</p>
       </div>

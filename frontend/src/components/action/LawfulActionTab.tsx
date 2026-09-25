@@ -1,14 +1,16 @@
 import type { ReactNode } from 'react'
 import { useMemo, useState } from 'react'
 import { Flag, ScrollText, Send } from 'lucide-react'
-import { Button, Modal, Well } from '../ui'
+import { Button } from '../ui/button'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog'
+import { Well } from '../ui/well'
 import { api } from '../../api'
 import { useUIStore } from '../../store/uiStore'
+import type { AccentColour } from '../../utils/constants'
 import type { Case, CampaignSummary, Exchange, NoticeType } from '../../types'
 import { formatINR } from '../../utils/format'
 import { ActionCard, type ActionStatus } from './ActionCard'
 import { noticeBody } from './noticeContent'
-import styles from './LawfulActionTab.module.css'
 
 interface CardConfig {
   type: NoticeType
@@ -16,7 +18,7 @@ interface CardConfig {
   subtitle?: string
   caption?: string
   readyLabel: string
-  readyColour: string
+  readyAccent: AccentColour
   buttonLabel: string
   confirmLabel: string
   icon: ReactNode
@@ -29,7 +31,7 @@ export interface LawfulActionTabProps {
   campaign: CampaignSummary
 }
 
-/** Tab 3 — three stacked lawful-action cards, each opening a modal whose Send/Generate button
+/** Tab 3 — three stacked lawful-action cards, each opening a dialog whose Send/Generate button
  * calls `api.sendNotice` and animates the card's status chip to a moss "SENT ✓". */
 export function LawfulActionTab({ caseId, caseData, exchange, campaign }: LawfulActionTabProps) {
   const showToast = useUIStore((s) => s.showToast)
@@ -51,7 +53,7 @@ export function LawfulActionTab({ caseId, caseData, exchange, campaign }: Lawful
         type: 'exchange-request',
         title: 'Request to the exchange',
         readyLabel: 'READY TO SEND',
-        readyColour: 'var(--sky)',
+        readyAccent: 'sky',
         buttonLabel: 'Preview & send',
         confirmLabel: 'Send',
         icon: <Send size={18} />,
@@ -62,7 +64,7 @@ export function LawfulActionTab({ caseId, caseData, exchange, campaign }: Lawful
         subtitle: 'Summons to produce documents — formerly Section 91 CrPC',
         caption: 'Draft only — an officer must review before filing.',
         readyLabel: 'DRAFT',
-        readyColour: 'var(--gold)',
+        readyAccent: 'gold',
         buttonLabel: 'Open draft',
         confirmLabel: 'Generate',
         icon: <ScrollText size={18} />,
@@ -72,7 +74,7 @@ export function LawfulActionTab({ caseId, caseData, exchange, campaign }: Lawful
         title: 'Report to FIU-IND',
         subtitle: 'Flags an unregistered VASP servicing Indian users',
         readyLabel: 'READY',
-        readyColour: 'var(--moss)',
+        readyAccent: 'moss',
         buttonLabel: 'Generate',
         confirmLabel: 'Generate',
         icon: <Flag size={18} />,
@@ -97,8 +99,8 @@ export function LawfulActionTab({ caseId, caseData, exchange, campaign }: Lawful
   }
 
   return (
-    <div className={styles.wrapper}>
-      <div className={styles.cards}>
+    <div className="flex flex-col gap-6">
+      <div className="flex flex-col gap-6">
         {cards.map((card) => (
           <ActionCard
             key={card.type}
@@ -108,7 +110,7 @@ export function LawfulActionTab({ caseId, caseData, exchange, campaign }: Lawful
             bodyPreview={bodies[card.type]}
             buttonLabel={card.buttonLabel}
             readyLabel={card.readyLabel}
-            readyColour={card.readyColour}
+            readyAccent={card.readyAccent}
             status={statuses[card.type]}
             onOpen={() => setOpenType(card.type)}
             icon={card.icon}
@@ -116,35 +118,47 @@ export function LawfulActionTab({ caseId, caseData, exchange, campaign }: Lawful
         ))}
       </div>
 
-      <Well className={styles.impactStrip}>
+      <Well className="border border-moss/20 bg-moss/10 text-sm font-semibold text-foreground">
         Because {campaign.cases} complaints share this wallet, this one action covers {campaign.cases} cases and{' '}
         {formatINR(campaign.totalINR)}.
       </Well>
 
-      <Modal open={activeCard != null} onClose={() => setOpenType(null)} title={activeCard?.title}>
-        {activeCard && (
-          <div className={styles.modalBody}>
-            {activeCard.caption && <p className={styles.modalCaption}>{activeCard.caption}</p>}
-            <textarea
-              className={styles.textarea}
-              value={bodies[activeCard.type]}
-              onChange={(e) => setBodies((prev) => ({ ...prev, [activeCard.type]: e.target.value }))}
-              rows={14}
-              spellCheck={false}
-            />
-            <div className={styles.modalActions}>
-              <Button onClick={() => setOpenType(null)}>Cancel</Button>
-              <Button
-                variant="primary"
-                onClick={() => handleConfirm(activeCard.type)}
-                disabled={statuses[activeCard.type] === 'sending'}
-              >
-                {statuses[activeCard.type] === 'sending' ? 'Sending…' : activeCard.confirmLabel}
-              </Button>
-            </div>
-          </div>
-        )}
-      </Modal>
+      <Dialog open={activeCard != null} onOpenChange={(open) => !open && setOpenType(null)}>
+        <DialogContent>
+          {activeCard && (
+            <>
+              <DialogHeader>
+                <DialogTitle>{activeCard.title}</DialogTitle>
+              </DialogHeader>
+              <div className="flex flex-col gap-3.5">
+                {activeCard.caption && (
+                  <p className="rounded-lg bg-vermillion/10 px-3.5 py-2.5 text-xs font-semibold text-vermillion">
+                    {activeCard.caption}
+                  </p>
+                )}
+                <textarea
+                  className="w-full resize-y rounded-xl border border-border bg-muted p-4 font-[family-name:var(--font-mono)] text-[12.5px] leading-relaxed text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  value={bodies[activeCard.type]}
+                  onChange={(e) => setBodies((prev) => ({ ...prev, [activeCard.type]: e.target.value }))}
+                  rows={14}
+                  spellCheck={false}
+                />
+                <div className="flex justify-end gap-3">
+                  <Button variant="outline" onClick={() => setOpenType(null)}>
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={() => handleConfirm(activeCard.type)}
+                    disabled={statuses[activeCard.type] === 'sending'}
+                  >
+                    {statuses[activeCard.type] === 'sending' ? 'Sending…' : activeCard.confirmLabel}
+                  </Button>
+                </div>
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

@@ -1,9 +1,9 @@
-import type { CSSProperties } from 'react'
 import { Copy, X } from 'lucide-react'
-import { Badge, Button } from '../ui'
+import { Badge } from '../ui/badge'
+import { Button } from '../ui/button'
+import { Card } from '../ui/card'
 import type { GraphNode } from '../../types'
 import { formatINR } from '../../utils/format'
-import styles from './NodeDrawer.module.css'
 
 const KIND_LABEL: Record<GraphNode['kind'], string> = {
   victim: 'Victim',
@@ -20,62 +20,67 @@ export interface NodeDrawerProps {
   onCopyAddress: (addr: string) => void
 }
 
-/** Right-hand `.raised` detail drawer that opens when a graph node is clicked — address,
- * amount, first-seen timestamp, and a copy-address action per the source spec. */
+/** Right-hand detail drawer that opens when a graph node is clicked — address, amount,
+ * first-seen timestamp, and a copy-address action per the source spec. */
 export function NodeDrawer({ node, onClose, onCopyAddress }: NodeDrawerProps) {
   if (!node) {
     return (
-      <div className={styles.drawer} data-empty="true">
-        <p className={styles.emptyText}>Click a node in the graph to see its details here.</p>
-      </div>
+      <Card className="flex min-h-[160px] w-[280px] flex-none items-center justify-center self-start p-6 text-center">
+        <p className="text-[13px] text-muted-foreground">Click a node in the graph to see its details here.</p>
+      </Card>
     )
   }
 
   return (
-    <div className={styles.drawer}>
-      <div className={styles.header}>
-        <Badge style={{ ['--badge-colour' as string]: `var(--${node.accent})` } as CSSProperties}>
-          {KIND_LABEL[node.kind]}
-        </Badge>
-        <button type="button" className={styles.closeButton} onClick={onClose} aria-label="Close details">
+    <Card className="flex w-[280px] flex-none flex-col gap-3.5 self-start p-5">
+      <div className="flex items-start justify-between gap-2">
+        <Badge variant={node.accent}>{KIND_LABEL[node.kind]}</Badge>
+        <button
+          type="button"
+          className="flex h-7 w-7 flex-none items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          onClick={onClose}
+          aria-label="Close details"
+        >
           <X size={16} />
         </button>
       </div>
 
-      <h3 className={styles.title}>{node.label}</h3>
-      <p className={styles.sublabel}>{node.sublabel}</p>
+      <div className="-mt-1">
+        <h3 className="font-[family-name:var(--font-display)] text-[17px] font-bold text-foreground">{node.label}</h3>
+        <p className="text-[13px] text-muted-foreground">{node.sublabel}</p>
+      </div>
 
-      <dl className={styles.factList}>
+      <dl className="flex flex-col gap-3">
         {node.addr && (
-          <div className={styles.fact}>
-            <dt>Address</dt>
-            <dd className="mono">{node.addr}</dd>
+          <div className="flex flex-col gap-0.5 rounded-lg bg-muted px-3 py-2.5">
+            <dt className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Address</dt>
+            <dd className="break-all font-[family-name:var(--font-mono)] text-[13px] text-foreground">{node.addr}</dd>
           </div>
         )}
         {node.amt != null && (
-          <div className={styles.fact}>
-            <dt>Amount at this hop</dt>
-            <dd>{formatINR(node.amt)}</dd>
+          <div className="flex flex-col gap-0.5 rounded-lg bg-muted px-3 py-2.5">
+            <dt className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Amount at this hop</dt>
+            <dd className="text-[13px] text-foreground">{formatINR(node.amt)}</dd>
           </div>
         )}
         {node.at && (
-          <div className={styles.fact}>
-            <dt>First seen</dt>
-            <dd className="mono">{node.at}</dd>
+          <div className="flex flex-col gap-0.5 rounded-lg bg-muted px-3 py-2.5">
+            <dt className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">First seen</dt>
+            <dd className="font-[family-name:var(--font-mono)] text-[13px] text-foreground">{node.at}</dd>
           </div>
         )}
-        <div className={styles.fact}>
-          <dt>Transaction count</dt>
-          <dd className={styles.notAvailable}>Not available in this demo dataset</dd>
+        <div className="flex flex-col gap-0.5 rounded-lg bg-muted px-3 py-2.5">
+          <dt className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Transaction count</dt>
+          <dd className="text-[13px] italic text-muted-foreground">Not available in this demo dataset</dd>
         </div>
       </dl>
 
       {node.addr && (
-        <Button onClick={() => onCopyAddress(node.addr!)} className={styles.copyButton}>
+        <Button onClick={() => onCopyAddress(node.addr!)} className="w-full justify-center">
           <Copy size={14} />
           Copy address
         </Button>
       )}
-    </div>
+    </Card>
   )
 }

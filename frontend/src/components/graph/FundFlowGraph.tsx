@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from 'react'
 import { Landmark, Maximize2, Play, Shuffle, User, Wallet, Waypoints } from 'lucide-react'
 import clsx from 'clsx'
-import { Chip } from '../ui'
+import { cn } from '@/lib/utils'
 import type { GraphData, GraphNode, GraphNodeKind } from '../../types'
 import { GraphLegend } from './GraphLegend'
 import { computeLayout, computeRoutePaths } from './graphLayout'
@@ -150,28 +150,53 @@ export function FundFlowGraph({ graph, onSelectNode }: FundFlowGraphProps) {
 
   return (
     <div className={styles.wrapper}>
-      <div className={styles.controls}>
-        <button type="button" className={styles.fitChip} onClick={fit}>
+      <div className="flex flex-wrap items-center gap-2.5">
+        <button
+          type="button"
+          onClick={fit}
+          className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-4 py-1.5 text-[13px] font-semibold text-muted-foreground shadow-sm transition-colors hover:bg-muted hover:text-foreground"
+        >
           <Maximize2 size={13} />
           Fit
         </button>
 
-        <div className={styles.segmentGroup} role="group" aria-label="Filter by route">
-          <Chip variant="segmented" selected={routeFilter === 'A'} onClick={() => setRouteFilter('A')}>
-            Show Route A
-          </Chip>
-          <Chip variant="segmented" selected={routeFilter === 'B'} onClick={() => setRouteFilter('B')}>
-            Show Route B
-          </Chip>
-          <Chip variant="segmented" selected={routeFilter === 'both'} onClick={() => setRouteFilter('both')}>
-            Show both
-          </Chip>
+        <div className="flex gap-1 rounded-xl bg-muted p-1" role="group" aria-label="Filter by route">
+          {(
+            [
+              { key: 'A' as const, label: 'Show Route A' },
+              { key: 'B' as const, label: 'Show Route B' },
+              { key: 'both' as const, label: 'Show both' },
+            ]
+          ).map((opt) => (
+            <button
+              key={opt.key}
+              type="button"
+              aria-pressed={routeFilter === opt.key}
+              onClick={() => setRouteFilter(opt.key)}
+              className={cn(
+                'rounded-lg px-3 py-1.5 text-[13px] font-medium transition-colors',
+                routeFilter === opt.key ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground',
+              )}
+            >
+              {opt.label}
+            </button>
+          ))}
         </div>
 
-        <Chip variant="segmented" selected={animating} onClick={() => setAnimating((v) => !v)} className={styles.animateChip}>
+        <button
+          type="button"
+          aria-pressed={animating}
+          onClick={() => setAnimating((v) => !v)}
+          className={cn(
+            'ml-auto inline-flex items-center gap-1.5 rounded-full border px-4 py-1.5 text-[13px] font-medium transition-colors',
+            animating
+              ? 'border-primary/20 bg-primary/10 text-primary'
+              : 'border-border bg-card text-muted-foreground hover:bg-muted',
+          )}
+        >
           <Play size={13} />
           Animate flow
-        </Chip>
+        </button>
       </div>
 
       <div className={styles.canvasFrame}>
@@ -187,10 +212,10 @@ export function FundFlowGraph({ graph, onSelectNode }: FundFlowGraphProps) {
             <svg className={styles.edgeLayer} width={layout.width} height={layout.height}>
               <defs>
                 <marker id="ffg-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
-                  <path d="M0 0 L10 5 L0 10 Z" fill="var(--indigo)" />
+                  <path d="M0 0 L10 5 L0 10 Z" fill="var(--color-indigo)" />
                 </marker>
                 <marker id="ffg-arrow-criminal" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
-                  <path d="M0 0 L10 5 L0 10 Z" fill="var(--vermillion)" />
+                  <path d="M0 0 L10 5 L0 10 Z" fill="var(--color-vermillion)" />
                 </marker>
                 {graph.edges.map((edge) => {
                   const from = layout.positions.get(edge.source)
@@ -198,8 +223,8 @@ export function FundFlowGraph({ graph, onSelectNode }: FundFlowGraphProps) {
                   if (!from || !to) return null
                   return (
                     <linearGradient key={edge.id} id={`ffg-grad-${edge.id}`} x1={from.x} y1={from.y} x2={to.x} y2={to.y} gradientUnits="userSpaceOnUse">
-                      <stop offset="0%" style={{ stopColor: `var(--${nodeById.get(edge.source)?.accent ?? 'sky'})` }} />
-                      <stop offset="100%" style={{ stopColor: `var(--${nodeById.get(edge.target)?.accent ?? 'sky'})` }} />
+                      <stop offset="0%" style={{ stopColor: `var(--color-${nodeById.get(edge.source)?.accent ?? 'sky'})` }} />
+                      <stop offset="100%" style={{ stopColor: `var(--color-${nodeById.get(edge.target)?.accent ?? 'sky'})` }} />
                     </linearGradient>
                   )
                 })}
@@ -216,7 +241,7 @@ export function FundFlowGraph({ graph, onSelectNode }: FundFlowGraphProps) {
                     <path
                       d={path}
                       className={clsx(styles.edgePath, edge.criminal && styles.edgeCriminal, edge.criminal && animating && styles.edgeFlowing)}
-                      stroke={edge.criminal ? 'var(--vermillion)' : `url(#ffg-grad-${edge.id})`}
+                      stroke={edge.criminal ? 'var(--color-vermillion)' : `url(#ffg-grad-${edge.id})`}
                       markerEnd={edge.criminal ? 'url(#ffg-arrow-criminal)' : 'url(#ffg-arrow)'}
                       fill="none"
                     />
@@ -239,7 +264,7 @@ export function FundFlowGraph({ graph, onSelectNode }: FundFlowGraphProps) {
                 top: pos.y,
                 width: size,
                 height: size,
-                ['--node-accent' as string]: `var(--${node.accent})`,
+                ['--node-accent' as string]: `var(--color-${node.accent})`,
                 ['--float-delay' as string]: `${(i * 0.37) % 2.4}s`,
                 ['--float-duration' as string]: `${4.2 + (i % 4) * 0.6}s`,
               }

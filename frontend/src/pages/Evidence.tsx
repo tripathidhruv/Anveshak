@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { ArrowRight } from 'lucide-react'
-import clsx from 'clsx'
-import { Button, Card, Spinner } from '../components/ui'
+import { Button } from '../components/ui/button'
+import { Card } from '../components/ui/card'
+import { Spinner } from '../components/ui/spinner'
+import { Tabs, TabsList, TabsTrigger } from '../components/ui/tabs'
 import { FundFlowGraph } from '../components/graph/FundFlowGraph'
 import { NodeDrawer } from '../components/graph/NodeDrawer'
 import { ReportDocument } from '../components/report/ReportDocument'
@@ -12,7 +14,6 @@ import { useCaseStore } from '../store/caseStore'
 import { useUIStore, type EvidenceTab } from '../store/uiStore'
 import type { GraphData, GraphNode, ReportData } from '../types'
 import { ROUTES } from '../utils/constants'
-import styles from './Evidence.module.css'
 
 const TABS: { key: EvidenceTab; label: string }[] = [
   { key: 'graph', label: 'Fund flow graph' },
@@ -102,64 +103,65 @@ export default function Evidence() {
 
   if (!caseId || !activeCase || !routeA || !routeB) {
     return (
-      <Card className={styles.loadingCard}>
+      <Card className="mx-auto my-16 flex max-w-[420px] flex-col items-center justify-center gap-4 p-10 text-center">
         <Spinner percent={70} label="Loading" />
-        <p>Loading case…</p>
+        <p className="text-sm text-muted-foreground">Loading case…</p>
       </Card>
     )
   }
 
   return (
-    <div className={styles.page}>
-      <header className={styles.header}>
-        <h1 className="page-title">The evidence pack.</h1>
-        <p className={styles.subtitle}>
+    <div className="flex flex-col gap-6">
+      <header className="max-w-2xl">
+        <h1 className="font-[family-name:var(--font-display)] text-[30px] font-bold text-foreground">
+          The evidence pack.
+        </h1>
+        <p className="mt-1.5 text-[15px] text-muted-foreground">
           Everything a court, an exchange, or FIU-IND would need — the trail, the report, and the notices.
         </p>
       </header>
 
-      <Card className={styles.panel} padding={0}>
-        <div className={styles.tabRow} role="tablist" aria-label="Evidence sections">
-          {TABS.map((tab) => (
-            <button
-              key={tab.key}
-              type="button"
-              role="tab"
-              aria-selected={activeTab === tab.key}
-              className={clsx(styles.tabChip, activeTab === tab.key && styles.tabChipActive)}
-              onClick={() => selectTab(tab.key)}
-            >
-              {tab.label}
-            </button>
-          ))}
+      <Card className="flex flex-col">
+        <div className="flex flex-col gap-6 p-6">
+          <Tabs value={activeTab} onValueChange={(v) => selectTab(v as EvidenceTab)}>
+            <TabsList aria-label="Evidence sections">
+              {TABS.map((tab) => (
+                <TabsTrigger key={tab.key} value={tab.key}>
+                  {tab.label}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+          </Tabs>
+
+          <div className="min-h-[560px]">
+            {loading || !graph || !report ? (
+              <div className="flex min-h-[400px] flex-col items-center justify-center gap-4 text-muted-foreground">
+                <Spinner percent={70} label="Loading" />
+                <p className="text-sm">Assembling the evidence pack…</p>
+              </div>
+            ) : (
+              <>
+                {activeTab === 'graph' && (
+                  <div className="flex items-start gap-6 max-[1279px]:flex-col">
+                    <div className="min-w-0 flex-1">
+                      <FundFlowGraph graph={graph} onSelectNode={setSelectedNode} />
+                    </div>
+                    <NodeDrawer node={selectedNode} onClose={() => setSelectedNode(null)} onCopyAddress={handleCopyAddress} />
+                  </div>
+                )}
+
+                {activeTab === 'report' && <ReportDocument data={report} />}
+
+                {activeTab === 'action' && (
+                  <LawfulActionTab caseId={caseId} caseData={report.case} exchange={report.exchange} campaign={report.campaign} />
+                )}
+              </>
+            )}
+          </div>
         </div>
 
-        <div className={styles.tabContent}>
-          {loading || !graph || !report ? (
-            <div className={styles.loadingInner}>
-              <Spinner percent={70} label="Loading" />
-              <p>Assembling the evidence pack…</p>
-            </div>
-          ) : (
-            <>
-              {activeTab === 'graph' && (
-                <div className={styles.graphLayout}>
-                  <FundFlowGraph graph={graph} onSelectNode={setSelectedNode} />
-                  <NodeDrawer node={selectedNode} onClose={() => setSelectedNode(null)} onCopyAddress={handleCopyAddress} />
-                </div>
-              )}
-
-              {activeTab === 'report' && <ReportDocument data={report} />}
-
-              {activeTab === 'action' && (
-                <LawfulActionTab caseId={caseId} caseData={report.case} exchange={report.exchange} campaign={report.campaign} />
-              )}
-            </>
-          )}
-        </div>
-
-        <div className={styles.footerRow}>
-          <Button variant="primary" onClick={() => navigate(ROUTES.closed(caseId))}>
+        <div className="flex justify-end p-6 pt-0">
+          <Button onClick={() => navigate(ROUTES.closed(caseId))}>
             Finish case
             <ArrowRight size={16} />
           </Button>

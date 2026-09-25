@@ -35,12 +35,12 @@ export function HopTable({ routeLabel, route, assetShort }: HopTableProps) {
           {route.trail.map((hop) => (
             <tr key={hop.n}>
               <td>{hop.n}</td>
-              <td className="mono">{hop.addr}</td>
+              <td className="font-[family-name:var(--font-mono)]">{hop.addr}</td>
               <td>{hop.role}</td>
               <td>
                 {cryptoFormatter.format(hop.amt)} {assetShort}
               </td>
-              <td className="mono">
+              <td className="font-[family-name:var(--font-mono)]">
                 {hop.at}
                 {hop.gapSec != null ? ` (+${hop.gapSec}s)` : ''}
               </td>
