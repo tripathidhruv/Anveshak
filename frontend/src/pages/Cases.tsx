@@ -8,6 +8,7 @@ import { IconTile } from '@/components/ui/icon-tile'
 import { Input } from '@/components/ui/input'
 import { Spinner } from '@/components/ui/spinner'
 import { api } from '../api'
+import { useCaseStore } from '../store/caseStore'
 import { useUIStore } from '../store/uiStore'
 import type { CaseStatus, RecentCase, RiskBand } from '../types'
 import type { SemanticColour } from '../utils/constants'
@@ -41,6 +42,7 @@ const STATUS_FILTERS: Array<CaseStatus | 'All'> = ['All', 'New', 'Traced', 'Noti
 export default function Cases() {
   const navigate = useNavigate()
   const showToast = useUIStore((s) => s.showToast)
+  const setActiveCase = useCaseStore((s) => s.setActiveCase)
   const [cases, setCases] = useState<RecentCase[] | null>(null)
   const [statusFilter, setStatusFilter] = useState<CaseStatus | 'All'>('All')
   const [query, setQuery] = useState('')
@@ -64,11 +66,13 @@ export default function Cases() {
     })
   }, [cases, statusFilter, query])
 
-  function handleRowClick(row: RecentCase) {
+  async function handleRowClick(row: RecentCase) {
     if (row.id === FULL_DATA_CASE_ID) {
-      // Same target Dashboard's recent-cases table uses for this case (status 'New'):
-      // Tracing.tsx itself redirects back to /case/new when no case exists in the store yet,
-      // so routing straight there avoids an unnecessary bounce.
+      // Status is 'New' in the DEMO data, so New Case is the narratively-correct destination
+      // (this case hasn't been traced yet) -- pre-populate the store so the form arrives with
+      // real data loaded instead of resetting to blank defaults.
+      const caseData = await api.getCase(row.id)
+      setActiveCase(caseData)
       navigate(ROUTES.newCase)
       return
     }

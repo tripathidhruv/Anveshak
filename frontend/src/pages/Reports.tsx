@@ -8,6 +8,7 @@ import { IconTile } from '@/components/ui/icon-tile'
 import { Spinner } from '@/components/ui/spinner'
 import { ReportDocument } from '../components/report/ReportDocument'
 import { api } from '../api'
+import { useCaseStore } from '../store/caseStore'
 import type { ReportData } from '../types'
 import { ROUTES } from '../utils/constants'
 
@@ -20,8 +21,20 @@ const FULL_DATA_CASE_ID = 'KZN-2026-0417'
  * report would slot into naturally once more cases reach the evidence stage. */
 export default function Reports() {
   const navigate = useNavigate()
+  const setActiveCase = useCaseStore((s) => s.setActiveCase)
+  const setTraceResult = useCaseStore((s) => s.setTraceResult)
   const [report, setReport] = useState<ReportData | null>(null)
   const [loading, setLoading] = useState(true)
+
+  /** Evidence.tsx's route guard requires an active case + trace result in the store, not just
+   * a valid case ID in the URL -- populate both before navigating so "View" lands on the real
+   * report tab instead of bouncing back to New Case. */
+  async function handleView(caseId: string) {
+    const [caseData, trace] = await Promise.all([api.getCase(caseId), api.getRoutes(caseId)])
+    setActiveCase(caseData)
+    setTraceResult(trace.routeA, trace.routeB)
+    navigate(`${ROUTES.evidence(caseId)}?tab=report`)
+  }
 
   useEffect(() => {
     let cancelled = false
@@ -77,7 +90,7 @@ export default function Reports() {
                 </div>
               </div>
 
-              <Button variant="secondary" onClick={() => navigate(`${ROUTES.evidence(report.case.id)}?tab=report`)}>
+              <Button variant="secondary" onClick={() => handleView(report.case.id)}>
                 View
               </Button>
             </div>
