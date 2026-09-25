@@ -21,7 +21,12 @@ def create_case(payload: CaseIn, db: Session = Depends(get_db)) -> CaseOut:
         id=str(uuid.uuid4()), ncrp=payload.ncrp, complainant=payload.complainant,
         location=payload.location, phone=payload.phone, incident_at=payload.incidentAt,
         fraud_type=payload.fraudType, amount_inr=payload.amountINR, amount_crypto=payload.amountCrypto,
-        asset=payload.asset, chain=payload.chain, suspect_wallet=payload.suspectWallet,
+        asset=payload.asset,
+        # Normalized once here so every downstream reader of `case.chain` (registry.py,
+        # tracer, etc.) always sees the canonical lowercase form — don't add more
+        # `.lower()` calls elsewhere for this.
+        chain=payload.chain.lower(),
+        suspect_wallet=payload.suspectWallet,
     )
     db.add(case)
     db.commit()

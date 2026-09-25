@@ -19,6 +19,33 @@ const CRYPTO_OPTIONS = [
   { label: 'ETH', chain: 'Ethereum' },
 ] as const
 
+const DISPLAY_MONTHS: Record<string, string> = {
+  Jan: '01', Feb: '02', Mar: '03', Apr: '04', May: '05', Jun: '06',
+  Jul: '07', Aug: '08', Sep: '09', Oct: '10', Nov: '11', Dec: '12',
+}
+
+/**
+ * Converts a `Case.incidentAt` value — which may be the demo seed's human display string
+ * (e.g. `'02 Sep 2026, 19:42 IST'`, see `api/mock.ts`'s `DEMO.case.incidentAt`) or a real
+ * backend response's ISO 8601 timestamp (which carries a timezone offset, e.g.
+ * `'2026-09-02T19:42:00+00:00'`) — into the timezone-free `YYYY-MM-DDTHH:mm` shape a native
+ * `datetime-local` input requires (it silently refuses to display a value with an offset).
+ * Also safe to call on a value already in that shape (e.g. round-tripped from the input
+ * itself) — `Date` parses it fine and re-formatting it is a no-op.
+ */
+function toDatetimeLocalValue(display: string): string {
+  const demoMatch = /^(\d{2}) (\w{3}) (\d{4}), (\d{2}):(\d{2})/.exec(display.trim())
+  if (demoMatch) {
+    const [, day, monAbbr, year, hour, minute] = demoMatch
+    const month = DISPLAY_MONTHS[monAbbr]
+    if (month) return `${year}-${month}-${day}T${hour}:${minute}`
+  }
+  const parsed = new Date(display)
+  if (Number.isNaN(parsed.getTime())) return display
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${parsed.getFullYear()}-${pad(parsed.getMonth() + 1)}-${pad(parsed.getDate())}T${pad(parsed.getHours())}:${pad(parsed.getMinutes())}`
+}
+
 /** A few plausible fraud types alongside the demo's pre-selected one. */
 const FRAUD_TYPES = [
   'Task-based job scam (Telegram)',
@@ -35,6 +62,7 @@ interface FormState {
   location: string
   phone: string
   amountINR: number
+  amountCrypto: number
   cryptoLabel: string
   incidentAt: string
   fraudType: string
@@ -49,8 +77,9 @@ function toFormState(source: Case): FormState {
     location: source.location,
     phone: source.phone,
     amountINR: source.amountINR,
+    amountCrypto: source.amountCrypto,
     cryptoLabel: matchedCrypto?.label ?? CRYPTO_OPTIONS[0].label,
-    incidentAt: source.incidentAt,
+    incidentAt: toDatetimeLocalValue(source.incidentAt),
     fraudType: FRAUD_TYPES.includes(source.fraudType) ? source.fraudType : FRAUD_TYPES[0],
     suspectWallet: source.suspectWallet,
   }
@@ -99,6 +128,11 @@ export default function NewCase() {
     updateField('amountINR', digitsOnly ? Number(digitsOnly) : 0)
   }
 
+  function handleAmountCryptoChange(raw: string) {
+    const numeric = raw.replace(/[^\d.]/g, '')
+    updateField('amountCrypto', numeric ? Number(numeric) : 0)
+  }
+
   function handleFillDemoData() {
     if (!seed) return
     setForm(toFormState(seed))
@@ -117,11 +151,17 @@ export default function NewCase() {
         ncrp: form.ncrp,
         location: form.location,
         phone: form.phone,
-        incidentAt: form.incidentAt,
+        // form.incidentAt holds whatever the datetime-local input naturally produces
+        // (`YYYY-MM-DDTHH:mm`) — converted to a real ISO 8601 instant only here, at the
+        // request-body boundary, not stored as ISO in form state.
+        incidentAt: new Date(form.incidentAt).toISOString(),
         fraudType: form.fraudType,
         amountINR: form.amountINR,
+        amountCrypto: form.amountCrypto,
         asset: selectedCrypto.label,
-        chain: selectedCrypto.chain,
+        // The backend's chain registry matches lowercase literals only ("tron", "ethereum",
+        // "bitcoin") — the display label/chip text stays as-is for the user.
+        chain: selectedCrypto.chain.toLowerCase(),
         suspectWallet: form.suspectWallet,
       })
       setActiveCase(createdCase)
@@ -205,6 +245,21 @@ export default function NewCase() {
               </div>
             </div>
 
+            <div className="flex w-full flex-col gap-1.5">
+              <label className="text-sm font-medium text-foreground" htmlFor="amountCrypto">
+                Amount lost (crypto)
+              </label>
+              <div className="flex items-center gap-1.5 rounded-xl border border-border bg-card px-4 py-2.5 focus-within:ring-2 focus-within:ring-ring">
+                <input
+                  id="amountCrypto"
+                  inputMode="decimal"
+                  value={form.amountCrypto}
+                  onChange={(e) => handleAmountCryptoChange(e.target.value)}
+                  className="w-full border-none bg-transparent font-[family-name:var(--font-mono)] text-sm text-foreground outline-none"
+                />
+              </div>
+            </div>
+
             <div className="flex flex-col gap-1.5">
               <span className="text-sm font-medium text-foreground">Cryptocurrency</span>
               <div className="flex flex-wrap gap-2.5">
@@ -231,6 +286,7 @@ export default function NewCase() {
             </div>
 
             <Input
+              type="datetime-local"
               label="Date & time of transfer"
               value={form.incidentAt}
               onChange={(e) => updateField('incidentAt', e.target.value)}
