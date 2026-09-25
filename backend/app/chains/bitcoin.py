@@ -80,10 +80,17 @@ class BitcoinChainClient:
 
         2. If `address` appears only in the transaction outputs (not inputs):
            - This is an INCOMING transfer to the address.
-           - Emit one Transfer per distinct input address (de-duplicated).
-           - Rationale: multi-input txs (common in mixing) send to a single recipient via
-             multiple sources. Each source is a potential trace point, but we emit once per
-             unique input to avoid duplicating the received amount.
+           - Emit exactly ONE Transfer for the whole transaction, using the first input
+             address (in the record's own original order) as a deterministic representative
+             sender.
+           - Rationale: per Bitcoin's common-input-ownership convention, all inputs of a
+             single transaction are (almost always) controlled by the same owner, so a
+             multi-input transaction is one real payer, not N — emitting one Transfer per
+             distinct input address would both multiply the received amount by the input
+             count and inflate "distinct payer" counts on an ordinary self-consolidation
+             transaction.
+           - If there are no resolvable input addresses (e.g. a coinbase-like record), emit
+             nothing for this transaction.
            - Set raw["multi_input"] = True if there are multiple distinct input addresses;
              the detector layer uses this to treat multi-input txs cautiously (they may be
              mixing transactions where the causal relationship is weaker).
@@ -142,17 +149,23 @@ class BitcoinChainClient:
                     ))
             elif any(v.get("scriptpubkey_address") == address for v in vout):
                 # INCOMING: address is a recipient (appears only in outputs).
-                # Emit one Transfer per distinct input address.
-                # Sum every output paying `address` — a tx can pay the same
-                # address in more than one vout entry, and taking only the
-                # first would silently understate the amount received.
+                # Sum every output paying `address` — a tx can pay the same address in more
+                # than one vout entry, and taking only the first would silently understate
+                # the amount received.
                 recv_value = sum(v["value"] for v in vout if v.get("scriptpubkey_address") == address)
-                # De-duplicate input addresses while preserving order (dict.fromkeys).
-                for from_addr in dict.fromkeys(vin_addresses):
+                if vin_addresses:
+                    # Emit exactly ONE Transfer for this transaction, using the first input
+                    # address as a representative sender -- per Bitcoin's common-input-
+                    # ownership convention, every input of a single transaction is (almost
+                    # always) controlled by the same owner, so a multi-input transaction is
+                    # one real payer, not N. Emitting one Transfer per distinct input address
+                    # (the old behavior) both multiplied the received amount by the input
+                    # count and inflated "distinct payer" counts on an ordinary
+                    # self-consolidation transaction into looking like several real payers.
                     out.append(Transfer(
                         tx_hash=tx["txid"],
                         chain="bitcoin",
-                        from_address=from_addr,
+                        from_address=vin_addresses[0],
                         to_address=address,
                         amount=Decimal(recv_value) / SATS_PER_BTC,
                         asset="BTC",

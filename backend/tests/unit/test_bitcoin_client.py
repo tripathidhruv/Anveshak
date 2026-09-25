@@ -103,30 +103,43 @@ def test_multi_input_flag_set_on_multiple_inputs():
     assert all(t.raw.get("multi_input") is False for t in tx1_transfers + tx2_transfers), \
         "Single-input txs should have raw['multi_input'] = False"
 
-def test_incoming_with_multi_input_deduplicates_input_addresses():
-    """Test that incoming transfers from multi-input tx de-duplicate input addresses."""
-    # Create a fixture with an incoming multi-input tx to our test address
+def test_incoming_multi_input_emits_single_transfer_with_unmultiplied_amount():
+    """Regression test for F9 (I5): a multi-input incoming transaction must produce
+    exactly ONE Transfer, carrying the received value ONCE, using the first input
+    address (original order, not deduplicated-then-sorted) as the representative
+    sender -- per Bitcoin's common-input-ownership convention. The old behavior
+    emitted one Transfer per distinct input address, each claiming the full amount,
+    which both multiplied the received value by the input count and inflated
+    "distinct payer" counts on an ordinary self-consolidation transaction.
+    """
     incoming_multi_fixture = [
         {
             "txid": "multi-input-incoming",
             "status": {"confirmed": True, "block_time": 1732000300},
             "vin": [
-                {"prevout": {"scriptpubkey_address": "bc1qfrom1111111111111111111111111111111", "value": 1000000}},
-                {"prevout": {"scriptpubkey_address": "bc1qfrom2222222222222222222222222222222", "value": 1000000}},
+                {"prevout": {"scriptpubkey_address": "bc1qfrom3333333333333333333333333333333", "value": 4000000000}},
+                {"prevout": {"scriptpubkey_address": "bc1qfrom1111111111111111111111111111111", "value": 3000000000}},
+                {"prevout": {"scriptpubkey_address": "bc1qfrom2222222222222222222222222222222", "value": 3000000000}},
                 {"prevout": {"scriptpubkey_address": "bc1qfrom1111111111111111111111111111111", "value": 500000}}
             ],
             "vout": [
-                {"scriptpubkey_address": "bc1qreceiver1111111111111111111111111111", "value": 2450000}
+                {"scriptpubkey_address": "bc1qreceiver1111111111111111111111111111", "value": 10000000000}
             ]
         }
     ]
     client = make_client(incoming_multi_fixture)
     transfers = client.get_transfers("bc1qreceiver1111111111111111111111111111")
 
-    # Should have 2 transfers (one per unique input address, duplicates removed)
-    assert len(transfers) == 2
-    input_addresses = {t.from_address for t in transfers}
-    assert input_addresses == {"bc1qfrom1111111111111111111111111111111", "bc1qfrom2222222222222222222222222222222"}
+    # Exactly ONE Transfer for the whole transaction, not one per distinct input address.
+    assert len(transfers) == 1
+    # The received amount once (100 BTC), not multiplied by the (3 distinct) input count.
+    assert transfers[0].amount == Decimal(10000000000) / Decimal(1e8)
+    assert transfers[0].amount == Decimal("100")
+    # from_address is the FIRST input address in the record's own original order
+    # (bc1qfrom3... appears first in `vin`, even though it's not alphabetically first).
+    assert transfers[0].from_address == "bc1qfrom3333333333333333333333333333333"
+    assert transfers[0].to_address == "bc1qreceiver1111111111111111111111111111"
+    assert transfers[0].raw.get("multi_input") is True
 
 def test_incoming_multi_output_same_address_sums_values():
     """Regression test: a tx can pay the receiving address via more than one vout
