@@ -45,24 +45,39 @@ def trace(chain_client: ChainClient, start_address: str, reported_amount: Decima
             continue
 
         try:
-            all_outgoing = [t for t in chain_client.get_transfers(address) if t.from_address == address]
+            # Scope the fetch server-side to the causal window: real adapters paginate with a
+            # fixed page size, so an unscoped fetch on a high-activity wallet can silently
+            # truncate before the causally-relevant (since_ts-and-later) range is even reached.
+            causal = [t for t in chain_client.get_transfers(address, since=since_ts)
+                      if t.from_address == address and t.timestamp >= since_ts]
         except Exception:
             result.hops.append(TraceHop(hop_index, address, chain_client.chain, funding_transfer,
                                          [], taint, "api_read_failure"))
             continue
 
-        causal = [t for t in all_outgoing if t.timestamp >= since_ts]
-
         if not causal:
-            stop_reason = "no_outgoing_activity" if not all_outgoing else "no_further_transfers"
+            # Distinguish "never had outgoing activity" from "had outgoing activity, but all of
+            # it predates the funding transfer" — only probe the unscoped history when we need
+            # to classify the stop reason, not on the hot path above.
+            try:
+                any_outgoing = any(t.from_address == address for t in chain_client.get_transfers(address))
+            except Exception:
+                any_outgoing = False
+            stop_reason = "no_further_transfers" if any_outgoing else "no_outgoing_activity"
             result.hops.append(TraceHop(hop_index, address, chain_client.chain, funding_transfer,
                                          [], taint, stop_reason))
             continue
 
         result.hops.append(TraceHop(hop_index, address, chain_client.chain, funding_transfer,
                                      causal, taint, None))
+        # Allocate the wallet's taint budget FIFO across sibling causal transfers (they are
+        # already timestamp-ordered) rather than letting each branch independently claim up to
+        # the full inherited taint — otherwise summed downstream taint can exceed what the
+        # wallet actually held and the victim actually reported.
+        remaining_budget = taint
         for t in causal:
-            next_taint = min(taint, t.amount)
+            next_taint = min(remaining_budget, t.amount)
+            remaining_budget -= next_taint
             queue.append((t.to_address, next_taint, t.timestamp, hop_index + 1, t))
 
     return result

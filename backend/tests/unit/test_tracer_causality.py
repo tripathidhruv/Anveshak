@@ -46,3 +46,51 @@ def test_taint_tracked_against_reported_amount_not_total_outflow():
     result = trace(client, start_address="scammer", reported_amount=Decimal("150"), start_time=t0, max_hops=3)
     hop2 = next(h for h in result.hops if h.wallet_address == "hop2")
     assert hop2.taint <= Decimal("150")
+
+def test_taint_allocated_fifo_across_fanout_siblings():
+    # Reviewer's own example: taint=150, three causal outgoing transfers of 100 each, in
+    # timestamp order. Each sibling must draw from a SHARED budget, not independently claim
+    # up to min(taint, amount) — otherwise summed downstream taint (300) would exceed what
+    # the wallet held and the victim reported (150).
+    t0 = datetime(2026, 1, 1, tzinfo=timezone.utc)
+    branch_a = mk("scammer", "branch_a", 100, t0 + timedelta(seconds=1))
+    branch_b = mk("scammer", "branch_b", 100, t0 + timedelta(seconds=2))
+    branch_c = mk("scammer", "branch_c", 100, t0 + timedelta(seconds=3))
+    client = FakeChainClient({
+        "scammer": [branch_a, branch_b, branch_c],
+        "branch_a": [], "branch_b": [], "branch_c": [],
+    })
+
+    result = trace(client, start_address="scammer", reported_amount=Decimal("150"), start_time=t0, max_hops=3)
+
+    taint_by_addr = {h.wallet_address: h.taint for h in result.hops}
+    assert taint_by_addr["branch_a"] == Decimal("100")
+    assert taint_by_addr["branch_b"] == Decimal("50")
+    assert taint_by_addr["branch_c"] == Decimal("0")
+    assert taint_by_addr["branch_a"] + taint_by_addr["branch_b"] + taint_by_addr["branch_c"] <= Decimal("150")
+
+def test_stop_reason_hop_cap_reached():
+    t0 = datetime(2026, 1, 1, tzinfo=timezone.utc)
+    client = FakeChainClient({"scammer": []})
+    result = trace(client, start_address="scammer", reported_amount=Decimal("150"), start_time=t0, max_hops=0)
+    assert result.hops[0].stop_reason == "hop_cap_reached"
+
+def test_stop_reason_api_read_failure():
+    class RaisingChainClient:
+        chain = "tron"
+        def get_transfers(self, address, since=None):
+            raise RuntimeError("chain API unavailable")
+
+    t0 = datetime(2026, 1, 1, tzinfo=timezone.utc)
+    result = trace(RaisingChainClient(), start_address="scammer", reported_amount=Decimal("150"),
+                    start_time=t0, max_hops=3)
+    assert result.hops[0].stop_reason == "api_read_failure"
+
+def test_stop_reason_no_further_transfers_when_outgoing_history_predates_since():
+    # Wallet DOES have outgoing history, but all of it is before the funding transfer — this
+    # must be distinguished from "no_outgoing_activity" (empty history entirely).
+    t0 = datetime(2026, 1, 1, tzinfo=timezone.utc)
+    stale_only = mk("scammer", "other", 50, t0 - timedelta(hours=1))
+    client = FakeChainClient({"scammer": [stale_only]})
+    result = trace(client, start_address="scammer", reported_amount=Decimal("150"), start_time=t0, max_hops=3)
+    assert result.hops[0].stop_reason == "no_further_transfers"
