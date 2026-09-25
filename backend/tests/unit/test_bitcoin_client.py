@@ -128,6 +128,36 @@ def test_incoming_with_multi_input_deduplicates_input_addresses():
     input_addresses = {t.from_address for t in transfers}
     assert input_addresses == {"bc1qfrom1111111111111111111111111111111", "bc1qfrom2222222222222222222222222222222"}
 
+def test_incoming_multi_output_same_address_sums_values():
+    """Regression test: a tx can pay the receiving address via more than one vout
+    entry. The emitted incoming Transfer's amount must be the SUM of every such
+    vout's value, not just the first one encountered.
+
+    This fails if `recv_value = sum(...)` in BitcoinChainClient._normalize_tx is
+    ever reverted to `next(...)` (or similar single-value logic), since every
+    other incoming-branch fixture in this file has exactly one vout entry paying
+    the target address and would not catch that regression.
+    """
+    multi_output_incoming_fixture = [
+        {
+            "txid": "multi-output-incoming",
+            "status": {"confirmed": True, "block_time": 1732000400},
+            "vin": [
+                {"prevout": {"scriptpubkey_address": "bc1qsender0000000000000000000000000001", "value": 300000}}
+            ],
+            "vout": [
+                {"scriptpubkey_address": "bc1qreceiver2222222222222222222222222222", "value": 100000},
+                {"scriptpubkey_address": "bc1qreceiver2222222222222222222222222222", "value": 200000},
+            ]
+        }
+    ]
+    client = make_client(multi_output_incoming_fixture)
+    transfers = client.get_transfers("bc1qreceiver2222222222222222222222222222")
+
+    assert len(transfers) == 1
+    assert transfers[0].amount == Decimal(300000) / Decimal(1e8)
+    assert transfers[0].from_address == "bc1qsender0000000000000000000000000001"
+
 def test_output_without_address_is_silently_skipped():
     """Test that a vout entry with no derivable address (e.g. OP_RETURN) is skipped,
     not treated as an error. This is correct behavior: some real Bitcoin outputs
