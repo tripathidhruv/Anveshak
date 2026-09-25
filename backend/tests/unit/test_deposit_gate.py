@@ -59,3 +59,52 @@ def test_unvetted_label_does_not_pass_the_gate():
                                     expected_predecessor="scammer_wallet")
     assert result.gate_passed is False
     assert result.entity_name == "UNKNOWN"
+
+# Plain-English requirement: reasoning/limitations must read like something a
+# non-technical officer can follow, with no leftover engineering jargon. This is
+# the task's explicit deliverable, so it gets its own regression guard -- a future
+# edit could otherwise reintroduce jargon while every gate_passed/entity_name/
+# breakdown assertion above stays green.
+JARGON_WORDS = ["vetted", "predecessor", "gate", "edge", "hop", "immediate", "distinct payers",
+                "deposit address"]
+
+def assert_no_jargon(text: str):
+    lowered = text.lower()
+    for word in JARGON_WORDS:
+        assert word not in lowered, f"jargon word '{word}' found in: {text}"
+
+def test_reasoning_and_limitations_are_plain_english_across_all_scenarios():
+    scenarios = []
+
+    hop0 = mk_hop(0, "victim_wallet", funding_from=None)
+    scenarios.append(evaluate_deposit_gate(hop0, distinct_payer_count=5, label=VETTED_LABEL))
+
+    wrong_predecessor_hop = mk_hop(3, "exchange_hot_wallet", funding_from="some_unrelated_address")
+    scenarios.append(evaluate_deposit_gate(wrong_predecessor_hop, distinct_payer_count=5, label=VETTED_LABEL,
+                                            expected_predecessor="scammer_wallet"))
+
+    missing_predecessor_hop = mk_hop(3, "exchange_hot_wallet", funding_from=None)
+    scenarios.append(evaluate_deposit_gate(missing_predecessor_hop, distinct_payer_count=5, label=VETTED_LABEL,
+                                            expected_predecessor="scammer_wallet"))
+
+    no_label_hop = mk_hop(3, "unknown_wallet", funding_from="scammer_wallet")
+    scenarios.append(evaluate_deposit_gate(no_label_hop, distinct_payer_count=1, label=None,
+                                            expected_predecessor="scammer_wallet"))
+
+    unvetted = VaspLabelSeed(address="exchange_hot_wallet", chain="tron", entity_name="Some Exchange",
+                              source_url="https://example.test", verified_at=datetime(2026, 9, 25, tzinfo=timezone.utc),
+                              vetting_status="unvetted")
+    unvetted_label_hop = mk_hop(3, "exchange_hot_wallet", funding_from="scammer_wallet")
+    scenarios.append(evaluate_deposit_gate(unvetted_label_hop, distinct_payer_count=5, label=unvetted,
+                                            expected_predecessor="scammer_wallet"))
+
+    success_hop = mk_hop(3, "exchange_hot_wallet", funding_from="scammer_wallet")
+    scenarios.append(evaluate_deposit_gate(success_hop, distinct_payer_count=5, label=VETTED_LABEL,
+                                            expected_predecessor="scammer_wallet"))
+
+    assert len(scenarios) == 6
+    for result in scenarios:
+        assert result.reasoning, "reasoning must not be empty"
+        assert result.limitations, "limitations must not be empty"
+        assert_no_jargon(result.reasoning)
+        assert_no_jargon(result.limitations)

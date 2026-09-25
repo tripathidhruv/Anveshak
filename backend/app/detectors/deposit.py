@@ -21,7 +21,7 @@ def _plain_failure_reasons(hop: TraceHop, distinct_payer_count: int, label: Vasp
     if breakdown["hop_0"]:
         reasons.append(
             "This is the very first wallet in the trace, the one we started from, so it can "
-            "never be counted as the deposit address itself."
+            "never be counted as the exchange wallet itself."
         )
 
     if not breakdown["distinct_payers_ok"]:
@@ -86,7 +86,7 @@ def evaluate_deposit_gate(hop: TraceHop, distinct_payer_count: int,
     if not gate_passed:
         reasons = _plain_failure_reasons(hop, distinct_payer_count, label, expected_predecessor, breakdown)
         reasoning = (
-            "We could not confirm this wallet is a real exchange deposit address. "
+            "We could not confirm this wallet belongs to a real exchange. "
             + " ".join(reasons)
         )
         return DepositGateResult(
