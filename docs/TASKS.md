@@ -4,19 +4,19 @@ Status: `[ ]` open · `[~]` in progress · `[x]` done · `[!]` blocked
 Owner: initials. Update the status **in the same commit** as the work.
 
 ## Where things stand (2026-09-25)
-Three build tracks exist. Read `docs/PROGRESS.md` top entry for full narrative.
+Read `docs/PROGRESS.md` top entry for full narrative.
 
 1. **Frontend, React app (`frontend/`)** — all 9 screens built and functionally complete against mock data (Phase 1 of the original migration plan, `docs/plans/react-migration-plan.md`, Tasks 1-8 all done).
-2. **Frontend, UI v2 visual redesign** — in progress. Migrating the whole app from the neumorphic CSS-Modules system to a Tailwind v4 + shadcn-style flat/white-card system (light theme, aurora page background). Plan: `docs/plans/ui-v2-redesign-plan.md`, 6 tasks. **Task 1 (primitives + layout shell) is the current in-flight task — check `.superpowers/sdd/progress.md` for exact status before resuming.**
-3. **Backend (`backend/`)** — NOT STARTED. Full design spec exists and is approved: `docs/superpowers/specs/2026-09-25-backend-v2-competitive-design.md` (supersedes the earlier `2026-09-25-real-tracing-vasp-feed-design.md`). This is the next major track once UI v2 lands — needs a `writing-plans`-style task breakdown from the spec before subagent dispatch can start.
+2. **Frontend, UI v2 visual redesign — COMPLETE.** Full migration from the neumorphic CSS-Modules system to a Tailwind v4 + shadcn-style flat/white-card system (light theme, aurora page background). All 6 tasks in `docs/plans/ui-v2-redesign-plan.md` done, reviewed clean, dead neumorphic system fully deleted. `npm run build` zero errors.
+3. **Backend (`backend/`)** — NOT STARTED. Full design spec exists and is approved: `docs/superpowers/specs/2026-09-25-backend-v2-competitive-design.md` (supersedes the earlier `2026-09-25-real-tracing-vasp-feed-design.md`). This is the next major track — needs a `writing-plans`-style task breakdown from the spec before subagent dispatch can start.
 
-## P0 — UI v2 redesign (`docs/plans/ui-v2-redesign-plan.md`)
-- [~] Task 1: remaining primitives (Input/Toast/Gauge/Spinner/Well/PlainWords) + layout shell restyle @
-- [ ] Task 2: Dashboard, Case Closed, Campaign restyle (parallel-safe with 3-5) @
-- [ ] Task 3: New Case, Tracing, Route Choice restyle (parallel-safe with 2,4,5) @
-- [ ] Task 4: Exchange Attribution, Risk Score restyle (parallel-safe with 2,3,5) @
-- [ ] Task 5: Evidence page (graph/report/lawful-action tabs) restyle (parallel-safe with 2,3,4) @
-- [ ] Task 6: cleanup — delete dead neumorphic CSS, full click-through QA @
+## P0 — UI v2 redesign (`docs/plans/ui-v2-redesign-plan.md`) — DONE
+- [x] Task 1: remaining primitives (Input/Toast/Gauge/Spinner/Well/PlainWords) + layout shell restyle @Claude
+- [x] Task 2: Dashboard, Case Closed, Campaign restyle @Claude
+- [x] Task 3: New Case, Tracing, Route Choice restyle @Claude
+- [x] Task 4: Exchange Attribution, Risk Score restyle @Claude
+- [x] Task 5: Evidence page (graph/report/lawful-action tabs) restyle @Claude
+- [x] Task 6: cleanup — dead neumorphic CSS deleted, imports normalized, full click-through QA @Claude
 
 ## P1 — Backend (spec approved, plan not yet written)
 - [ ] Break `docs/superpowers/specs/2026-09-25-backend-v2-competitive-design.md` into a task-by-task implementation plan (writing-plans skill)
