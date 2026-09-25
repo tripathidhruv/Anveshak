@@ -92,6 +92,27 @@ function isPlausibleWalletAddress(addr: string): boolean {
   return addr.trim().length >= 8 && /^[A-Za-z0-9]/.test(addr.trim())
 }
 
+/**
+ * Empty, submittable starting point for the intake form when no seed case is available
+ * (e.g. `getCase('demo')` 404s in live mode — see the mount effect below). The form is still
+ * fully usable from here; the officer just has to fill it in by hand instead of it being
+ * pre-populated.
+ */
+function defaultFormState(): FormState {
+  return {
+    complainant: '',
+    ncrp: '',
+    location: '',
+    phone: '',
+    amountINR: 0,
+    amountCrypto: 0,
+    cryptoLabel: CRYPTO_OPTIONS[0].label,
+    incidentAt: '',
+    fraudType: FRAUD_TYPES[0],
+    suspectWallet: '',
+  }
+}
+
 export default function NewCase() {
   const navigate = useNavigate()
   const setActiveCase = useCaseStore((s) => s.setActiveCase)
@@ -103,19 +124,30 @@ export default function NewCase() {
 
   useEffect(() => {
     let cancelled = false
-    // The mock API ignores the id argument and always returns the single demo case —
-    // this is purely the "pre-filled" seed data for the intake form.
-    api.getCase('demo').then((demoCase) => {
-      if (cancelled) return
-      setSeed(demoCase)
-      setForm(toFormState(demoCase))
-    })
+    // The mock API ignores the id argument and always returns the single demo case — this is
+    // purely the "pre-filled" seed data for the intake form. In live mode there is no case
+    // literally named "demo" (cases get server-generated UUIDs), so this request 404s on every
+    // fresh backend — that's an expected miss, not a fatal error, so we fall back to an empty
+    // but fully submittable form instead of leaving the screen stuck on "Loading case intake…"
+    // forever (an unhandled rejection here used to do exactly that).
+    api
+      .getCase('demo')
+      .then((demoCase) => {
+        if (cancelled) return
+        setSeed(demoCase)
+        setForm(toFormState(demoCase))
+      })
+      .catch(() => {
+        if (cancelled) return
+        setSeed(null)
+        setForm(defaultFormState())
+      })
     return () => {
       cancelled = true
     }
   }, [])
 
-  if (!form || !seed) {
+  if (!form) {
     return <Card className="p-6">Loading case intake…</Card>
   }
 
@@ -140,6 +172,10 @@ export default function NewCase() {
   }
 
   const walletValid = isPlausibleWalletAddress(form.suspectWallet)
+  // Used for the "Valid {chain} address" line below — the currently-selected chip, not the
+  // (possibly absent) seed case, since the seed case's chain doesn't necessarily match whatever
+  // the officer has selected in the cryptocurrency picker.
+  const selectedCryptoChain = (CRYPTO_OPTIONS.find((option) => option.label === form.cryptoLabel) ?? CRYPTO_OPTIONS[0]).chain
 
   async function handleSubmit() {
     if (!form) return
@@ -327,7 +363,7 @@ export default function NewCase() {
             />
             {walletValid && (
               <span className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap text-sm font-semibold text-moss">
-                <Check size={15} /> Valid {seed.chain} address
+                <Check size={15} /> Valid {selectedCryptoChain} address
               </span>
             )}
           </div>
