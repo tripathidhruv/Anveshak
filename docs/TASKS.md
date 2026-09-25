@@ -24,6 +24,11 @@ Read `docs/PROGRESS.md` top entry for full narrative.
 - [ ] Sprint 2: Ethereum adapter, VASP flagged-wallet feed (pull API + push webhooks + demo VASP receiver), Tether freeze check + golden hour, bridge-hop linking, campaign clustering
 - [ ] Sprint 3: reproducible evidence hashing + hash-chained audit log, calibration pass, legal templates + SAHYOG payload, ML risk scoring (gated)
 
+## P0.5 — Sidebar registry screens (`docs/plans/stub-screens-plan.md`) — DONE
+- [x] Cases / Trace / Campaigns / Reports / Exchanges — all 5 built as real screens, reviewed, fixed @Claude
+- [x] Fixed a real bug found during review: Reports' "View" button bounced to New Case because Evidence.tsx's route guard requires caseStore populated — now pre-fetches case+trace before navigating @Claude
+- [ ] Minor cleanup (non-blocking): `FULL_DATA_CASE_ID` constant duplicated across Cases/Reports/Trace/Exchanges instead of one shared constant; `STATUS_COLOUR`/`RISK_COLOUR` maps duplicated between Dashboard.tsx and Cases.tsx — from parallel-agent builds, worth consolidating if time allows @
+
 ## P2 — Frontend honesty fixes (cheap, do anytime, listed in backend v2 spec)
 - [ ] `ReportDocument.tsx` PDF claim ("read directly from public blockchain data") — make true or label as demo data
 - [ ] `mock.ts` — fix invalid address formats, double-counted Route A+B totals, duplicate node, suspect/scammer mismatch
