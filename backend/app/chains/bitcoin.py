@@ -110,7 +110,10 @@ class BitcoinChainClient:
             elif any(v.get("scriptpubkey_address") == address for v in vout):
                 # INCOMING: address is a recipient (appears only in outputs).
                 # Emit one Transfer per distinct input address.
-                recv_value = next(v["value"] for v in vout if v.get("scriptpubkey_address") == address)
+                # Sum every output paying `address` — a tx can pay the same
+                # address in more than one vout entry, and taking only the
+                # first would silently understate the amount received.
+                recv_value = sum(v["value"] for v in vout if v.get("scriptpubkey_address") == address)
                 # De-duplicate input addresses while preserving order (dict.fromkeys).
                 for from_addr in dict.fromkeys(vin_addresses):
                     out.append(Transfer(

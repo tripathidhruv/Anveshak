@@ -128,20 +128,33 @@ def test_incoming_with_multi_input_deduplicates_input_addresses():
     input_addresses = {t.from_address for t in transfers}
     assert input_addresses == {"bc1qfrom1111111111111111111111111111111", "bc1qfrom2222222222222222222222222222222"}
 
-def test_malformed_record_raises_informative_error():
-    """Test that malformed records produce informative error messages."""
-    malformed_fixture = [
+def test_output_without_address_is_silently_skipped():
+    """Test that a vout entry with no derivable address (e.g. OP_RETURN) is skipped,
+    not treated as an error. This is correct behavior: some real Bitcoin outputs
+    genuinely have no scriptpubkey_address."""
+    no_address_output_fixture = [
         {
-            "txid": "bad-tx-1",
+            "txid": "tx-output-no-address",
             "status": {"confirmed": True, "block_time": 1732000000},
             "vin": [
                 {"prevout": {"scriptpubkey_address": "bc1qsender", "value": 1000000}}
             ],
             "vout": [
-                # Missing scriptpubkey_address
+                # Missing scriptpubkey_address (e.g. OP_RETURN output)
                 {"value": 1000000}
             ]
-        },
+        }
+    ]
+
+    client = make_client(no_address_output_fixture)
+    transfers = client.get_transfers("bc1qsender")
+
+    assert transfers == [], "Output with no derivable address should be skipped, not raise"
+
+def test_malformed_record_raises_informative_error():
+    """Test that a genuinely malformed record (missing a required field) raises
+    an informative ValueError naming the offending txid."""
+    malformed_fixture = [
         {
             "txid": "bad-tx-2",
             "status": {"confirmed": True},
@@ -153,11 +166,32 @@ def test_malformed_record_raises_informative_error():
 
     client = make_client(malformed_fixture)
 
-    # First tx should raise with informative error
     try:
         client.get_transfers("bc1qsender")
         assert False, "Should have raised ValueError for malformed record"
     except ValueError as e:
         error_msg = str(e)
-        assert "bad-tx-" in error_msg, f"Error should mention tx id, got: {error_msg}"
+        assert "bad-tx-2" in error_msg, f"Error should mention tx id, got: {error_msg}"
         assert "Malformed" in error_msg, f"Error should say 'Malformed', got: {error_msg}"
+
+def test_unconfirmed_tx_produces_no_transfers():
+    """Test that an unconfirmed transaction is excluded from results (not a crash,
+    not included), even when other fields (e.g. block_time) are absent as they
+    would be for a still-pending tx."""
+    unconfirmed_fixture = [
+        {
+            "txid": "tx-unconfirmed",
+            "status": {"confirmed": False},
+            "vin": [
+                {"prevout": {"scriptpubkey_address": "bc1qsender", "value": 1000000}}
+            ],
+            "vout": [
+                {"scriptpubkey_address": "bc1qrecipient", "value": 900000}
+            ]
+        }
+    ]
+
+    client = make_client(unconfirmed_fixture)
+    transfers = client.get_transfers("bc1qsender")
+
+    assert transfers == [], "Unconfirmed transactions should produce no Transfer objects"
