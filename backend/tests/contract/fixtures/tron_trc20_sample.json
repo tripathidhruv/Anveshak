@@ -1,0 +1,18 @@
+[
+  {
+    "transaction_id": "a1b2c3",
+    "token_info": {"symbol": "USDT", "decimals": 6, "address": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t"},
+    "block_timestamp": 1732000000000,
+    "from": "TVictimWalletAAAAAAAAAAAAAAAAAAAAA",
+    "to": "TScamWalletBBBBBBBBBBBBBBBBBBBBBBB",
+    "value": "150000000"
+  },
+  {
+    "transaction_id": "d4e5f6",
+    "token_info": {"symbol": "USDT", "decimals": 6, "address": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t"},
+    "block_timestamp": 1732000042000,
+    "from": "TScamWalletBBBBBBBBBBBBBBBBBBBBBBB",
+    "to": "TExchangeHotWalletCCCCCCCCCCCCCCCCC",
+    "value": "148500000"
+  }
+]
