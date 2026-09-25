@@ -18,3 +18,5 @@ build/
 ~$*
 *.tmp
 .superpowers/
+*.db
+*.db-journal
