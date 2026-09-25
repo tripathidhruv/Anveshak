@@ -26,7 +26,7 @@ Read `docs/PROGRESS.md` top entry for full narrative.
 - [x] Task 5: Bitcoin adapter over Blockstream Esplora, UTXO normalization @Claude
 - [x] Task 6: chain registry, causal FIFO tracer, conservation invariant @Claude
 - [x] Task 7: vetted VASP label seeds, gated sweep + deposit-address detectors (correctness-guard checklist) @Claude
-- [ ] Task 8: exculpatory/innocence scorer
+- [x] Task 8: exculpatory/innocence scorer @Claude
 - [ ] Task 9: backward unreported-victim enumeration
 - [ ] Task 10: cross-chain bridge-hop linker (timing + amount correlation)
 - [ ] Task 11: API layer — cases/traces endpoints wiring everything together
