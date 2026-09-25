@@ -1,11 +1,13 @@
 import { useEffect, useRef, useState } from 'react'
 import { Check } from 'lucide-react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { Card, Button, Spinner } from '../components/ui'
+import { cn } from '@/lib/utils'
+import { Card } from '../components/ui/card'
+import { Button } from '../components/ui/button'
+import { Spinner } from '../components/ui/spinner'
 import { api } from '../api'
 import { useCaseStore } from '../store/caseStore'
 import { ROUTES } from '../utils/constants'
-import styles from './Tracing.module.css'
 
 const STATUS_LINES = [
   'Connecting to the TRON blockchain…',
@@ -131,33 +133,44 @@ export default function Tracing() {
   }
 
   return (
-    <div className={styles.page}>
-      <Card>
-        <div className={styles.stage}>
-          <div className={styles.ringColumn}>
-            <div className={styles.ringWell}>
-              <Spinner percent={percent} size={260} strokeWidth={14} />
-            </div>
-            <p className={styles.statusLine} key={statusIndex}>
+    <div className="flex min-h-[560px] flex-col items-center gap-2">
+      <Card className="w-full">
+        <div className="flex flex-col items-center justify-center gap-14 px-6 pb-6 pt-12 md:flex-row">
+          <div className="flex flex-col items-center gap-6">
+            <Spinner percent={percent} size={260} strokeWidth={14} />
+            <p
+              key={statusIndex}
+              className="min-h-6 animate-in fade-in slide-in-from-bottom-1 text-center text-base font-semibold text-foreground duration-200"
+            >
               {STATUS_LINES[statusIndex]}
             </p>
           </div>
 
-          <div className={styles.checklist}>
-            <span className={styles.checklistTitle}>What we&rsquo;ve found so far</span>
+          <div className="flex min-w-85 flex-col gap-1 rounded-2xl border border-border bg-card p-5">
+            <span className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              What we&rsquo;ve found so far
+            </span>
             {CHECKLIST_ITEMS.slice(0, checklistShown).map((item, index) => (
-              <div className={styles.checkItem} key={item.label} style={{ animationDelay: `${index * 20}ms` }}>
-                <span className={styles.checkDot}>
+              <div
+                key={item.label}
+                style={{ animationDelay: `${index * 20}ms` }}
+                className="flex animate-in items-center gap-2.5 fade-in zoom-in-95 py-2 duration-200"
+              >
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-moss text-white">
                   <Check size={14} />
                 </span>
-                <span className={styles.checkLabel}>{item.label}</span>
-                {item.sweep && <span className={styles.sweepPill}>SWEEP DETECTED</span>}
+                <span className="flex-1 text-sm text-foreground">{item.label}</span>
+                {item.sweep && (
+                  <span className="whitespace-nowrap rounded-full bg-vermillion px-2.5 py-0.5 text-[11px] font-semibold text-white">
+                    SWEEP DETECTED
+                  </span>
+                )}
               </div>
             ))}
           </div>
         </div>
 
-        <div className={styles.footer}>
+        <div className={cn('flex justify-end px-6 pb-6')}>
           <Button onClick={handleSkip}>See what we found →</Button>
         </div>
       </Card>

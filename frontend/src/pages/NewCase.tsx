@@ -1,13 +1,16 @@
 import { useEffect, useState } from 'react'
 import { ArrowLeft, Check } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
-import { Card, Chip, Input, PlainWords, Button } from '../components/ui'
+import { cn } from '@/lib/utils'
+import { Card } from '../components/ui/card'
+import { Input } from '../components/ui/input'
+import { Button } from '../components/ui/button'
+import { PlainWords } from '../components/ui/plain-words'
 import { api } from '../api'
 import { useCaseStore } from '../store/caseStore'
 import { useUIStore } from '../store/uiStore'
 import { ROUTES } from '../utils/constants'
 import type { Case } from '../types'
-import styles from './NewCase.module.css'
 
 /** Cryptocurrency options for the segmented chip picker — each carries the chain it implies. */
 const CRYPTO_OPTIONS = [
@@ -84,7 +87,7 @@ export default function NewCase() {
   }, [])
 
   if (!form || !seed) {
-    return <Card>Loading case intake…</Card>
+    return <Card className="p-6">Loading case intake…</Card>
   }
 
   function updateField<K extends keyof FormState>(key: K, value: FormState[K]) {
@@ -130,29 +133,37 @@ export default function NewCase() {
   }
 
   return (
-    <div className={styles.page}>
-      <Card className={styles.sections}>
-        <div className={styles.header}>
+    <div className="flex flex-col gap-6">
+      <Card className="flex flex-col gap-6 p-6">
+        <div className="flex items-center gap-3.5">
           <button
             type="button"
-            className={styles.backButton}
             aria-label="Back to dashboard"
             onClick={() => navigate(ROUTES.dashboard)}
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-border text-muted-foreground transition-colors hover:bg-muted"
           >
             <ArrowLeft size={18} />
           </button>
-          <div className={styles.headerText}>
-            <h2>New Case</h2>
-            <p>Pre-filled from the complaint already on file — every field stays editable.</p>
+          <div className="min-w-0 flex-1">
+            <h2 className="font-[family-name:var(--font-display)] text-xl font-bold text-foreground">New Case</h2>
+            <p className="mt-0.5 text-sm text-muted-foreground">
+              Pre-filled from the complaint already on file — every field stays editable.
+            </p>
           </div>
-          <button type="button" className={styles.fillDemoLink} onClick={handleFillDemoData}>
+          <button
+            type="button"
+            onClick={handleFillDemoData}
+            className="whitespace-nowrap text-sm font-semibold text-sky hover:underline"
+          >
             Fill demo data
           </button>
         </div>
 
-        <div className={styles.formGrid}>
-          <div className={styles.column}>
-            <span className={styles.columnHeading}>Who was defrauded?</span>
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+          <div className="flex flex-col gap-4.5">
+            <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              Who was defrauded?
+            </span>
 
             <Input
               label="Complainant name"
@@ -161,7 +172,7 @@ export default function NewCase() {
             />
             <Input
               label="NCRP acknowledgement number"
-              className="mono"
+              className="font-[family-name:var(--font-mono)]"
               value={form.ncrp}
               onChange={(e) => updateField('ncrp', e.target.value)}
             />
@@ -173,39 +184,49 @@ export default function NewCase() {
             <Input label="Contact" value={form.phone} onChange={(e) => updateField('phone', e.target.value)} />
           </div>
 
-          <div className={styles.column}>
-            <span className={styles.columnHeading}>What was taken?</span>
+          <div className="flex flex-col gap-4.5">
+            <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              What was taken?
+            </span>
 
-            <div className={styles.amountWrapper}>
-              <label className="label" htmlFor="amountINR">
+            <div className="flex w-full flex-col gap-1.5">
+              <label className="text-sm font-medium text-foreground" htmlFor="amountINR">
                 Amount lost (₹)
               </label>
-              <div className={styles.amountField}>
-                <span className={styles.amountCurrency}>₹</span>
+              <div className="flex items-center gap-1.5 rounded-xl border border-border bg-card px-4 py-2.5 focus-within:ring-2 focus-within:ring-ring">
+                <span className="font-[family-name:var(--font-mono)] text-sm text-muted-foreground">₹</span>
                 <input
                   id="amountINR"
-                  className={styles.amountInput}
                   inputMode="numeric"
                   value={amountFormatter.format(form.amountINR)}
                   onChange={(e) => handleAmountChange(e.target.value)}
+                  className="w-full border-none bg-transparent font-[family-name:var(--font-mono)] text-sm text-foreground outline-none"
                 />
               </div>
             </div>
 
-            <div className={styles.chipRow}>
-              <span className="label">Cryptocurrency</span>
-              <div className={styles.chips}>
-                {CRYPTO_OPTIONS.map((option) => (
-                  <Chip
-                    key={option.label}
-                    variant="segmented"
-                    selected={form.cryptoLabel === option.label}
-                    onClick={() => updateField('cryptoLabel', option.label)}
-                  >
-                    {form.cryptoLabel === option.label && <Check size={13} />}
-                    {option.label}
-                  </Chip>
-                ))}
+            <div className="flex flex-col gap-1.5">
+              <span className="text-sm font-medium text-foreground">Cryptocurrency</span>
+              <div className="flex flex-wrap gap-2.5">
+                {CRYPTO_OPTIONS.map((option) => {
+                  const selected = form.cryptoLabel === option.label
+                  return (
+                    <button
+                      key={option.label}
+                      type="button"
+                      onClick={() => updateField('cryptoLabel', option.label)}
+                      className={cn(
+                        'inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-sm font-semibold transition-colors',
+                        selected
+                          ? 'border-primary bg-primary/10 text-primary'
+                          : 'border-border bg-card text-muted-foreground hover:bg-muted',
+                      )}
+                    >
+                      {selected && <Check size={13} />}
+                      {option.label}
+                    </button>
+                  )
+                })}
               </div>
             </div>
 
@@ -215,15 +236,15 @@ export default function NewCase() {
               onChange={(e) => updateField('incidentAt', e.target.value)}
             />
 
-            <div className={styles.selectWrapper}>
-              <label className="label" htmlFor="fraudType">
+            <div className="flex w-full flex-col gap-1.5">
+              <label className="text-sm font-medium text-foreground" htmlFor="fraudType">
                 Fraud type
               </label>
               <select
                 id="fraudType"
-                className={styles.select}
                 value={form.fraudType}
                 onChange={(e) => updateField('fraudType', e.target.value)}
+                className="w-full rounded-xl border border-border bg-card px-4 py-2.5 text-sm text-foreground outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring"
               >
                 {FRAUD_TYPES.map((type) => (
                   <option key={type} value={type}>
@@ -235,21 +256,21 @@ export default function NewCase() {
           </div>
         </div>
 
-        <div className={styles.walletSection}>
-          <label className="label" htmlFor="suspectWallet">
+        <div className="flex flex-col gap-1.5">
+          <label className="text-sm font-medium text-foreground" htmlFor="suspectWallet">
             The wallet address the money was sent to
           </label>
-          <span className={styles.walletSubtitle}>This is the only technical input required.</span>
-          <div className={styles.walletWell}>
+          <span className="-mt-1 text-xs text-muted-foreground">This is the only technical input required.</span>
+          <div className="flex min-h-16 items-center gap-3 rounded-xl border border-border bg-card px-4.5 py-3 focus-within:ring-2 focus-within:ring-ring">
             <input
               id="suspectWallet"
-              className={styles.walletInput}
               value={form.suspectWallet}
               onChange={(e) => updateField('suspectWallet', e.target.value)}
               spellCheck={false}
+              className="min-w-0 flex-1 border-none bg-transparent font-[family-name:var(--font-mono)] text-base text-foreground outline-none"
             />
             {walletValid && (
-              <span className={styles.walletValid}>
+              <span className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap text-sm font-semibold text-moss">
                 <Check size={15} /> Valid {seed.chain} address
               </span>
             )}
@@ -260,8 +281,8 @@ export default function NewCase() {
           This is everything a police station already collects today. Nothing new is asked of the victim.
         </PlainWords>
 
-        <div className={styles.footerRow}>
-          <Button variant="primary" onClick={handleSubmit} disabled={submitting || !walletValid}>
+        <div className="flex justify-end">
+          <Button size="lg" onClick={handleSubmit} disabled={submitting || !walletValid}>
             {submitting ? 'Starting…' : 'Start tracing the money →'}
           </Button>
         </div>

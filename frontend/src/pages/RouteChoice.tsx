@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { Card, Button, PlainWords } from '../components/ui'
+import { Card } from '../components/ui/card'
+import { Button } from '../components/ui/button'
+import { PlainWords } from '../components/ui/plain-words'
 import { RouteCard } from '../components/route/RouteCard'
 import { api } from '../api'
 import { useCaseStore } from '../store/caseStore'
 import { useUIStore } from '../store/uiStore'
 import { ROUTES } from '../utils/constants'
-import styles from './RouteChoice.module.css'
 
 export default function RouteChoice() {
   const { id: caseId } = useParams<{ id: string }>()
@@ -46,19 +47,21 @@ export default function RouteChoice() {
   }
 
   if (!activeCase || !routeA || !routeB || !caseId) {
-    return <Card>Loading routes…</Card>
+    return <Card className="p-6">Loading routes…</Card>
   }
 
   const assetShort = activeCase.asset.split(' ')[0]
 
   return (
-    <div className={styles.page}>
-      <Card className={styles.headingCard}>
-        <span className={styles.heading}>The money took two different routes.</span>
-        <span className={styles.subheading}>Click either route to follow it.</span>
+    <div className="flex flex-col gap-6">
+      <Card className="flex flex-col gap-1 p-6">
+        <span className="font-[family-name:var(--font-display)] text-xl font-bold text-foreground">
+          The money took two different routes.
+        </span>
+        <span className="text-sm text-muted-foreground">Click either route to follow it.</span>
       </Card>
 
-      <div className={styles.cardsGrid}>
+      <div className="grid grid-cols-1 items-start gap-6 md:grid-cols-2">
         <RouteCard
           routeLabel="Route A"
           route={routeA}
@@ -88,8 +91,8 @@ export default function RouteChoice() {
         doesn&rsquo;t — we pick it up on the other side.
       </PlainWords>
 
-      <div className={styles.footerRow}>
-        <Button variant="primary" onClick={() => navigate(ROUTES.exchange(caseId))}>
+      <div className="flex justify-end">
+        <Button size="lg" onClick={() => navigate(ROUTES.exchange(caseId))}>
           Who cashed it out? →
         </Button>
       </div>
