@@ -25,14 +25,30 @@ _NATIVE_ETH_DECIMALS = 18
 class EvmChainClient:
     chain = "ethereum"
 
-    def __init__(self, api_key: str | None = None, http: AdaptiveHttpClient | None = None):
+    def __init__(self, api_key: str | None = None, http: AdaptiveHttpClient | None = None,
+                 asset_contract: str | None = None):
         self._api_key = api_key
         self._http = http or AdaptiveHttpClient()
+        # When set, filters `tokentx`-sourced results to only the token whose contract
+        # this is. This is the case's own declared asset resolved through
+        # app.chains.known_assets.resolve_asset_contract -- filtering by contract
+        # address (not the `tokenSymbol` string) is what actually resists a spoofed
+        # spam token claiming to be "USDT". None means no filter -- unchanged behavior.
+        # Never applies to native-ETH (`txlist`) records -- they have no contract at
+        # all and aren't the thing this filter is defending against.
+        self._asset_contract = asset_contract
 
     def get_transfers(self, address: str, since: datetime | None = None) -> list[Transfer]:
         token_records = self._fetch("tokentx", address)
         native_records = self._fetch("txlist", address)
-        transfers = [self._normalize(record) for record in token_records]
+        token_transfers = [self._normalize(record) for record in token_records]
+        if self._asset_contract is not None:
+            wanted = self._asset_contract.lower()
+            token_transfers = [
+                t for t in token_transfers
+                if str(t.raw.get("contractAddress", "")).lower() == wanted
+            ]
+        transfers = token_transfers
         transfers += [
             self._normalize_native(record)
             for record in native_records

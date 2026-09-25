@@ -24,6 +24,20 @@ EMPTY_RESULT = {"status": "1", "message": "OK", "result": []}
 NO_ACTIVITY_RESULT = {"status": "0", "message": "No transactions found", "result": []}
 REAL_ERROR_RESULT = {"status": "0", "message": "NOTOK", "result": "Max rate limit reached"}
 
+GENUINE_USDT_CONTRACT = "0xdAC17F958D2ee523a2206206994597C13D831ec7"
+SPAM_CONTRACT = "0xspam00000000000000000000000000000009"
+
+SPAM_TOKEN_TX = {
+    "hash": "0xspamtx001",
+    "from": "0xattacker00000000000000000000000000009",
+    "to": "0xscammer000000000000000000000000000002",
+    "value": "999000000",
+    "tokenSymbol": "USDT",
+    "tokenDecimal": "6",
+    "contractAddress": SPAM_CONTRACT,
+    "timeStamp": "1732000120",
+}
+
 NATIVE_TX = {
     "hash": "0xnative111",
     "from": "0xvictim0000000000000000000000000000001",
@@ -163,3 +177,74 @@ def test_failed_native_transaction_is_excluded():
     hashes = {t.tx_hash for t in transfers}
     assert "0xnative111" in hashes
     assert "0xnativefail" not in hashes
+
+
+def test_asset_contract_filter_drops_spoofed_symbol_wrong_contract():
+    """A spam token transfer sharing the same "USDT" symbol string as the fixture's
+    genuine transfers but a different `contractAddress` must be dropped when
+    `asset_contract` is set to the real contract; the two genuine transfers survive."""
+    tokentx_data = {
+        "status": "1",
+        "message": "OK",
+        "result": TOKENTX_FIXTURE + [SPAM_TOKEN_TX],
+    }
+    http = AdaptiveHttpClient(
+        transport=httpx.MockTransport(
+            lambda request: (
+                httpx.Response(200, json=tokentx_data)
+                if request.url.params.get("action") == "tokentx"
+                else httpx.Response(200, json=EMPTY_RESULT)
+            )
+        ),
+        min_interval_seconds=0.0,
+    )
+    client = EvmChainClient(api_key="test-key", http=http, asset_contract=GENUINE_USDT_CONTRACT)
+
+    transfers = client.get_transfers("0xscammer000000000000000000000000000002")
+
+    assert len(transfers) == 2
+    assert {t.tx_hash for t in transfers} == {"0xaaa111", "0xbbb222"}
+
+
+def test_asset_contract_filter_ignores_case_and_leaves_native_eth_alone():
+    """Etherscan may return `contractAddress` in either case -- the comparison must be
+    case-insensitive. Native ETH transfers (no `contractAddress` at all) must never be
+    dropped by this filter."""
+    tokentx_data = {
+        "status": "1",
+        "message": "OK",
+        "result": TOKENTX_FIXTURE + [SPAM_TOKEN_TX],
+    }
+    txlist_data = {"status": "1", "message": "OK", "result": [NATIVE_TX]}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        action = request.url.params.get("action")
+        if action == "tokentx":
+            return httpx.Response(200, json=tokentx_data)
+        return httpx.Response(200, json=txlist_data)
+
+    http = AdaptiveHttpClient(transport=httpx.MockTransport(handler), min_interval_seconds=0.0)
+    client = EvmChainClient(
+        api_key="test-key", http=http, asset_contract=GENUINE_USDT_CONTRACT.upper()
+    )
+
+    transfers = client.get_transfers("0xscammer000000000000000000000000000002")
+
+    hashes = {t.tx_hash for t in transfers}
+    assert hashes == {"0xaaa111", "0xbbb222", "0xnative111"}
+
+
+def test_no_asset_contract_filter_keeps_unfiltered_behavior():
+    """When `asset_contract` is None (not provided), the spam transfer is not filtered
+    out -- a regression guard for existing unfiltered callers."""
+    tokentx_data = {
+        "status": "1",
+        "message": "OK",
+        "result": TOKENTX_FIXTURE + [SPAM_TOKEN_TX],
+    }
+    client = make_client(tokentx_data=tokentx_data)
+
+    transfers = client.get_transfers("0xscammer000000000000000000000000000002")
+
+    hashes = {t.tx_hash for t in transfers}
+    assert hashes == {"0xaaa111", "0xbbb222", "0xspamtx001"}

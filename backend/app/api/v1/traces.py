@@ -41,7 +41,7 @@ def run_trace(case_id: str, db: Session = Depends(get_db)) -> TraceOut:
     if case is None:
         raise HTTPException(status_code=404, detail="case not found")
 
-    client = get_chain_client(case.chain)
+    client = get_chain_client(case.chain, case.asset)
     reported_amount = Decimal(str(case.amount_crypto))
     incident_at = case.incident_at if case.incident_at.tzinfo else case.incident_at.replace(tzinfo=timezone.utc)
 

@@ -13,9 +13,16 @@ MAX_PAGES = 10
 class TronChainClient:
     chain = "tron"
 
-    def __init__(self, api_key: str | None = None, http: AdaptiveHttpClient | None = None):
+    def __init__(self, api_key: str | None = None, http: AdaptiveHttpClient | None = None,
+                 asset_contract: str | None = None):
         self._api_key = api_key
         self._http = http or AdaptiveHttpClient()
+        # When set, filters results to only the token whose contract this is. This is
+        # the case's own declared asset resolved through
+        # app.chains.known_assets.resolve_asset_contract -- filtering by contract
+        # address (not the `symbol` string) is what actually resists a spoofed spam
+        # token claiming to be "USDT". None means no filter -- unchanged behavior.
+        self._asset_contract = asset_contract
 
     def get_transfers(self, address: str, since: datetime | None = None) -> list[Transfer]:
         headers = {"TRON-PRO-API-KEY": self._api_key} if self._api_key else None
@@ -49,6 +56,11 @@ class TronChainClient:
             if not fingerprint:
                 break
         transfers = [self._normalize(record) for record in records]
+        if self._asset_contract is not None:
+            transfers = [
+                t for t in transfers
+                if t.raw.get("token_info", {}).get("address") == self._asset_contract
+            ]
         if since is not None:
             transfers = [t for t in transfers if t.timestamp >= since]
         return sorted(transfers, key=lambda t: t.timestamp)

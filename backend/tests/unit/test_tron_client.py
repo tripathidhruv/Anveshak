@@ -4,6 +4,9 @@ import httpx
 from app.chains.http_client import AdaptiveHttpClient
 from app.chains.tron import TronChainClient
 
+GENUINE_USDT_CONTRACT = "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t"
+SPAM_CONTRACT = "TSpamTokenContractZZZZZZZZZZZZZZZZ"
+
 FIXTURE = json.loads((Path(__file__).parent.parent / "contract/fixtures/tron_trc20_sample.json").read_text())
 
 # Same two records as the fixture, but returned out of timestamp order (as
@@ -107,3 +110,55 @@ def test_pagination_loop_terminates_when_fingerprint_never_runs_out():
     from app.chains.tron import MAX_PAGES
     assert call_count["n"] == MAX_PAGES
     assert len(transfers) == MAX_PAGES
+
+
+def _make_spam_record(tx_id: str, ts_ms: int) -> dict:
+    """A spam/address-poisoning token that spoofs the "USDT" symbol string but is a
+    different contract entirely -- the case this filter exists to catch."""
+    return {
+        "transaction_id": tx_id,
+        "token_info": {"symbol": "USDT", "decimals": 6, "address": SPAM_CONTRACT},
+        "block_timestamp": ts_ms,
+        "from": "TAttackerWalletZZZZZZZZZZZZZZZZZZZ",
+        "to": "TScamWalletBBBBBBBBBBBBBBBBBBBBBBB",
+        "value": "999000000",
+    }
+
+
+def test_asset_contract_filter_drops_spoofed_symbol_wrong_contract():
+    """Positive + negative case together: a genuine-contract USDT transfer and a
+    spam-token transfer sharing the same "USDT" symbol string but a different
+    `token_info.address`. When `asset_contract` is set to the real contract, only the
+    genuine transfer survives."""
+    genuine = _make_trc20_record("genuine-1", 1732000000000)
+    spam = _make_spam_record("spam-1", 1732000010000)
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, json={"data": [genuine, spam], "success": True})
+
+    http = AdaptiveHttpClient(transport=httpx.MockTransport(handler), min_interval_seconds=0.0)
+    client = TronChainClient(http=http, asset_contract=GENUINE_USDT_CONTRACT)
+
+    transfers = client.get_transfers("TScamWalletBBBBBBBBBBBBBBBBBBBBBBB")
+
+    assert len(transfers) == 1
+    assert transfers[0].tx_hash == "genuine-1"
+    assert transfers[0].raw["token_info"]["address"] == GENUINE_USDT_CONTRACT
+
+
+def test_no_asset_contract_filter_keeps_unfiltered_behavior():
+    """When `asset_contract` is None (not provided), both the genuine and the spam
+    transfer survive -- a regression guard for existing unfiltered callers."""
+    genuine = _make_trc20_record("genuine-1", 1732000000000)
+    spam = _make_spam_record("spam-1", 1732000010000)
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, json={"data": [genuine, spam], "success": True})
+
+    http = AdaptiveHttpClient(transport=httpx.MockTransport(handler), min_interval_seconds=0.0)
+    client = TronChainClient(http=http)
+
+    transfers = client.get_transfers("TScamWalletBBBBBBBBBBBBBBBBBBBBBBB")
+
+    assert len(transfers) == 2
+    assert {t.tx_hash for t in transfers} == {"genuine-1", "spam-1"}
