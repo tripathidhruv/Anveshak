@@ -147,7 +147,7 @@ export default function Dashboard() {
         </Card>
 
         <Card className="relative flex flex-col items-start gap-2.5 overflow-hidden p-6">
-          <div className="absolute inset-x-0 top-0 h-1 bg-vermillion" />
+          <div className="absolute inset-x-0 top-0 h-1 bg-vermillion" aria-hidden="true" />
           <IconTile color="vermillion">
             <Megaphone size={20} />
           </IconTile>

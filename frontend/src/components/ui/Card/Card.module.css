@@ -1,4 +1,0 @@
-.card {
-  composes: raised from '../../../styles/surfaces.css';
-  padding: var(--card-padding, 24px);
-}
