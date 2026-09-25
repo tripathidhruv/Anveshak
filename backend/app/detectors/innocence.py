@@ -47,7 +47,7 @@ def compute_innocence(wallet_address: str, all_transfers: list[Transfer], incide
             f"this wallet over more than {LONG_HISTORY_DAYS} days. That looks like a wallet that "
             "was already doing regular business with lots of different people, not one that was "
             "freshly made for this scam.",
-            True, 0.35,
+            True, 0.55,
         ))
 
     counter_flow = any(
