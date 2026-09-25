@@ -1,0 +1,131 @@
+from datetime import datetime, timezone
+from decimal import Decimal
+from app.chains.base import Transfer
+from app.chains.http_client import AdaptiveHttpClient
+
+ESPLORA_BASE = "https://blockstream.info/api"
+SATS_PER_BTC = Decimal(10) ** 8
+
+class BitcoinChainClient:
+    chain = "bitcoin"
+
+    def __init__(self, http: AdaptiveHttpClient | None = None):
+        self._http = http or AdaptiveHttpClient()
+
+    def get_transfers(self, address: str, since: datetime | None = None) -> list[Transfer]:
+        """Fetch and normalize UTXO transactions from Esplora.
+
+        Args:
+            address: Bitcoin address to fetch transfers for.
+            since: Optional minimum timestamp filter (applied post-fetch).
+
+        Returns:
+            List of Transfer objects, sorted ascending by timestamp.
+        """
+        response = self._http.get(f"{ESPLORA_BASE}/address/{address}/txs")
+        response.raise_for_status()
+        transfers: list[Transfer] = []
+        for tx in response.json():
+            transfers.extend(self._normalize_tx(tx, address))
+        if since is not None:
+            transfers = [t for t in transfers if t.timestamp >= since]
+        return sorted(transfers, key=lambda t: t.timestamp)
+
+    @staticmethod
+    def _normalize_tx(tx: dict, address: str) -> list[Transfer]:
+        """Normalize a single Esplora transaction into zero or more Transfer objects.
+
+        UTXO normalization (heuristic, with limitations documented for trace attribution):
+
+        1. If `address` appears in the transaction inputs (via prevout addresses):
+           - This is an OUTGOING transfer from the address.
+           - Emit one Transfer per output address that is NOT also an input address.
+           - Rationale: in a change-producing tx, the sender often routes change back to
+             themselves; skipping these self-change outputs prevents double-counting.
+           - Edge case: if a sender deliberately sends to an address they also control
+             elsewhere in the same tx, this heuristic will skip it. Document in limitations.
+
+        2. If `address` appears only in the transaction outputs (not inputs):
+           - This is an INCOMING transfer to the address.
+           - Emit one Transfer per distinct input address (de-duplicated).
+           - Rationale: multi-input txs (common in mixing) send to a single recipient via
+             multiple sources. Each source is a potential trace point, but we emit once per
+             unique input to avoid duplicating the received amount.
+           - Set raw["multi_input"] = True if there are multiple distinct input addresses;
+             the detector layer uses this to treat multi-input txs cautiously (they may be
+             mixing transactions where the causal relationship is weaker).
+
+        3. Unconfirmed txs are skipped (return empty list).
+
+        Args:
+            tx: Esplora transaction record (with prevout inline on all inputs).
+            address: The address we're filtering for.
+
+        Returns:
+            List of Transfer objects (0, 1, or more).
+
+        Raises:
+            ValueError: If the transaction record is malformed (missing required fields,
+                       wrong types, etc.), with the tx id included in the message.
+        """
+        tx_id = tx.get("txid", "<unknown>")
+        try:
+            # Only emit transfers from confirmed transactions.
+            if not tx.get("status", {}).get("confirmed"):
+                return []
+
+            ts = datetime.fromtimestamp(tx["status"]["block_time"], tz=timezone.utc)
+
+            # Extract input addresses from prevout records (Esplora includes these inline).
+            vin_addresses = [v["prevout"]["scriptpubkey_address"]
+                            for v in tx.get("vin", []) if v.get("prevout")]
+            vout = tx.get("vout", [])
+
+            # Flag multi-input txs for the detector layer: if there are multiple distinct
+            # input addresses, set multi_input=True so mixing/consolidation logic can
+            # apply extra caution when attributing funds.
+            multi_input = len(set(vin_addresses)) > 1
+            out: list[Transfer] = []
+
+            if address in vin_addresses:
+                # OUTGOING: address is a sender. Emit one Transfer per output address
+                # that is NOT also an input address (skip self-change).
+                for v in vout:
+                    to_addr = v.get("scriptpubkey_address")
+                    if not to_addr or to_addr in vin_addresses:
+                        # Skip outputs to addresses that also appear as inputs
+                        # (these are likely change outputs going back to the sender).
+                        continue
+                    out.append(Transfer(
+                        tx_hash=tx["txid"],
+                        chain="bitcoin",
+                        from_address=address,
+                        to_address=to_addr,
+                        amount=Decimal(v["value"]) / SATS_PER_BTC,
+                        asset="BTC",
+                        timestamp=ts,
+                        fee=Decimal("0"),
+                        raw={**tx, "multi_input": multi_input},
+                    ))
+            elif any(v.get("scriptpubkey_address") == address for v in vout):
+                # INCOMING: address is a recipient (appears only in outputs).
+                # Emit one Transfer per distinct input address.
+                recv_value = next(v["value"] for v in vout if v.get("scriptpubkey_address") == address)
+                # De-duplicate input addresses while preserving order (dict.fromkeys).
+                for from_addr in dict.fromkeys(vin_addresses):
+                    out.append(Transfer(
+                        tx_hash=tx["txid"],
+                        chain="bitcoin",
+                        from_address=from_addr,
+                        to_address=address,
+                        amount=Decimal(recv_value) / SATS_PER_BTC,
+                        asset="BTC",
+                        timestamp=ts,
+                        fee=Decimal("0"),
+                        raw={**tx, "multi_input": multi_input},
+                    ))
+            return out
+        except (KeyError, TypeError, AttributeError) as exc:
+            raise ValueError(
+                f"Malformed Esplora transaction record (txid={tx_id}): {exc!r}"
+            ) from exc
