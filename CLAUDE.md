@@ -57,8 +57,9 @@ See `docs/PROGRESS.md` for the work log and `docs/TASKS.md` for what's open.
 ## Design system — do not deviate
 Neumorphic soft UI. Base `#E0E5EC`, light shadow `#FFFFFF`,
 dark shadow `#A3B1C6`. Accents (same as the slide deck):
-indigo `#1E3A5C` · vermillion `#B93E28` · teal `#0E6E6B` ·
-violet `#6A4C93` · moss `#4C7A3F` · gold `#B8912F` · sky `#2F7DBF`.
+indigo `#4338CA` · vermillion `#DC2626` · teal `#0D9488` ·
+violet `#7C3AED` · moss `#16A34A` · gold `#D97706` · sky `#2563EB`.
+(Brightened 2026-09-25 from an earlier, more muted set — same semantics, more vivid tones.)
 Fonts: Outfit (display) · Inter (body) · JetBrains Mono (data).
 
 **Colour semantics are fixed:** vermillion = criminal path / high risk.

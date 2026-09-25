@@ -15,7 +15,7 @@ export function LogoMark({ size = 40 }: { size?: number }) {
       role="img"
       aria-label="KAIZEN logo"
     >
-      <rect x="0" y="0" width="100" height="100" rx="22" fill="#1E3A5C" />
+      <rect x="0" y="0" width="100" height="100" rx="22" fill="#4338CA" />
       {/* K — vertical stem with two arms fanning out from its mid-point (mirrored across y=50) */}
       <rect x="8" y="8" width="14" height="84" rx="7" fill="#fff" />
       <path d="M22 43 L52 8 H66 L36 50 Z" fill="#fff" />
