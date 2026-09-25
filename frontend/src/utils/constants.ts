@@ -9,6 +9,11 @@ export const ROUTES = {
   evidence: (id: string) => `/case/${id}/evidence`,
   closed: (id: string) => `/case/${id}/closed`,
   campaign: (id: string) => `/campaign/${id}`,
+  cases: '/cases',
+  trace: '/trace',
+  campaigns: '/campaigns',
+  reports: '/reports',
+  exchanges: '/exchanges',
 } as const
 
 export interface RailStep {
