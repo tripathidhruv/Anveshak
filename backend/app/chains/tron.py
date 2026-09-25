@@ -28,16 +28,25 @@ class TronChainClient:
 
     @staticmethod
     def _normalize(record: dict) -> Transfer:
-        decimals = record["token_info"].get("decimals", 6)
-        symbol = record["token_info"].get("symbol", "UNKNOWN")
-        return Transfer(
-            tx_hash=record["transaction_id"],
-            chain="tron",
-            from_address=record["from"],
-            to_address=record["to"],
-            amount=Decimal(record["value"]) / (Decimal(10) ** decimals),
-            asset=f"{symbol}-TRC20",
-            timestamp=datetime.fromtimestamp(record["block_timestamp"] / 1000, tz=timezone.utc),
-            fee=Decimal("0"),
-            raw=record,
-        )
+        tx_id = record.get("transaction_id", "<unknown>")
+        try:
+            # TronGrid doesn't always echo decimals; USDT-TRC20 (this adapter's
+            # primary target asset) is always 6 decimals, so that's a safe default
+            # even though it's not universally true for every TRC-20 token.
+            decimals = record["token_info"].get("decimals", 6)
+            symbol = record["token_info"].get("symbol", "UNKNOWN")
+            return Transfer(
+                tx_hash=record["transaction_id"],
+                chain="tron",
+                from_address=record["from"],
+                to_address=record["to"],
+                amount=Decimal(record["value"]) / (Decimal(10) ** decimals),
+                asset=f"{symbol}-TRC20",
+                timestamp=datetime.fromtimestamp(record["block_timestamp"] / 1000, tz=timezone.utc),
+                fee=Decimal("0"),
+                raw=record,
+            )
+        except (KeyError, TypeError, AttributeError) as exc:
+            raise ValueError(
+                f"Malformed TronGrid TRC-20 record (transaction_id={tx_id}): {exc!r}"
+            ) from exc
