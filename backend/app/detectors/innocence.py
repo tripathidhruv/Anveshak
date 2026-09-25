@@ -20,13 +20,14 @@ class InnocenceResult:
     factors: list[InnocenceFactor]
 
 def compute_innocence(wallet_address: str, all_transfers: list[Transfer], incident_at: datetime,
-                       victim_amount: Decimal) -> InnocenceResult:
+                       victim_amount: Decimal, asset: str) -> InnocenceResult:
     """The exculpatory counterpart to the risk score. Every KAIZEN risk factor accuses;
     this is the only check that can say 'not this one' -- same gating logic the deposit
     detector needs anyway (distinct payers, counter-flow, known-contract checks), surfaced
     as a first-class output instead of buried as an internal guard. Every wallet gets both
-    a risk score and an innocence score; when innocence is high the notice-drafting flow
-    refuses to fire (wired in the API layer, Task 11).
+    a risk score and an innocence score; a high innocence score is meant to eventually gate
+    the notice-drafting flow (not yet built anywhere in this backend -- deferred, see
+    docs/TASKS.md).
 
     Every InnocenceFactor.description below is written in plain English a non-technical
     reader can follow -- no engineering jargon like 'counterparties', 'commingled', or
@@ -68,7 +69,7 @@ def compute_innocence(wallet_address: str, all_transfers: list[Transfer], incide
     if total_throughput > 0 and (victim_amount / total_throughput) < Decimal(str(NEGLIGIBLE_FRACTION_THRESHOLD)):
         factors.append(InnocenceFactor(
             "negligible_fraction_of_throughput",
-            f"The victim's {victim_amount} is less than {NEGLIGIBLE_FRACTION_THRESHOLD:.0%} of "
+            f"The victim's {victim_amount} {asset} is less than {NEGLIGIBLE_FRACTION_THRESHOLD:.0%} of "
             "all the money that has ever come into this wallet. In other words, the victim's "
             "money is just mixed in with a lot of other people's money, not money that was "
             "specifically aimed at this wallet.",

@@ -15,7 +15,8 @@ def test_high_innocence_for_long_history_p2p_merchant():
     # high innocence" bar by itself. See task-8-report.md for the writeup.
     incident = datetime(2026, 1, 1, tzinfo=timezone.utc)
     long_history = [mk(incident - timedelta(days=400 - i), f"payer{i}", "merchant", 20) for i in range(50)]
-    result = compute_innocence("merchant", long_history, incident_at=incident, victim_amount=Decimal("150"))
+    result = compute_innocence("merchant", long_history, incident_at=incident, victim_amount=Decimal("150"),
+                                asset="USDT-TRC20")
     assert result.innocence_score > 0.5
     assert any(
         f.check == "long_history_many_counterparties" and f.supports_innocence
@@ -25,7 +26,8 @@ def test_high_innocence_for_long_history_p2p_merchant():
 def test_low_innocence_for_fresh_wallet_with_one_counterparty():
     incident = datetime(2026, 1, 1, tzinfo=timezone.utc)
     single = [mk(incident, "victim", "burner", 150)]
-    result = compute_innocence("burner", single, incident_at=incident, victim_amount=Decimal("150"))
+    result = compute_innocence("burner", single, incident_at=incident, victim_amount=Decimal("150"),
+                                asset="USDT-TRC20")
     assert result.innocence_score < 0.3
 
 def test_counter_flow_back_to_payer_raises_innocence():
@@ -34,15 +36,29 @@ def test_counter_flow_back_to_payer_raises_innocence():
         mk(incident, "victim", "wallet", 150),
         mk(incident + timedelta(minutes=5), "wallet", "victim", 150),  # trade, money came back
     ]
-    result = compute_innocence("wallet", transfers, incident_at=incident, victim_amount=Decimal("150"))
+    result = compute_innocence("wallet", transfers, incident_at=incident, victim_amount=Decimal("150"),
+                                asset="USDT-TRC20")
     assert any(f.check == "counter_flow_to_payer" and f.supports_innocence for f in result.factors)
 
 def test_negligible_fraction_of_throughput_supports_innocence():
     incident = datetime(2026, 1, 1, tzinfo=timezone.utc)
     big_flow = [mk(incident - timedelta(days=i), f"p{i}", "hub", 10000) for i in range(30)]
     small_victim_tx = [mk(incident, "victim", "hub", 150)]
-    result = compute_innocence("hub", big_flow + small_victim_tx, incident_at=incident, victim_amount=Decimal("150"))
+    result = compute_innocence("hub", big_flow + small_victim_tx, incident_at=incident, victim_amount=Decimal("150"),
+                                asset="USDT-TRC20")
     assert any(f.check == "negligible_fraction_of_throughput" and f.supports_innocence for f in result.factors)
+
+def test_negligible_fraction_of_throughput_sentence_includes_asset_unit():
+    # F11: {victim_amount} used to print as a bare, unit-less Decimal ("The victim's 150 is
+    # less than 5%..."), meaningless to a non-technical reader. The sentence must now name
+    # the asset so the number has a unit.
+    incident = datetime(2026, 1, 1, tzinfo=timezone.utc)
+    big_flow = [mk(incident - timedelta(days=i), f"p{i}", "hub", 10000) for i in range(30)]
+    small_victim_tx = [mk(incident, "victim", "hub", 150)]
+    result = compute_innocence("hub", big_flow + small_victim_tx, incident_at=incident, victim_amount=Decimal("150"),
+                                asset="USDT-TRC20")
+    factor = next(f for f in result.factors if f.check == "negligible_fraction_of_throughput")
+    assert "USDT-TRC20" in factor.description
 
 # Plain-English requirement: every InnocenceFactor.description must read like something a
 # 12-year-old could follow, with no leftover engineering jargon (this is the task's explicit
@@ -65,24 +81,27 @@ def test_descriptions_are_plain_english_across_all_scenarios():
     # triggers long_history_many_counterparties (True) -- and, since all activity is >1 day
     # before the incident, no_pre_incident_history does NOT fire here.
     long_history = [mk(incident - timedelta(days=400 - i), f"payer{i}", "merchant", 20) for i in range(50)]
-    scenarios.append(compute_innocence("merchant", long_history, incident_at=incident, victim_amount=Decimal("150")))
+    scenarios.append(compute_innocence("merchant", long_history, incident_at=incident, victim_amount=Decimal("150"),
+                                        asset="USDT-TRC20"))
 
     # triggers no_pre_incident_history (False) -- single fresh transfer, no prior activity.
     single = [mk(incident, "victim", "burner", 150)]
-    scenarios.append(compute_innocence("burner", single, incident_at=incident, victim_amount=Decimal("150")))
+    scenarios.append(compute_innocence("burner", single, incident_at=incident, victim_amount=Decimal("150"),
+                                        asset="USDT-TRC20"))
 
     # triggers counter_flow_to_payer (True).
     counter_flow = [
         mk(incident, "victim", "wallet", 150),
         mk(incident + timedelta(minutes=5), "wallet", "victim", 150),
     ]
-    scenarios.append(compute_innocence("wallet", counter_flow, incident_at=incident, victim_amount=Decimal("150")))
+    scenarios.append(compute_innocence("wallet", counter_flow, incident_at=incident, victim_amount=Decimal("150"),
+                                        asset="USDT-TRC20"))
 
     # triggers negligible_fraction_of_throughput (True).
     big_flow = [mk(incident - timedelta(days=i), f"p{i}", "hub", 10000) for i in range(30)]
     small_victim_tx = [mk(incident, "victim", "hub", 150)]
     scenarios.append(compute_innocence("hub", big_flow + small_victim_tx, incident_at=incident,
-                                        victim_amount=Decimal("150")))
+                                        victim_amount=Decimal("150"), asset="USDT-TRC20"))
 
     all_factors = [f for result in scenarios for f in result.factors]
     assert len(all_factors) >= 4, "expected every scenario to produce at least one factor"

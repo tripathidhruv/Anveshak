@@ -444,3 +444,65 @@ def test_unreported_victims_excludes_every_wallet_already_in_the_trace_path():
     payer_addresses = {v["payerAddress"] for v in body["unreportedVictims"]}
     assert payer_addresses == {THIRDPARTY}
     assert MIDDLE not in payer_addresses
+
+
+# ---------------------------------------------------------------------------
+# Task F11 (I10 partial + I11): HopOut.role / HopOut.flag must be plain English, not the raw
+# internal "suspect"/"intermediate" role literals or stop_reason codes
+# ("no_outgoing_activity", "no_further_transfers", "hop_cap_reached", "api_read_failure").
+# `stopReason` is a separate schema field and intentionally keeps the raw code.
+# ---------------------------------------------------------------------------
+
+RAW_ROLE_CODES = {"suspect", "intermediate"}
+RAW_STOP_REASON_CODES = {
+    "no_outgoing_activity", "no_further_transfers", "hop_cap_reached", "api_read_failure",
+}
+
+# Same pattern as test_deposit_gate.py / test_innocence.py's JARGON_WORDS + assert_no_jargon.
+JARGON_WORDS = [
+    "hop", "gate", "taint", "sweep", "fifo", "distinct payers", "causal", "stop reason",
+    "vetted", "predecessor",
+]
+
+def assert_no_jargon(text: str):
+    lowered = text.lower()
+    for word in JARGON_WORDS:
+        assert word not in lowered, f"jargon word '{word}' found in: {text}"
+
+def test_hop_role_and_flag_are_plain_english_not_raw_codes():
+    case_id = _make_case()
+    with patch("app.api.v1.traces.get_chain_client", return_value=FakeChainClient()), \
+         patch("app.api.v1.traces.lookup_label", return_value=VETTED_LABEL):
+        response = client.post(f"/api/v1/cases/{case_id}/trace")
+
+    assert response.status_code == 200
+    body = response.json()
+    hops = body["hops"]
+    assert len(hops) >= 1
+
+    for hop in hops:
+        # role/flag must never be the raw internal codes verbatim.
+        assert hop["role"] not in RAW_ROLE_CODES
+        assert hop["role"], "role must not be empty"
+        assert_no_jargon(hop["role"])
+        if hop["flag"] is not None:
+            assert hop["flag"] not in RAW_STOP_REASON_CODES
+            assert_no_jargon(hop["flag"])
+        # stopReason is the separate, still-raw machine-readable field -- untouched by this fix.
+        if hop["stopReason"] is not None:
+            assert hop["stopReason"] in RAW_STOP_REASON_CODES
+
+    # The suspect's own hop (n == 0) gets the plain-English "suspect" role text.
+    suspect_hop = next(h for h in hops if h["n"] == 0)
+    assert suspect_hop["role"] == "Suspect's wallet"
+
+    # At least one non-suspect hop exists and carries the plain-English "intermediate" role.
+    other_hops = [h for h in hops if h["n"] != 0]
+    assert other_hops
+    assert all(h["role"] == "Wallet the money passed through" for h in other_hops)
+
+    # The terminal hop (COLD, in this fixture) has no further outgoing activity, so its flag
+    # must be the plain-English translation of "no_outgoing_activity", not the code itself.
+    flagged = [h for h in hops if h["flag"] is not None]
+    assert flagged, "expected at least one hop to carry a plain-English stop flag"
+    assert all(h["flag"] == "This wallet never sent this money anywhere else" for h in flagged)

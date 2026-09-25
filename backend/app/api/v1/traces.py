@@ -20,6 +20,29 @@ from app.schemas import (
 
 router = APIRouter(prefix="/api/v1/cases", tags=["traces"])
 
+# Plain-English mappings for HopOut.role / HopOut.flag (Task F11, I10/I11): the raw
+# `stop_reason` codes and `"suspect"`/`"intermediate"` role literals are internal signals,
+# not something a non-technical reader (or a judge with zero crypto background, per
+# CLAUDE.md rule 3) should see verbatim. `stopReason` (the separate schema field) keeps the
+# raw code for anything downstream that still wants it as a machine-readable signal (see
+# test_traces_api.py's `stopReason is None` check) -- only `flag` needs to become
+# human-readable. This intentionally does NOT introduce per-hop "this is the exchange" /
+# "this hop swept the money" detection to match the frontend mock data's richer flag
+# vocabulary (`'EXCHANGE'`, `'SWEPT'`, `'BRIDGE IN'`) -- that is separate, not-yet-built
+# per-hop attribution work (see docs/TASKS.md), and forcing a fake match here would be
+# inventing data, not translating it.
+_ROLE_PLAIN_ENGLISH = {
+    "suspect": "Suspect's wallet",
+    "intermediate": "Wallet the money passed through",
+}
+
+_STOP_REASON_PLAIN_ENGLISH = {
+    "no_outgoing_activity": "This wallet never sent this money anywhere else",
+    "no_further_transfers": "This wallet has not moved this money any further yet",
+    "hop_cap_reached": "We stopped following the money here to keep the search from going too deep",
+    "api_read_failure": "We could not check this wallet's history right now",
+}
+
 
 def _verified_predecessor(hops: list[TraceHop], terminal: TraceHop) -> str | None:
     """Cross-checks the terminal hop's recorded funding transfer against the trace's own
@@ -49,9 +72,10 @@ def run_trace(case_id: str, db: Session = Depends(get_db)) -> TraceOut:
                     start_time=incident_at)
 
     hops_out = [
-        HopOut(n=h.hop_index, addr=h.wallet_address, role="suspect" if h.hop_index == 0 else "intermediate",
+        HopOut(n=h.hop_index, addr=h.wallet_address,
+               role=_ROLE_PLAIN_ENGLISH["suspect" if h.hop_index == 0 else "intermediate"],
                amt=float(h.taint), at=(h.funding_transfer.timestamp if h.funding_transfer else incident_at),
-               flag=h.stop_reason, chain=h.chain, stopReason=h.stop_reason)
+               flag=_STOP_REASON_PLAIN_ENGLISH.get(h.stop_reason), chain=h.chain, stopReason=h.stop_reason)
         for h in result.hops
     ]
 
@@ -200,7 +224,8 @@ def run_trace(case_id: str, db: Session = Depends(get_db)) -> TraceOut:
     except Exception:
         suspect_history = []
     innocence = compute_innocence(case.suspect_wallet, suspect_history,
-                                   incident_at=incident_at, victim_amount=reported_amount)
+                                   incident_at=incident_at, victim_amount=reported_amount,
+                                   asset=case.asset)
     innocence_out = InnocenceOut(
         innocenceScore=innocence.innocence_score,
         factors=[InnocenceFactorOut(check=f.check, description=f.description,
