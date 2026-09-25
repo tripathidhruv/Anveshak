@@ -109,7 +109,17 @@ the reported amount.
 
 ---
 
-## Task F3: attribution must not name an exchange for a wallet holding none of the victim's money, and the sweep check must be reachable for a real deposit address (C2 + C3 + I9)
+## Task F3: attribution must not name an exchange for a wallet holding none of the victim's money, and the sweep check must be reachable for a real deposit address (C2 + C3 + I9 + I1 + I6, merged)
+
+**Merge note (added when F3 was actually dispatched):** F4 (I1 — guard chain-API refetch
+failures) and F5 (I6 — exclude every trace-path wallet from unreported-victims, not just the
+suspect) are absorbed into this task rather than run as separate tasks. All three land in the
+exact same ~50-line block of `traces.py` that this task already fully rewrites (the per-hop
+attribution loop this task introduces makes multiple `get_transfers` calls, one per candidate
+— exactly where I1's guarding needs to apply — and the same loop already has every wallet in
+`result.hops` in scope, which is exactly what I6's fix needs). Doing them as 3 separate serial
+passes over the same lines would be pure waste. F4 and F5 below are marked absorbed; their
+fixes are folded into this task's brief.
 
 **Files:** `backend/app/api/v1/traces.py`, `backend/app/detectors/sweep.py`, their tests.
 
@@ -191,7 +201,7 @@ being fixed here — say so explicitly in the report if that happens.
 
 ---
 
-## Task F4: don't 500 when a chain API read fails mid-attribution (I1)
+## Task F4 (ABSORBED INTO F3 — see F3's merge note): don't 500 when a chain API read fails mid-attribution (I1)
 
 **Files:** `backend/app/api/v1/traces.py`, its tests.
 
@@ -220,7 +230,7 @@ in each case, not a 500.
 
 ---
 
-## Task F5: unreported-victim enumeration must not list the criminal's own wallets as victims (I6)
+## Task F5 (ABSORBED INTO F3 — see F3's merge note): unreported-victim enumeration must not list the criminal's own wallets as victims (I6)
 
 **Files:** `backend/app/api/v1/traces.py`, its tests.
 
