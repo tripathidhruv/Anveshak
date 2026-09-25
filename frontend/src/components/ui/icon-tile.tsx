@@ -4,16 +4,16 @@ import { cn } from '@/lib/utils'
 
 /** The colored circular icon tile used on KPI cards, evidence rows, etc. -- matches the
  * reference dashboard's "Digital Assets / Pending Staking / Funds Available" icon circles. */
-const iconTileVariants = cva('flex shrink-0 items-center justify-center rounded-full', {
+const iconTileVariants = cva('flex shrink-0 items-center justify-center rounded-full shadow-sm', {
   variants: {
     color: {
-      vermillion: 'bg-vermillion/12 text-vermillion',
-      gold: 'bg-gold/12 text-gold',
-      teal: 'bg-teal/12 text-teal',
-      violet: 'bg-violet/12 text-violet',
-      moss: 'bg-moss/12 text-moss',
-      sky: 'bg-sky/12 text-sky',
-      primary: 'bg-primary/10 text-primary',
+      vermillion: 'bg-vermillion text-white',
+      gold: 'bg-gold text-white',
+      teal: 'bg-teal text-white',
+      violet: 'bg-violet text-white',
+      moss: 'bg-moss text-white',
+      sky: 'bg-sky text-white',
+      primary: 'bg-primary text-white',
     },
     size: {
       sm: 'h-9 w-9',
