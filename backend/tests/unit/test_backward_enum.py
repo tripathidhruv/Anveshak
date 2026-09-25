@@ -29,7 +29,15 @@ def test_finds_payers_not_in_known_victim_set():
 
 def test_excludes_the_hub_wallet_itself_and_known_victims():
     t0 = datetime(2026, 1, 1, tzinfo=timezone.utc)
-    transfers = [mk("known_victim", "hub", 150, t0)]
+    transfers = [
+        mk("known_victim", "hub", 150, t0),
+        mk("hub", "hub", 999, t0 + timedelta(minutes=1)),  # hub paying itself: self-loop
+    ]
     client = FakeChainClient(transfers)
+    result = enumerate_unreported_victims(client, "hub", known_victim_addresses={"known_victim"})
+    assert result == []
+
+def test_empty_transfers_returns_empty_list():
+    client = FakeChainClient([])
     result = enumerate_unreported_victims(client, "hub", known_victim_addresses={"known_victim"})
     assert result == []
