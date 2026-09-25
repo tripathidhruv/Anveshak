@@ -29,14 +29,14 @@ Read `docs/PROGRESS.md` top entry for full narrative.
 - [x] Task 8: exculpatory/innocence scorer @Claude
 - [x] Task 9: backward unreported-victim enumeration @Claude
 - [x] Task 10: cross-chain bridge-hop linker (timing + amount correlation) @Claude
-- [~] Task 11: API layer — cases/traces endpoints wiring everything together @Claude
+- [x] Task 11: API layer — cases/traces endpoints wiring everything together @Claude
 - [ ] Task 12: frontend `httpApi` wiring against the real endpoints
 
 Deferred past this plan, unchanged from the approved spec: VASP flagged-wallet broadcast feed, Tether freeze check + golden hour, OFAC/sanctions screening, reproducible evidence hashing + hash-chained audit log, calibration pass, legal templates + SAHYOG payload, ML risk scoring.
 
-**New standing rule (2026-09-25):** every backend-generated string meant for a human reader (risk-score reasons, attribution reasoning, innocence factors, flagged-exchange explanations) must be plain, non-technical English a 12-year-old could follow — extends CLAUDE.md rule 3 explicitly to backend prose, not just frontend copy. Task 7's `reasoning`/`limitations` fields follow this; carry it into Task 8 (innocence factors) and any later task that generates explanatory text.
+**New standing rule (2026-09-25):** every backend-generated string meant for a human reader (risk-score reasons, attribution reasoning, innocence factors, flagged-exchange explanations) must be plain, non-technical English a 12-year-old could follow — extends CLAUDE.md rule 3 explicitly to backend prose, not just frontend copy. Task 7's `reasoning`/`limitations` fields follow this; carried into Tasks 8 and 11.
 
-**Flagged for Task 11:** Task 7's `detect_sweep()` is not yet consumed anywhere — the spec's correctness-guard checklist implies deposit-address attribution should require "N-payers-and-sweep," but `evaluate_deposit_gate()` currently gates on distinct-payer count without checking the sweep signal. Task 11 (API layer) must wire `detect_sweep` into the attribution decision, or this checklist item goes unenforced.
+**Resolved in Task 11:** `detect_sweep()` is now consumed and AND-combined with the payer/label gate (`final_gate_passed = gate.gate_passed and sweep_signal.is_sweep`) in `backend/app/api/v1/traces.py`. Task 11's review also caught and fixed 2 further plan-mandated bugs beyond the 3 pre-flight corrections: the "immediate predecessor" check was a tautology (fixed via an independent `_verified_predecessor` cross-check against the trace's own hop list), and the innocence scorer was fed only forward-followed transfers, so it could never see money sent *to* the suspect wallet (fixed by fetching the suspect wallet's own full history separately).
 
 ## P0.5 — Sidebar registry screens (`docs/plans/stub-screens-plan.md`) — DONE
 - [x] Cases / Trace / Campaigns / Reports / Exchanges — all 5 built as real screens, reviewed, fixed @Claude
