@@ -204,6 +204,100 @@ def test_malformed_record_raises_informative_error():
         assert "bad-tx-2" in error_msg, f"Error should mention tx id, got: {error_msg}"
         assert "Malformed" in error_msg, f"Error should say 'Malformed', got: {error_msg}"
 
+def _make_confirmed_tx(txid: str, block_time: int, from_addr: str, to_addr: str, value: int) -> dict:
+    return {
+        "txid": txid,
+        "status": {"confirmed": True, "block_time": block_time},
+        "vin": [{"prevout": {"scriptpubkey_address": from_addr, "value": value + 1000}}],
+        "vout": [{"scriptpubkey_address": to_addr, "value": value}],
+    }
+
+def test_paginates_across_multiple_pages_via_last_seen_txid():
+    """A first page that is exactly a full page (25 confirmed txs) must trigger a
+    follow-up request to /txs/chain/:last_seen_txid using the oldest confirmed
+    txid on that page, and the two pages' transfers must be merged."""
+    address = "bc1qscammer000000000000000000000000002"
+    page1 = [
+        _make_confirmed_tx(f"page1-tx-{i}", 1732100000 - i, "bc1qvictim0000000000000000000000000001", address, 1000 * (i + 1))
+        for i in range(25)
+    ]
+    page2 = [_make_confirmed_tx("page2-tx-0", 1732000000, "bc1qvictim0000000000000000000000000009", address, 5000)]
+    requests_seen: list[httpx.Request] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        requests_seen.append(request)
+        if "/txs/chain/" in request.url.path:
+            assert request.url.path.endswith("page1-tx-24")
+            return httpx.Response(200, json=page2)
+        return httpx.Response(200, json=page1)
+
+    http = AdaptiveHttpClient(transport=httpx.MockTransport(handler), min_interval_seconds=0.0)
+    client = BitcoinChainClient(http=http)
+
+    transfers = client.get_transfers(address)
+
+    assert len(requests_seen) == 2
+    incoming = [t for t in transfers if t.to_address == address]
+    assert len(incoming) == 26
+    assert {t.tx_hash for t in incoming} == {f"page1-tx-{i}" for i in range(25)} | {"page2-tx-0"}
+    # Merged result must still be sorted ascending by timestamp.
+    assert transfers[0].tx_hash == "page2-tx-0"
+    assert transfers[-1].tx_hash == "page1-tx-0"
+
+def test_pagination_stops_when_page_is_not_full():
+    """A page with fewer than CONFIRMED_PAGE_SIZE confirmed txs means we've
+    reached the oldest history — no further /chain requests should follow."""
+    address = "bc1qscammer000000000000000000000000002"
+    page1 = [
+        _make_confirmed_tx(f"page1-tx-{i}", 1732100000 - i, "bc1qvictim0000000000000000000000000001", address, 1000 * (i + 1))
+        for i in range(25)
+    ]
+    page2 = [_make_confirmed_tx("page2-tx-0", 1732000000, "bc1qvictim0000000000000000000000000009", address, 5000)]
+    # Only 1 confirmed tx on page2: not a full page, so a hypothetical page3 must never be requested.
+    call_count = {"n": 0}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        call_count["n"] += 1
+        if "/txs/chain/" in request.url.path:
+            return httpx.Response(200, json=page2)
+        return httpx.Response(200, json=page1)
+
+    http = AdaptiveHttpClient(transport=httpx.MockTransport(handler), min_interval_seconds=0.0)
+    client = BitcoinChainClient(http=http)
+
+    client.get_transfers(address)
+
+    assert call_count["n"] == 2
+
+def test_pagination_loop_terminates_when_every_page_is_full():
+    """Guard against a regression where a mock (or a misbehaving API) always
+    returns a full page of confirmed transactions — the loop must stop at the
+    page cap rather than looping forever."""
+    address = "bc1qscammer000000000000000000000000002"
+    call_count = {"n": 0}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        call_count["n"] += 1
+        page = [
+            _make_confirmed_tx(
+                f"call{call_count['n']}-tx-{i}",
+                1732100000 - call_count["n"] * 100 - i,
+                "bc1qvictim0000000000000000000000000001",
+                address,
+                1000 * (i + 1),
+            )
+            for i in range(25)
+        ]
+        return httpx.Response(200, json=page)
+
+    http = AdaptiveHttpClient(transport=httpx.MockTransport(handler), min_interval_seconds=0.0)
+    client = BitcoinChainClient(http=http)
+
+    client.get_transfers(address)
+
+    from app.chains.bitcoin import MAX_PAGES
+    assert call_count["n"] == MAX_PAGES
+
 def test_unconfirmed_tx_produces_no_transfers():
     """Test that an unconfirmed transaction is excluded from results (not a crash,
     not included), even when other fields (e.g. block_time) are absent as they

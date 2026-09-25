@@ -6,6 +6,14 @@ from app.chains.http_client import AdaptiveHttpClient
 ESPLORA_BASE = "https://blockstream.info/api"
 SATS_PER_BTC = Decimal(10) ** 8
 
+# Esplora's confirmed-history page size: `/address/:a/txs` returns the newest ~50
+# mempool txs plus the first 25 confirmed ones; `/address/:a/txs/chain/:last_seen_txid`
+# returns 25 confirmed txs per page, continuing from just before `last_seen_txid`.
+CONFIRMED_PAGE_SIZE = 25
+# Generous but bounded page cap (25 * 10 = 250 confirmed records) to avoid an
+# unbounded loop against a wallet with years of history.
+MAX_PAGES = 10
+
 class BitcoinChainClient:
     chain = "bitcoin"
 
@@ -14,6 +22,12 @@ class BitcoinChainClient:
 
     def get_transfers(self, address: str, since: datetime | None = None) -> list[Transfer]:
         """Fetch and normalize UTXO transactions from Esplora.
+
+        Paginates through confirmed history via Esplora's `/txs/chain/:last_seen_txid`
+        cursor: the first page comes from `/address/:a/txs` (newest mempool + first 25
+        confirmed), and each subsequent page continues from the oldest confirmed txid
+        seen so far, stopping once a page has fewer than a full page of confirmed
+        transactions (meaning we've reached the oldest history) or the page cap is hit.
 
         Args:
             address: Bitcoin address to fetch transfers for.
@@ -24,8 +38,27 @@ class BitcoinChainClient:
         """
         response = self._http.get(f"{ESPLORA_BASE}/address/{address}/txs")
         response.raise_for_status()
+        page = response.json()
+        all_txs: list[dict] = list(page)
+        # Only confirmed txs count toward "is this a full page" — the first page's
+        # mempool transactions are unbounded/unrelated to the confirmed-history cursor
+        # and would otherwise make a short confirmed page look full (or vice versa).
+        confirmed = [tx for tx in page if tx.get("status", {}).get("confirmed")]
+
+        pages_fetched = 1
+        while len(confirmed) == CONFIRMED_PAGE_SIZE and pages_fetched < MAX_PAGES:
+            last_seen_txid = confirmed[-1]["txid"]
+            response = self._http.get(f"{ESPLORA_BASE}/address/{address}/txs/chain/{last_seen_txid}")
+            response.raise_for_status()
+            page = response.json()
+            if not page:
+                break
+            all_txs.extend(page)
+            confirmed = [tx for tx in page if tx.get("status", {}).get("confirmed")]
+            pages_fetched += 1
+
         transfers: list[Transfer] = []
-        for tx in response.json():
+        for tx in all_txs:
             transfers.extend(self._normalize_tx(tx, address))
         if since is not None:
             transfers = [t for t in transfers if t.timestamp >= since]
