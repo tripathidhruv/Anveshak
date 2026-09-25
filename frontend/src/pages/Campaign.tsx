@@ -1,12 +1,15 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { ArrowLeft, Landmark, MapPin, Users, Wallet } from 'lucide-react'
-import { Button, Card, PlainWords, Well } from '../components/ui'
+import { Button } from '@/components/ui/button'
+import { Card } from '@/components/ui/card'
+import { IconTile } from '@/components/ui/icon-tile'
+import { PlainWords } from '@/components/ui/plain-words'
+import { Well } from '@/components/ui/well'
 import { api } from '../api'
 import type { CampaignSummary } from '../types'
 import { ROUTES } from '../utils/constants'
 import { formatINR, truncateAddress } from '../utils/format'
-import styles from './Campaign.module.css'
 
 /**
  * `/campaign/:id` — a real but intentionally light v1. The source spec (Task 9) describes this
@@ -37,57 +40,66 @@ export default function Campaign() {
   }, [id])
 
   if (loading || !campaign) {
-    return <Card className={styles.loadingCard}>Loading campaign…</Card>
+    return (
+      <Card className="mx-auto mt-16 max-w-md p-10 text-center text-muted-foreground">Loading campaign…</Card>
+    )
   }
 
   return (
-    <div className={styles.page}>
-      <header className={styles.header}>
-        <button type="button" className={styles.backButton} aria-label="Back to dashboard" onClick={() => navigate(ROUTES.dashboard)}>
+    <div className="flex flex-col gap-6">
+      <header className="flex max-w-3xl items-start gap-4">
+        <button
+          type="button"
+          aria-label="Back to dashboard"
+          onClick={() => navigate(ROUTES.dashboard)}
+          className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-border bg-card text-foreground transition-colors hover:bg-muted"
+        >
           <ArrowLeft size={18} />
         </button>
         <div>
-          <h1 className="page-title">One wallet. {campaign.cases} victims.</h1>
-          <p className={styles.subtitle}>
+          <h1 className="font-[family-name:var(--font-display)] text-2xl font-bold text-foreground">
+            One wallet. {campaign.cases} victims.
+          </h1>
+          <p className="mt-1.5 text-[15px] text-muted-foreground">
             Every case below sent funds into the same collection wallet — this is one criminal campaign, not{' '}
             {campaign.cases} unrelated complaints.
           </p>
         </div>
       </header>
 
-      <Card className={styles.summaryCard}>
-        <div className={styles.statGrid}>
-          <Well className={styles.statWell}>
-            <span className={styles.statIcon}>
+      <Card className="flex flex-col gap-6 p-6">
+        <div className="grid grid-cols-1 gap-3.5 md:grid-cols-3">
+          <Well className="flex flex-col items-center gap-2 p-5 text-center">
+            <IconTile color="vermillion" size="sm">
               <Users size={18} />
-            </span>
-            <span className={styles.statValue}>{campaign.cases}</span>
-            <span className={styles.statLabel}>Linked complaints</span>
+            </IconTile>
+            <span className="font-[family-name:var(--font-mono)] text-xl font-bold text-foreground">{campaign.cases}</span>
+            <span className="text-xs text-muted-foreground">Linked complaints</span>
           </Well>
-          <Well className={styles.statWell}>
-            <span className={styles.statIcon}>
+          <Well className="flex flex-col items-center gap-2 p-5 text-center">
+            <IconTile color="vermillion" size="sm">
               <MapPin size={18} />
-            </span>
-            <span className={styles.statValue}>{campaign.states}</span>
-            <span className={styles.statLabel}>States affected</span>
+            </IconTile>
+            <span className="font-[family-name:var(--font-mono)] text-xl font-bold text-foreground">{campaign.states}</span>
+            <span className="text-xs text-muted-foreground">States affected</span>
           </Well>
-          <Well className={styles.statWell}>
-            <span className={styles.statIcon}>
+          <Well className="flex flex-col items-center gap-2 p-5 text-center">
+            <IconTile color="vermillion" size="sm">
               <Landmark size={18} />
-            </span>
-            <span className="mono">{formatINR(campaign.totalINR)}</span>
-            <span className={styles.statLabel}>Total value traced</span>
+            </IconTile>
+            <span className="font-[family-name:var(--font-mono)] text-xl font-bold text-foreground">{formatINR(campaign.totalINR)}</span>
+            <span className="text-xs text-muted-foreground">Total value traced</span>
           </Well>
         </div>
 
-        <div className={styles.walletRow}>
-          <span className={styles.walletIcon}>
+        <div className="flex items-center gap-3.5 rounded-xl border border-border bg-card px-5 py-4">
+          <span className="shrink-0 text-vermillion">
             <Wallet size={18} />
           </span>
-          <div className={styles.walletText}>
-            <span className="label">Shared collection wallet</span>
-            <span className={styles.walletValue}>
-              <span className="mono">{truncateAddress(campaign.sharedWallet)}</span>
+          <div className="flex flex-col gap-1">
+            <span className="text-sm font-medium text-muted-foreground">Shared collection wallet</span>
+            <span className="font-[family-name:var(--font-mono)] text-[15px] text-foreground">
+              {truncateAddress(campaign.sharedWallet)}
             </span>
           </div>
         </div>
@@ -99,8 +111,8 @@ export default function Campaign() {
         notice, not {campaign.cases} separate ones.
       </PlainWords>
 
-      <div className={styles.actions}>
-        <Button variant="primary" onClick={() => navigate(ROUTES.dashboard)}>
+      <div className="flex justify-end">
+        <Button variant="default" onClick={() => navigate(ROUTES.dashboard)}>
           Back to dashboard
         </Button>
       </div>

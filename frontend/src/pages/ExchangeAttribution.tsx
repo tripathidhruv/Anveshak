@@ -1,13 +1,16 @@
 import { useEffect, useState } from 'react'
 import { Navigate, useNavigate, useParams } from 'react-router-dom'
 import { ArrowRight, CheckCircle2, ShieldAlert } from 'lucide-react'
-import clsx from 'clsx'
-import { Button, Card, PlainWords, Spinner, Well } from '../components/ui'
+import { Button } from '../components/ui/button'
+import { Card } from '../components/ui/card'
+import { IconTile } from '../components/ui/icon-tile'
+import { PlainWords } from '../components/ui/plain-words'
+import { Spinner } from '../components/ui/spinner'
+import { Stat } from '../components/ui/well'
 import { api } from '../api'
 import type { Exchange } from '../types'
 import { ROUTES } from '../utils/constants'
 import { truncateAddress } from '../utils/format'
-import styles from './ExchangeAttribution.module.css'
 
 /**
  * Screen 4 — reads `Exchange` for the active case id and renders the gold-accented hero
@@ -49,7 +52,7 @@ export default function ExchangeAttribution() {
 
   if (loading || !exchange) {
     return (
-      <Card className={styles.loadingCard}>
+      <Card className="mx-auto my-16 flex max-w-[420px] flex-col items-center gap-4 p-8 text-center text-muted-foreground">
         <Spinner percent={70} label="Loading" />
         <p>Loading exchange attribution…</p>
       </Card>
@@ -57,49 +60,55 @@ export default function ExchangeAttribution() {
   }
 
   return (
-    <div className={styles.page}>
-      <header className={styles.header}>
-        <h1 className="page-title">The money reached a cryptocurrency exchange.</h1>
-        <p className={styles.subtitle}>
+    <div className="flex flex-col gap-6">
+      <header className="max-w-2xl">
+        <h1 className="font-[family-name:var(--font-display)] text-2xl font-bold text-foreground">
+          The money reached a cryptocurrency exchange.
+        </h1>
+        <p className="mt-1.5 text-[15px] text-muted-foreground">
           This is where a real, named person exists — exchanges are legally required to verify identity.
         </p>
       </header>
 
-      <div className={styles.grid}>
-        <Card className={styles.heroCard}>
-          <div className={styles.heroTop}>
-            <div className={styles.monogram}>{exchange.monogram}</div>
-            <div className={styles.heroIdentity}>
-              <h2 className={styles.exchangeName}>{exchange.name}</h2>
-              <p className={styles.depositAddr}>
-                Deposit address: <span className={clsx('mono', styles.depositAddrValue)}>{truncateAddress(exchange.depositAddr)}</span>
+      <div className="grid grid-cols-1 items-start gap-6 xl:grid-cols-[1.1fr_0.9fr]">
+        <Card className="relative flex flex-col gap-5 overflow-hidden p-6">
+          <div className="absolute inset-x-0 top-0 h-1 bg-gold" aria-hidden />
+
+          <div className="flex items-center gap-4">
+            <IconTile
+              color="gold"
+              size="lg"
+              className="font-[family-name:var(--font-display)] text-xl font-bold"
+            >
+              {exchange.monogram}
+            </IconTile>
+            <div className="min-w-0">
+              <h2 className="font-[family-name:var(--font-display)] text-2xl font-bold text-foreground">
+                {exchange.name}
+              </h2>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Deposit address:{' '}
+                <span className="font-[family-name:var(--font-mono)] text-foreground/80">
+                  {truncateAddress(exchange.depositAddr)}
+                </span>
               </p>
             </div>
           </div>
 
-          <div className={styles.statRow}>
-            <Well className={styles.statWell}>
-              <span className="label">Registered in</span>
-              <span className={styles.statValue}>{exchange.jurisdiction}</span>
-            </Well>
-            <Well className={styles.statWell}>
-              <span className="label">FIU-IND registered</span>
-              <span className={styles.statValue}>{exchange.fiuRegistered ? 'YES' : 'NO'}</span>
-            </Well>
-            <Well className={styles.statWell}>
-              <span className="label">Indian users</span>
-              <span className={styles.statValue}>{exchange.indianUsers}</span>
-            </Well>
+          <div className="grid grid-cols-3 gap-3.5">
+            <Stat label="Registered in" value={exchange.jurisdiction} />
+            <Stat label="FIU-IND registered" value={exchange.fiuRegistered ? 'YES' : 'NO'} />
+            <Stat label="Indian users" value={exchange.indianUsers} />
           </div>
 
           {!exchange.fiuRegistered && (
-            <div className={styles.complianceStrip}>
-              <span className={styles.complianceIcon}>
+            <div className="flex items-start gap-3.5 rounded-xl bg-vermillion p-4 text-white">
+              <span className="mt-0.5 flex shrink-0 items-center justify-center">
                 <ShieldAlert size={18} />
               </span>
               <div>
-                <p className={styles.complianceHeading}>Not registered with FIU-IND</p>
-                <p className={styles.complianceBody}>
+                <p className="text-sm font-bold">Not registered with FIU-IND</p>
+                <p className="mt-0.5 text-xs opacity-90">
                   A registered exchange must respond to Indian law enforcement. This one is not registered, which is
                   itself a finding.
                 </p>
@@ -108,20 +117,27 @@ export default function ExchangeAttribution() {
           )}
         </Card>
 
-        <Card className={styles.evidenceCard}>
-          <h3 className="card-title">How we know</h3>
-          <div className={styles.evidenceList}>
+        <Card className="flex flex-col gap-4 p-6">
+          <h3 className="font-[family-name:var(--font-display)] text-base font-semibold text-foreground">
+            How we know
+          </h3>
+          <div className="flex flex-col divide-y divide-border">
             {exchange.evidence.map((item) => (
-              <Well key={item.label} className={styles.evidenceItem}>
-                <CheckCircle2 size={16} className={styles.checkIcon} />
-                <div className={styles.evidenceBody}>
-                  <p className={styles.evidenceLabel}>{item.label}</p>
-                  <div className={styles.confTrack}>
-                    <div className={styles.confFill} style={{ width: barsIn ? `${item.conf * 100}%` : 0 }} />
+              <div key={item.label} className="flex items-center gap-3.5 py-3.5 first:pt-0 last:pb-0">
+                <CheckCircle2 size={16} className="shrink-0 text-moss" />
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm text-foreground/90">{item.label}</p>
+                  <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-muted">
+                    <div
+                      className="h-full rounded-full bg-gold transition-[width] duration-700 ease-[cubic-bezier(.22,1,.36,1)]"
+                      style={{ width: barsIn ? `${item.conf * 100}%` : 0 }}
+                    />
                   </div>
                 </div>
-                <span className={clsx('mono', styles.confValue)}>{Math.round(item.conf * 100)}%</span>
-              </Well>
+                <span className="w-11 shrink-0 text-right font-[family-name:var(--font-mono)] text-sm font-bold text-foreground">
+                  {Math.round(item.conf * 100)}%
+                </span>
+              </div>
             ))}
           </div>
         </Card>
@@ -129,8 +145,8 @@ export default function ExchangeAttribution() {
 
       <PlainWords>Think of it as tracing stolen cash to the counter of a specific bank branch.</PlainWords>
 
-      <div className={styles.actions}>
-        <Button variant="primary" onClick={() => navigate(ROUTES.risk(id))}>
+      <div className="flex justify-end">
+        <Button variant="default" onClick={() => navigate(ROUTES.risk(id))}>
           Calculate the risk score
           <ArrowRight size={16} />
         </Button>

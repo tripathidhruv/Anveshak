@@ -1,9 +1,10 @@
 import type { ReactNode } from 'react'
 import { ArrowDown, ArrowUp } from 'lucide-react'
-import clsx from 'clsx'
+import { Card } from '../ui/card'
+import { IconTile } from '../ui/icon-tile'
+import { Badge } from '../ui/badge'
 import { useCountUp } from '../../hooks/useCountUp'
 import type { DashboardKpi } from '../../types'
-import styles from './KpiCard.module.css'
 
 /**
  * Splits a KPI's display string into an animatable numeric core plus static
@@ -27,7 +28,7 @@ export interface KpiCardProps {
   sparklinePath: string
 }
 
-/** One KPI tile: icon tile, uppercase label, count-up number, delta pill, decorative sparkline. */
+/** One KPI tile: colored icon tile, uppercase label, count-up number, delta badge, decorative sparkline. */
 export function KpiCard({ kpi, icon, sparklinePath }: KpiCardProps) {
   const parsed = parseKpiValue(kpi.value)
   const animated = useCountUp(parsed?.number ?? 0)
@@ -36,21 +37,21 @@ export function KpiCard({ kpi, icon, sparklinePath }: KpiCardProps) {
     : kpi.value
 
   return (
-    <div className={styles.card}>
-      <div className={styles.top}>
-        <span className={styles.iconTile}>{icon}</span>
-        <span className={clsx(styles.delta, styles.deltaMoss)}>
+    <Card className="flex flex-col gap-3 p-6">
+      <div className="flex items-center justify-between gap-3">
+        <IconTile color="teal">{icon}</IconTile>
+        <Badge variant="moss">
           {kpi.dir === 'up' ? <ArrowUp size={12} /> : <ArrowDown size={12} />}
           {kpi.delta}
-        </span>
+        </Badge>
       </div>
 
-      <span className={clsx('label', styles.label)}>{kpi.label}</span>
-      <span className={clsx('kpi-number', styles.value)}>{displayValue}</span>
+      <span className="text-sm text-muted-foreground">{kpi.label}</span>
+      <span className="font-[family-name:var(--font-mono)] text-3xl font-bold text-foreground">{displayValue}</span>
 
-      <svg className={styles.sparkline} viewBox="0 0 120 32" preserveAspectRatio="none" aria-hidden="true">
-        <path d={sparklinePath} fill="none" stroke="var(--teal)" strokeWidth="2" strokeLinecap="round" />
+      <svg className="mt-0.5 h-8 w-full" viewBox="0 0 120 32" preserveAspectRatio="none" aria-hidden="true">
+        <path d={sparklinePath} fill="none" stroke="var(--color-teal)" strokeWidth="2" strokeLinecap="round" />
       </svg>
-    </div>
+    </Card>
   )
 }

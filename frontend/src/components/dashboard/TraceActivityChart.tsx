@@ -1,7 +1,6 @@
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import type { TooltipContentProps } from 'recharts'
 import type { NameType, ValueType } from 'recharts/types/component/DefaultTooltipContent'
-import styles from './TraceActivityChart.module.css'
 
 /**
  * 14 synthetic-but-plausible daily trace counts (illustrative only — this field doesn't exist
@@ -19,46 +18,44 @@ function ChartTooltip({ active, payload }: TooltipContentProps<ValueType, NameTy
   if (!active || !payload?.length) return null
   const value = payload[0].value
   return (
-    <div className={styles.tooltip}>
-      <span className={styles.tooltipValue}>{value}</span>
-      <span className={styles.tooltipLabel}>traces that day</span>
+    <div className="rounded-xl border border-border bg-card px-3.5 py-2 shadow-md flex items-baseline gap-1.5">
+      <span className="font-[family-name:var(--font-mono)] text-base font-bold text-foreground">{value}</span>
+      <span className="text-xs text-muted-foreground">traces that day</span>
     </div>
   )
 }
 
-/** "Trace activity, last 14 days" — the pressed-well line chart per the Global Constraints chart rules. */
+/** "Trace activity, last 14 days" — soft blue gradient-fill area chart on a plain white card. */
 export function TraceActivityChart() {
   return (
-    <div className={styles.well}>
-      <ResponsiveContainer width="100%" height={200}>
-        <AreaChart data={TRACE_ACTIVITY} margin={{ top: 8, right: 12, bottom: 0, left: -12 }}>
-          <defs>
-            <linearGradient id="traceActivityFill" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="var(--teal)" stopOpacity={0.28} />
-              <stop offset="100%" stopColor="var(--teal)" stopOpacity={0} />
-            </linearGradient>
-          </defs>
-          <CartesianGrid stroke="#CDD5E0" vertical={false} />
-          <XAxis
-            dataKey="day"
-            axisLine={false}
-            tickLine={false}
-            tick={{ fill: 'var(--ink-soft)', fontSize: 12 }}
-            interval={1}
-          />
-          <YAxis axisLine={false} tickLine={false} tick={{ fill: 'var(--ink-soft)', fontSize: 12 }} width={28} />
-          <Tooltip content={ChartTooltip} cursor={{ stroke: 'var(--teal)', strokeWidth: 1, strokeDasharray: '3 3' }} />
-          <Area
-            type="monotone"
-            dataKey="traces"
-            stroke="var(--teal)"
-            strokeWidth={2.5}
-            fill="url(#traceActivityFill)"
-            dot={false}
-            activeDot={{ r: 5, fill: 'var(--teal)', stroke: 'var(--bg)', strokeWidth: 2 }}
-          />
-        </AreaChart>
-      </ResponsiveContainer>
-    </div>
+    <ResponsiveContainer width="100%" height={200}>
+      <AreaChart data={TRACE_ACTIVITY} margin={{ top: 8, right: 12, bottom: 0, left: -12 }}>
+        <defs>
+          <linearGradient id="traceActivityFill" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="var(--color-teal)" stopOpacity={0.28} />
+            <stop offset="100%" stopColor="var(--color-teal)" stopOpacity={0} />
+          </linearGradient>
+        </defs>
+        <CartesianGrid stroke="var(--color-border)" vertical={false} />
+        <XAxis
+          dataKey="day"
+          axisLine={false}
+          tickLine={false}
+          tick={{ fill: 'var(--color-muted-foreground)', fontSize: 12 }}
+          interval={1}
+        />
+        <YAxis axisLine={false} tickLine={false} tick={{ fill: 'var(--color-muted-foreground)', fontSize: 12 }} width={28} />
+        <Tooltip content={ChartTooltip} cursor={{ stroke: 'var(--color-teal)', strokeWidth: 1, strokeDasharray: '3 3' }} />
+        <Area
+          type="monotone"
+          dataKey="traces"
+          stroke="var(--color-teal)"
+          strokeWidth={2.5}
+          fill="url(#traceActivityFill)"
+          dot={false}
+          activeDot={{ r: 5, fill: 'var(--color-teal)', stroke: 'var(--color-card)', strokeWidth: 2 }}
+        />
+      </AreaChart>
+    </ResponsiveContainer>
   )
 }
