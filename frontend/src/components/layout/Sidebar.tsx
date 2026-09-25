@@ -1,31 +1,30 @@
 import { LifeBuoy, Plus } from 'lucide-react'
 import { NavLink, useNavigate } from 'react-router-dom'
-import clsx from 'clsx'
-import { Button } from '../ui'
+import { cn } from '@/lib/utils'
+import { Button } from '../ui/button'
 import { LogoMark } from '../../assets/logoMark'
 import { useUIStore } from '../../store/uiStore'
 import { ROUTES } from '../../utils/constants'
 import { NAV_ITEMS } from './navConfig'
-import styles from './Sidebar.module.css'
 
-/** 248px `.raised` sidebar: logo, primary nav, `+ New Case`, Help & Support footer. */
+/** 248px white `Card`-style sidebar: logo, primary nav, `+ New Case`, Help & Support footer. */
 export function Sidebar() {
   const navigate = useNavigate()
   const showToast = useUIStore((state) => state.showToast)
 
   return (
-    <aside className={styles.sidebar}>
-      <div className={styles.logoBlock}>
-        <div className={styles.logoMark}>
-          <LogoMark size={22} />
-        </div>
+    <aside className="flex h-screen w-[248px] shrink-0 flex-col gap-6 border-r border-border bg-card p-4">
+      <div className="flex items-center gap-3 px-2 pt-2">
+        <LogoMark size={22} />
         <div>
-          <div className={styles.logoText}>KAIZEN</div>
-          <div className={styles.logoSub}>Cyber Cell Console</div>
+          <div className="font-[family-name:var(--font-display)] text-sm font-bold leading-tight text-foreground">
+            KAIZEN
+          </div>
+          <div className="text-xs text-muted-foreground">Cyber Cell Console</div>
         </div>
       </div>
 
-      <nav className={styles.navSection}>
+      <nav className="flex flex-col gap-1">
         {NAV_ITEMS.map((item) => {
           const Icon = item.icon
 
@@ -34,14 +33,18 @@ export function Sidebar() {
               <button
                 key={item.key}
                 type="button"
-                className={styles.navItem}
+                className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted"
                 onClick={() => showToast('Coming in v2')}
               >
-                <span className={styles.navIcon}>
+                <span className="flex h-5 w-5 items-center justify-center">
                   <Icon size={18} />
                 </span>
-                <span className={styles.navLabel}>{item.label}</span>
-                {item.badge ? <span className={styles.navBadge}>{item.badge}</span> : null}
+                <span className="flex-1 text-left">{item.label}</span>
+                {item.badge ? (
+                  <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-semibold text-muted-foreground">
+                    {item.badge}
+                  </span>
+                ) : null}
               </button>
             )
           }
@@ -51,31 +54,36 @@ export function Sidebar() {
               key={item.key}
               to={item.to}
               end={item.to === '/'}
-              className={({ isActive }) => clsx(styles.navItem, isActive && styles.navItemActive)}
+              className={({ isActive }) =>
+                cn(
+                  'flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted',
+                  isActive && 'bg-primary/10 font-semibold text-primary hover:bg-primary/10',
+                )
+              }
             >
-              <span className={styles.navIcon}>
+              <span className="flex h-5 w-5 items-center justify-center">
                 <Icon size={18} />
               </span>
-              <span className={styles.navLabel}>{item.label}</span>
-              {item.badge ? <span className={styles.navBadge}>{item.badge}</span> : null}
+              <span className="flex-1 text-left">{item.label}</span>
+              {item.badge ? (
+                <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-semibold text-muted-foreground">
+                  {item.badge}
+                </span>
+              ) : null}
             </NavLink>
           )
         })}
       </nav>
 
-      <Button
-        variant="primary"
-        className={styles.newCaseButton}
-        onClick={() => navigate(ROUTES.newCase)}
-      >
+      <Button variant="default" className="w-full" onClick={() => navigate(ROUTES.newCase)}>
         <Plus size={16} /> New Case
       </Button>
 
-      <div className={styles.spacer} />
+      <div className="flex-1" />
 
       <button
         type="button"
-        className={styles.helpLink}
+        className="flex items-center gap-2 rounded-xl px-3 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted"
         onClick={() => showToast('Coming in v2')}
       >
         <LifeBuoy size={16} /> Help &amp; Support
