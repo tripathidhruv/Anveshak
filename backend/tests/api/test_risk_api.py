@@ -142,6 +142,44 @@ def test_synthetic_disclosure_present_in_every_response_shape():
         assert response.json()["syntheticDataDisclosure"]
 
 
+def test_well_evidenced_case_upgrades_flagged_wallet_to_real_ml_score():
+    case_id = _make_case()
+    with patch("app.api.v1.risk.get_chain_client", return_value=WellEvidencedClient()), \
+         patch("app.api.v1.risk.lookup_label", return_value=VETTED_LABEL):
+        response = client.get(f"/api/v1/risk/{case_id}/score")
+
+    assert response.status_code == 200
+    body = response.json()
+    combined_score = body["combinedScore"]
+
+    flagged_response = client.get("/api/v1/vasp-feed/flagged-wallets", params={"chain": "tron"})
+    assert flagged_response.status_code == 200
+    items = flagged_response.json()["items"]
+
+    matching = [item for item in items if item["address"] == DEPOSIT and case_id in item["caseIds"]]
+    assert len(matching) == 1
+    # The persisted risk_score must reflect the real ML-informed combined score, not the
+    # interim proxy's crude 1.0/0.0.
+    assert matching[0]["riskScore"] == combined_score
+    assert combined_score not in (0.0, 1.0)
+
+
+def test_thin_trace_does_not_call_auto_flag_wallet_for_missing_winner():
+    case_id = _make_case()
+    with patch("app.api.v1.risk.get_chain_client", return_value=ThinDataClient()), \
+         patch("app.api.v1.risk.lookup_label", return_value=None), \
+         patch("app.api.v1.risk.vasp_distribution.auto_flag_wallet") as mock_auto_flag:
+        response = client.get(f"/api/v1/risk/{case_id}/score")
+
+    assert response.status_code == 200
+    mock_auto_flag.assert_not_called()
+
+    flagged_response = client.get("/api/v1/vasp-feed/flagged-wallets")
+    assert flagged_response.status_code == 200
+    items = flagged_response.json()["items"]
+    assert not any(case_id in item["caseIds"] for item in items)
+
+
 def test_risk_score_404s_for_unknown_case():
     response = client.get("/api/v1/risk/does-not-exist/score")
     assert response.status_code == 404

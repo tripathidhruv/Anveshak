@@ -16,6 +16,7 @@ from app.risk.features import TraceFeatures
 from app.risk.data_quality import assess_data_quality
 from app.risk.rules import compute_rule_based_score
 from app.risk.model import get_model, SYNTHETIC_DATA_DISCLOSURE
+from app.vasp_feed import distribution as vasp_distribution
 
 router = APIRouter(prefix="/api/v1/risk", tags=["risk"])
 
@@ -54,7 +55,7 @@ class RiskScoreOut(BaseModel):
     syntheticDataDisclosure: str
 
 
-def _build_trace_features(case: Case) -> TraceFeatures:
+def _build_trace_features(case: Case) -> tuple[TraceFeatures, str | None, str | None]:
     """Builds this trace's TraceFeatures from the same real detectors traces.py already uses
     (sweep, deposit gate, innocence) -- deliberately NOT importing from traces.py itself (out
     of this task's file scope), but reusing the same detector modules and the same
@@ -78,6 +79,8 @@ def _build_trace_features(case: Case) -> TraceFeatures:
     best_gate_passed = False
     best_sweep_gap: float | None = None
     best_value_preserved: float | None = None
+    best_wallet_address: str | None = None
+    best_chain: str | None = None
     best_score = -1.0  # picks the strongest candidate (gate passed + sweep) to represent the trace
 
     for hop in candidates:
@@ -118,6 +121,8 @@ def _build_trace_features(case: Case) -> TraceFeatures:
             best_gate_passed = gate.gate_passed
             best_sweep_gap = sweep_signal.gap_seconds
             best_value_preserved = sweep_signal.value_preserved_pct
+            best_wallet_address = hop.wallet_address
+            best_chain = hop.chain
 
     total_read_attempts += 1  # the suspect wallet's own history read, below
     try:
@@ -132,12 +137,13 @@ def _build_trace_features(case: Case) -> TraceFeatures:
                                    victim_amount=reported_amount, asset=case.asset,
                                    history_unavailable=suspect_history_read_failed)
 
-    return TraceFeatures(
+    features = TraceFeatures(
         hop_count=hop_count, distinct_payers=best_distinct_payers, gate_passed=best_gate_passed,
         sweep_gap_seconds=best_sweep_gap, value_preserved_pct=best_value_preserved,
         innocence_score=innocence.innocence_score, read_failure_count=read_failure_count,
         total_read_attempts=total_read_attempts, label_vetted=label_vetted,
     )
+    return features, best_wallet_address, best_chain
 
 
 @router.get("/{case_id}/score", response_model=RiskScoreOut)
@@ -146,7 +152,7 @@ def get_risk_score(case_id: str, db: Session = Depends(get_db)) -> RiskScoreOut:
     if case is None:
         raise HTTPException(status_code=404, detail="case not found")
 
-    features = _build_trace_features(case)
+    features, best_wallet_address, best_chain = _build_trace_features(case)
 
     rule_result = compute_rule_based_score(features)
     quality = assess_data_quality(features)
@@ -159,6 +165,16 @@ def get_risk_score(case_id: str, db: Session = Depends(get_db)) -> RiskScoreOut:
         # Simple, disclosed blend: average of the rule-based and ML scores. Neither score is
         # ever hidden -- both are always returned in full alongside this combined figure.
         combined_score = round((rule_result.score + ml_result.score) / 2.0, 2)
+
+        # Upgrade the FlaggedWallet row (created via the interim proxy score in traces.py's
+        # run_trace) to this endpoint's real ML-informed combined score, now that we've paid
+        # the cost of recomputing it here. Only when a winning candidate wallet was actually
+        # identified -- an empty/all-read-failed candidate set has no wallet to flag.
+        if best_wallet_address is not None:
+            vasp_distribution.auto_flag_wallet(
+                db, case_id=case.id, address=best_wallet_address, chain=best_chain,
+                gate_passed=features.gate_passed, risk_score=combined_score,
+            )
 
     return RiskScoreOut(
         caseId=case.id, walletAddress=case.suspect_wallet, chain=case.chain,
