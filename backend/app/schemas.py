@@ -95,3 +95,61 @@ class TraceOut(BaseModel):
     # couldn't check", not "we checked and there are none".
     unreportedVictimsDataUnavailable: bool
     bridgeLinks: list[BridgeLinkOut]
+
+# --- Sprint 2/3 additions (docs/superpowers/plans/2026-09-26-backend-sprint2-3-completion.md) ---
+# Each Sprint 2/3 task (H1-H8) may extend these with its own request/response shapes as needed;
+# these are the shared shapes for the H0 scaffolding pass only.
+
+class CampaignOut(BaseModel):
+    id: str
+    hubAddress: str
+    chain: str
+    caseIds: list[str]
+    totalAmountINR: float
+
+class FlaggedWalletOut(BaseModel):
+    address: str
+    chain: str
+    riskScore: float
+    caseIds: list[str]
+    flaggedAt: datetime
+    broadcastStatus: dict
+
+class VaspSubscriberIn(BaseModel):
+    name: str
+    webhookUrl: str
+
+class FreezeCheckOut(BaseModel):
+    walletAddress: str
+    chain: str
+    isBlacklisted: bool
+    unfrozenBalance: float
+    checkedAt: datetime
+    goldenHourMinutesRemaining: float | None
+    dataUnavailable: bool
+
+class SanctionsMatchOut(BaseModel):
+    walletAddress: str
+    chain: str
+    listSource: str
+    matchedAt: datetime
+    listVersion: str
+
+class EvidencePackOut(BaseModel):
+    caseId: str
+    packHash: str
+    manifestEntries: list[dict]
+    createdAt: datetime
+
+class AuditLogEntryOut(BaseModel):
+    actor: str
+    action: str
+    objectType: str
+    objectId: str
+    hash: str
+    createdAt: datetime
+
+class AuditVerifyOut(BaseModel):
+    valid: bool
+    brokenAtEntryId: int | None
+    checkedEntries: int

@@ -87,3 +87,61 @@ class UnreportedVictim(Base):
     total_amount: Mapped[float] = mapped_column(Float)
     transfer_count: Mapped[int] = mapped_column()
     first_seen_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+
+# --- Sprint 2/3 additions (docs/superpowers/plans/2026-09-26-backend-sprint2-3-completion.md) ---
+
+class FlaggedWallet(Base):
+    __tablename__ = "flagged_wallets"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    address: Mapped[str] = mapped_column(String, index=True)
+    chain: Mapped[str] = mapped_column(String)
+    risk_score: Mapped[float] = mapped_column(Float)
+    case_ids: Mapped[list] = mapped_column(JSON)  # list[str] of Case.id
+    flagged_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    broadcast_status: Mapped[dict] = mapped_column(JSON, default=dict)  # {subscriber_id: "delivered"|"failed"|"pending"}
+
+class VaspSubscriber(Base):
+    __tablename__ = "vasp_subscribers"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str] = mapped_column(String)
+    webhook_url: Mapped[str] = mapped_column(String)
+    api_key: Mapped[str] = mapped_column(String)
+    active: Mapped[bool] = mapped_column(Boolean, default=True)
+
+class FreezeCheck(Base):
+    __tablename__ = "freeze_checks"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    wallet_address: Mapped[str] = mapped_column(String, index=True)
+    chain: Mapped[str] = mapped_column(String)
+    is_blacklisted: Mapped[bool] = mapped_column(Boolean)
+    unfrozen_balance: Mapped[float] = mapped_column(Float)
+    checked_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    golden_hour_minutes_remaining: Mapped[float | None] = mapped_column(Float, nullable=True)
+
+class SanctionsMatch(Base):
+    __tablename__ = "sanctions_matches"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    wallet_address: Mapped[str] = mapped_column(String, index=True)
+    chain: Mapped[str] = mapped_column(String)
+    list_source: Mapped[str] = mapped_column(String)
+    matched_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    list_version: Mapped[str] = mapped_column(String)
+
+class EvidenceManifest(Base):
+    __tablename__ = "evidence_manifests"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    case_id: Mapped[str] = mapped_column(ForeignKey("cases.id"))
+    entries: Mapped[list] = mapped_column(JSON)  # list[{source_url, raw_response_hash, fetched_at}]
+    pack_hash: Mapped[str] = mapped_column(String)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+class AuditLogEntry(Base):
+    __tablename__ = "audit_log_entries"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    actor: Mapped[str] = mapped_column(String)
+    action: Mapped[str] = mapped_column(String)
+    object_type: Mapped[str] = mapped_column(String)
+    object_id: Mapped[str] = mapped_column(String)
+    prev_hash: Mapped[str] = mapped_column(String)
+    hash: Mapped[str] = mapped_column(String)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
