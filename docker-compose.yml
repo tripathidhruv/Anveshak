@@ -1,0 +1,63 @@
+# KAIZEN — local Docker Compose stack (frontend + backend).
+#
+# Honest scoping notes (see backend/Dockerfile, frontend/Dockerfile, and Task H9's report at
+# .superpowers/sdd/task-H9-report.md for the full writeup):
+#
+# - No `postgres` service. `backend/app/db.py` builds its SQLAlchemy engine from
+#   `KAIZEN_DATABASE_URL`, which defaults to `sqlite:///./kaizen.db` (see backend/app/config.py)
+#   and nothing in this repo wires a Postgres connection today. Shipping a `postgres:16`
+#   service here would be unused decoration, not real support — so this stack runs SQLite,
+#   persisted to a named volume so data survives `docker compose down`/`up` cycles. Swap in a
+#   real Postgres service (and set KAIZEN_DATABASE_URL accordingly) if/when the backend actually
+#   grows Postgres wiring.
+# - No `redis` service and no separate worker container. Task H2's VASP webhook delivery (the
+#   only background-job-shaped feature in this backend) runs on FastAPI's own `BackgroundTasks`
+#   (see backend/app/vasp_feed/distribution.py's module docstring), not Celery. There is no
+#   Celery/Redis wiring anywhere in this repo to stand a worker service up against, so this
+#   compose file does not ship unused Redis/worker services either.
+# - The frontend service runs Vite's dev server (not a production static build) — see
+#   frontend/Dockerfile's comment for why.
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      # SQLite file path inside the container; matches the named volume mount below so the
+      # database persists across `docker compose down && up`.
+      KAIZEN_DATABASE_URL: sqlite:////app/data/kaizen.db
+      # Optional: set real keys via a local `.env` file (untracked) or your shell environment
+      # before running `docker compose up` if you have TronGrid/Etherscan API keys; the backend
+      # runs fine without them within their respective free-tier/public-endpoint limits.
+      KAIZEN_TRONGRID_API_KEY: ${KAIZEN_TRONGRID_API_KEY:-}
+      KAIZEN_ETHERSCAN_API_KEY: ${KAIZEN_ETHERSCAN_API_KEY:-}
+    volumes:
+      - backend-db:/app/data
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/docs')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "5173:5173"
+    environment:
+      # Browser-side URL — the user's browser hits this directly, so it must be the backend's
+      # *host*-mapped address (http://localhost:8000), not a Docker-internal service name like
+      # http://backend:8000 (which the browser cannot resolve).
+      VITE_API_BASE_URL: http://localhost:8000
+      VITE_USE_MOCK: "false"
+    depends_on:
+      backend:
+        condition: service_healthy
+
+volumes:
+  backend-db:
