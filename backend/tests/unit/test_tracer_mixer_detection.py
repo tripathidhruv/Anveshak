@@ -83,9 +83,12 @@ def test_address_not_matching_any_known_mixer_traces_normally():
 
 
 def test_mixer_check_takes_precedence_over_bridge_check():
-    # An address that is (implausibly) both a known bridge AND a known mixer must be
-    # honestly reported as having entered a mixer -- a mixer is a dead end this codebase
-    # can never see through, unlike a bridge crossing it can sometimes confirm.
+    # The mixer check must run BEFORE the bridge check, so a hypothetical address matching
+    # both never even reaches is_bridge_contract -- a mixer is a dead end this codebase can
+    # never see through, unlike a bridge crossing it can sometimes confirm. This test proves
+    # ordering, not a real dual-match: is_bridge_contract is stubbed to return None (never
+    # actually made to match), and the assertion is that it's never CALLED at all for the
+    # mixer address -- which only holds if the mixer check runs first and short-circuits.
     deposit = mk("scammer", MIXER_ADDR, 5, T0)
     client = EthClient({"scammer": [deposit]})
 
