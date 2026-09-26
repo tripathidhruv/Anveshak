@@ -7,7 +7,7 @@ from app.main import app
 from app.db import Base, get_db
 from app.chains.base import Transfer
 from app.labels.seed_labels import VaspLabelSeed
-from app.models import Hop
+from app.models import AttributionCandidate, Hop
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
@@ -819,3 +819,58 @@ def test_trace_persists_hop_rows_even_when_there_are_zero_attribution_candidates
     assert len(rows) == len(body["hops"])
     assert rows[0].wallet_address == SUSPECT
     assert rows[0].tx_hash is None  # hop 0 has no funding_transfer
+
+
+# ---------------------------------------------------------------------------
+# Idempotency fix (whole-branch review, 2026-09-26): calling POST /trace twice for the same,
+# unchanged case must not duplicate persisted rows or re-fire side effects. The bug proven by
+# the review's executed probe: Hop rows duplicated, AttributionCandidate rows duplicated, a
+# duplicate "attribution.result" audit entry, and `deliver_webhooks` fired a second time --
+# even though `auto_flag_wallet`'s own FlaggedWallet row correctly merges `case_ids` and does
+# NOT duplicate.
+# ---------------------------------------------------------------------------
+
+def test_run_trace_twice_is_idempotent_for_hops_candidates_and_webhooks():
+    # Reuses the exact gate-passing fixture from
+    # test_trace_endpoint_confirms_attribution_when_payers_and_sweep_both_hold so this also
+    # exercises the auto-flag / webhook-scheduling path (only reachable when the gate passes).
+    case_id = _make_case()
+
+    with patch("app.api.v1.traces.get_chain_client", return_value=FakeChainClient()), \
+         patch("app.api.v1.traces.lookup_label", return_value=VETTED_LABEL), \
+         patch("app.api.v1.traces.vasp_distribution.deliver_webhooks") as mock_deliver:
+        first = client.post(f"/api/v1/cases/{case_id}/trace")
+        assert first.status_code == 200
+        assert first.json()["attribution"]["gatePassed"] is True
+        assert mock_deliver.call_count == 1
+
+        db = TestSession()
+        try:
+            hop_count_after_first = db.query(Hop).filter(Hop.case_id == case_id).count()
+            candidate_count_after_first = db.query(AttributionCandidate).filter(
+                AttributionCandidate.case_id == case_id).count()
+        finally:
+            db.close()
+        assert hop_count_after_first > 0
+        assert candidate_count_after_first > 0
+
+        # Second, identical call for the same unchanged case.
+        second = client.post(f"/api/v1/cases/{case_id}/trace")
+        assert second.status_code == 200
+        assert second.json()["attribution"]["gatePassed"] is True
+
+        db = TestSession()
+        try:
+            hop_count_after_second = db.query(Hop).filter(Hop.case_id == case_id).count()
+            candidate_count_after_second = db.query(AttributionCandidate).filter(
+                AttributionCandidate.case_id == case_id).count()
+        finally:
+            db.close()
+
+        # Row counts must not double.
+        assert hop_count_after_second == hop_count_after_first
+        assert candidate_count_after_second == candidate_count_after_first
+        # deliver_webhooks must not be invoked a second time for this unchanged attribution --
+        # the wallet's gate-passed status (and FlaggedWallet.case_ids membership) hasn't changed
+        # since the first run.
+        assert mock_deliver.call_count == 1

@@ -1,9 +1,10 @@
 from datetime import datetime, timezone
 from decimal import Decimal
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 from app.api.deps import get_db
-from app.models import AttributionCandidate, Case, Hop
+from app.models import AttributionCandidate, Case, FlaggedWallet, Hop
 from app.chains.registry import get_chain_client
 from app.tracing.tracer import trace, TraceHop
 from app.tracing.conservation import check_conservation
@@ -149,6 +150,13 @@ def run_trace(case_id: str, background_tasks: BackgroundTasks, db: Session = Dep
     # `route_label` is always the literal "routeA": this backend only ever traces one chain /
     # one route per case (see `bridge_links` below and its own comment for the same
     # one-chain-per-case architectural fact) -- there is no second route to choose between.
+    #
+    # Idempotency fix (whole-branch review, 2026-09-26): a re-run of this same case must not
+    # duplicate Hop rows. Delete this case's previously-persisted Hop rows before writing the
+    # new set -- a full replace, not a diff/upsert, so a re-run producing a different number of
+    # hops than the first run (a different chain-client response, a code change, etc.) is
+    # handled correctly without needing to reconcile row-by-row.
+    db.query(Hop).filter(Hop.case_id == case.id).delete()
     for h, out in zip(result.hops, hops_out):
         db.add(Hop(
             case_id=case.id, route_label="routeA", hop_index=h.hop_index,
@@ -226,6 +234,27 @@ def run_trace(case_id: str, background_tasks: BackgroundTasks, db: Session = Dep
     # real deposit wallet sweeping a victim's own deposit is exactly what a wallet only stops
     # the trace by NOT doing (fixes C3).
     candidates = [h for h in result.hops if h.hop_index > 0 and h.taint > Decimal("0")]
+
+    # Idempotency fix (whole-branch review, 2026-09-26): clear this case's previously-persisted
+    # AttributionCandidate rows before writing whatever new set this run produces. Deliberately
+    # unconditional (not inside `if candidates:` below) so a re-run that this time produces ZERO
+    # candidates (e.g. the chain client now returns no further activity) still clears stale rows
+    # left over from an earlier run that had some -- same full-replace reasoning as the Hop
+    # delete above, in preference to a row-by-row diff/upsert.
+    #
+    # `flush()`, not `commit()`, here on purpose: a review of this fix caught that an early,
+    # standalone commit would make the delete durable *before* the candidate-evaluation loop
+    # below runs (lookup_label/_verified_predecessor/detect_sweep/evaluate_deposit_gate, none
+    # of which are wrapped in try/except) -- an exception partway through that loop would then
+    # permanently destroy this case's prior evidence rows without ever writing their
+    # replacements, a strictly worse failure mode than existed before this fix (pre-fix, a
+    # mid-request crash left AttributionCandidate rows untouched). `flush()` makes the delete
+    # visible within this session (so the loop/inserts below see a clean slate) without
+    # committing it; the single `db.commit()` this function reaches either way (line further
+    # below inside `if candidates:`, or the `else` branch's own commit) is what makes the
+    # delete durable, atomically together with whatever replaces it.
+    db.query(AttributionCandidate).filter(AttributionCandidate.case_id == case.id).delete()
+    db.flush()
 
     if candidates:
         evaluated = []
@@ -321,17 +350,39 @@ def run_trace(case_id: str, background_tasks: BackgroundTasks, db: Session = Dep
         # this task. `GET /api/v1/risk/{case_id}/score` remains the place to get the real ML
         # score; a future task can thread that score into this call site's `risk_score=`
         # parameter once it's worth the extra chain reads on every trace.
+        # Idempotency fix (whole-branch review, 2026-09-26): a re-run of this same case, for a
+        # wallet whose gate-passed status hasn't changed since the last run, must not re-notify
+        # VASP subscribers or write a second "attribution.result" audit entry.
+        # `auto_flag_wallet`'s own merge-by-address-and-chain lookup (app/vasp_feed/distribution.py)
+        # already correctly avoids a duplicate FlaggedWallet row -- it just folds `case.id` into
+        # the existing row's `case_ids` (a no-op if it's already there) -- but it always returns
+        # that row, so the OLD code below always scheduled another webhook delivery and another
+        # audit entry regardless. Check whether `case.id` was already present in that wallet's
+        # `case_ids` BEFORE calling `auto_flag_wallet` (which mutates it in place): if so, this
+        # exact case already flagged and webhooked this wallet on a previous run, so skip both.
+        already_flagged_for_case = False
         if final_gate_passed:
+            existing_flagged = db.execute(
+                select(FlaggedWallet).where(FlaggedWallet.address == hop.wallet_address,
+                                             FlaggedWallet.chain == hop.chain.lower())
+            ).scalar_one_or_none()
+            already_flagged_for_case = (
+                existing_flagged is not None and case.id in existing_flagged.case_ids
+            )
+
             flagged = vasp_distribution.auto_flag_wallet(
                 db, case_id=case.id, address=hop.wallet_address, chain=hop.chain,
                 gate_passed=final_gate_passed,
             )
-            if flagged is not None:
+            if flagged is not None and not already_flagged_for_case:
                 background_tasks.add_task(vasp_distribution.deliver_webhooks, db, flagged.id)
 
         # Task H11 (item 4): audit-log the attribution result actually reported to the caller.
-        append_entry(db, actor="system", action="attribution.result",
-                     object_type="attribution_candidate", object_id=attribution_out.walletAddress)
+        # Skipped when `already_flagged_for_case` (see above) -- an unchanged repeat run for a
+        # wallet already flagged for this case has nothing new to audit-log.
+        if not already_flagged_for_case:
+            append_entry(db, actor="system", action="attribution.result",
+                         object_type="attribution_candidate", object_id=attribution_out.walletAddress)
 
         # Sub-fix I6 (absorbed): exclude EVERY wallet already in this trace's own hop list from
         # "unreported victims", not just the suspect wallet -- an intermediate hop in the causal
@@ -370,6 +421,13 @@ def run_trace(case_id: str, background_tasks: BackgroundTasks, db: Session = Dep
                                      transferCount=v.transfer_count, firstSeenAt=v.first_seen_at)
                 for v in victims
             ]
+    else:
+        # No candidates this run -- the flushed-but-uncommitted AttributionCandidate delete
+        # above still needs to become durable (the `if candidates:` branch's own commit never
+        # runs in this path), or a re-run that drops to zero candidates would leave the
+        # previous run's stale rows in place, silently reintroducing the exact bug this whole
+        # fix exists to close.
+        db.commit()
 
     # The suspect wallet's own full transfer history (both directions), not just the
     # forward-followed outgoing transfers the trace happened to walk -- compute_innocence
