@@ -74,6 +74,38 @@ def assert_no_jargon(text: str):
     for word in JARGON_WORDS:
         assert word not in lowered, f"jargon word '{word}' found in: {text}"
 
+# ---------------------------------------------------------------------------
+# Task G3 (I-B, instance 3): a chain-API read failure for the suspect wallet's history must
+# not be indistinguishable from "we checked and this wallet genuinely has no prior history" --
+# the former must skip the accusatory `no_pre_incident_history` factor (it was never actually
+# checked) and report an honest `history_unavailable` factor instead.
+# ---------------------------------------------------------------------------
+
+def test_history_unavailable_skips_accusatory_factor_and_reports_honest_one():
+    incident = datetime(2026, 1, 1, tzinfo=timezone.utc)
+    # An empty transfer list is exactly what the caller passes when the chain-API read
+    # failed (see traces.py) -- under the OLD behavior this would make
+    # `no_pre_incident_history` fire as if "no activity before the incident" were a
+    # confirmed, checked fact, when it was never actually checked.
+    result = compute_innocence("burner", [], incident_at=incident, victim_amount=Decimal("150"),
+                                asset="USDT-TRC20", history_unavailable=True)
+    checks = [f.check for f in result.factors]
+    assert "no_pre_incident_history" not in checks
+    assert "history_unavailable" in checks
+    factor = next(f for f in result.factors if f.check == "history_unavailable")
+    assert factor.supports_innocence is False
+    assert_no_jargon(factor.description)
+
+def test_history_unavailable_false_by_default_preserves_existing_behavior():
+    # Every existing caller/test passes real (possibly genuinely empty) history without the
+    # new keyword -- the default must keep producing the old, checked-fact factor.
+    incident = datetime(2026, 1, 1, tzinfo=timezone.utc)
+    result = compute_innocence("burner", [], incident_at=incident, victim_amount=Decimal("150"),
+                                asset="USDT-TRC20")
+    checks = [f.check for f in result.factors]
+    assert "no_pre_incident_history" in checks
+    assert "history_unavailable" not in checks
+
 def test_descriptions_are_plain_english_across_all_scenarios():
     incident = datetime(2026, 1, 1, tzinfo=timezone.utc)
     scenarios = []

@@ -85,17 +85,51 @@ def run_trace(case_id: str, db: Session = Depends(get_db)) -> TraceOut:
     # since one hop's funding transfer is also the previous hop's outgoing transfer). Taint
     # is already FIFO-capped at the reported amount (see tracer.py), so this honestly
     # reflects value that reached a stopping point versus value the trace lost track of.
-    outgoing_total = sum((h.taint for h in terminal_hops), Decimal("0"))
+    #
+    # Task G3 (I-B, instance 1): a terminal hop whose OWN stop_reason is "api_read_failure"
+    # never actually reached a verified stopping point -- its chain-API read simply failed
+    # (see tracer.py), so its taint is not "value the trace watched settle here", it's value
+    # whose destination is unknown. Counting it into outgoing_total would let the
+    # conservation check report "reconciled" (or a too-small remainder) as if the trace fully
+    # accounted for that money, when it actually couldn't verify anything past that hop. Same
+    # shape as the candidate-loop's `history_read_failed` flag: exclude the unread taint and
+    # thread a bool through to `check_conservation` so `reconciled` is never falsely True.
+    unread_terminal_hops = [h for h in terminal_hops if h.stop_reason == "api_read_failure"]
+    outgoing_total = sum((h.taint for h in terminal_hops if h.stop_reason != "api_read_failure"),
+                         Decimal("0"))
     conservation = check_conservation(incoming_total=reported_amount, outgoing_total=outgoing_total,
-                                       fees=Decimal("0"))
+                                       fees=Decimal("0"), data_unavailable=bool(unread_terminal_hops))
 
-    attribution_out = AttributionOut(
-        walletAddress=case.suspect_wallet, chain=case.chain, gatePassed=False, entityName="UNKNOWN",
-        breakdown={},
-        reasoning="No wallet in this trace ever received any of the victim's traced money, so there is nothing yet to check against an exchange.",
-        limitations="No wallet holding the victim's money was found to evaluate.",
-    )
+    # Task G3 (I-B, instance 2): the default "no wallet ever received any of the victim's
+    # money" message below is only honest when `candidates` is empty BECAUSE the money
+    # genuinely never moved -- not when it's empty because a chain-API read failed somewhere
+    # in `result.hops` (e.g. the very first hop, fetching the suspect wallet's own outgoing
+    # transfers in tracer.py, before this candidate loop even runs) and we simply couldn't see
+    # whether it moved. Check for that read-failure signal before asserting the confident
+    # version.
+    any_hop_read_failed = any(h.stop_reason == "api_read_failure" for h in result.hops)
+    if any_hop_read_failed:
+        attribution_out = AttributionOut(
+            walletAddress=case.suspect_wallet, chain=case.chain, gatePassed=False, entityName="UNKNOWN",
+            breakdown={"data_unavailable": True},
+            reasoning=(
+                "We could not read this wallet's transaction history right now, so we don't know "
+                "whether the victim's money moved further than what we could see."
+            ),
+            limitations=(
+                "Some of this trace's data was unavailable when it ran. Try running the trace "
+                "again, or check this wallet manually."
+            ),
+        )
+    else:
+        attribution_out = AttributionOut(
+            walletAddress=case.suspect_wallet, chain=case.chain, gatePassed=False, entityName="UNKNOWN",
+            breakdown={},
+            reasoning="No wallet in this trace ever received any of the victim's traced money, so there is nothing yet to check against an exchange.",
+            limitations="No wallet holding the victim's money was found to evaluate.",
+        )
     unreported_victims_out: list[UnreportedVictimOut] = []
+    unreported_victims_data_unavailable = False
 
     # Attribution candidates: any hop past the suspect wallet that actually received some of
     # the victim's traced money (taint > 0) -- not just wherever the BFS physically stopped.
@@ -202,11 +236,18 @@ def run_trace(case_id: str, db: Session = Depends(get_db)) -> TraceOut:
         # "unreported victims", not just the suspect wallet -- an intermediate hop in the causal
         # path (e.g. a hub the money passed through) is part of the criminal's own flow, not a
         # genuine additional victim.
+        # Task G3 (I-B, 4th instance found while fixing the 3 named ones): `victims = []`
+        # after this except is indistinguishable downstream from "we checked this wallet's
+        # payers and genuinely found no other victims" -- the same false-confident-empty-list
+        # bug as instances 1-3, just surfacing here as a list instead of a message or a bool.
+        # Thread the same shape of signal through to the API response instead of silently
+        # returning an empty list either way.
         try:
             victims = enumerate_unreported_victims(client, hop.wallet_address,
                                                     known_victim_addresses={h.wallet_address for h in result.hops})
         except Exception:
             victims = []
+            unreported_victims_data_unavailable = True
         unreported_victims_out = [
             UnreportedVictimOut(payerAddress=v.payer_address, chain=v.chain, totalAmount=float(v.total_amount),
                                  transferCount=v.transfer_count, firstSeenAt=v.first_seen_at)
@@ -219,13 +260,22 @@ def run_trace(case_id: str, db: Session = Depends(get_db)) -> TraceOut:
     # counter-flow-to-payer and pre-existing history, and `outgoing_transfers` from the hops
     # list never contains anything sent TO the suspect wallet. Sub-fix 4 (I1, absorbed): guard
     # this refetch the same way -- a chain-API failure here must not 500 the whole endpoint.
+    #
+    # Task G3 (I-B, instance 3): `suspect_history = []` on failure is indistinguishable from a
+    # wallet that genuinely has zero history, and compute_innocence's `no_pre_incident_history`
+    # factor would then fire as an accusatory "checked fact" ("no activity before the
+    # incident") that was never actually checked. Thread the same `*_read_failed`-shaped bool
+    # through so compute_innocence can skip that factor and report an honest "couldn't check"
+    # one instead.
+    suspect_history_read_failed = False
     try:
         suspect_history = client.get_transfers(case.suspect_wallet)
     except Exception:
         suspect_history = []
+        suspect_history_read_failed = True
     innocence = compute_innocence(case.suspect_wallet, suspect_history,
                                    incident_at=incident_at, victim_amount=reported_amount,
-                                   asset=case.asset)
+                                   asset=case.asset, history_unavailable=suspect_history_read_failed)
     innocence_out = InnocenceOut(
         innocenceScore=innocence.innocence_score,
         factors=[InnocenceFactorOut(check=f.check, description=f.description,
@@ -250,5 +300,8 @@ def run_trace(case_id: str, db: Session = Depends(get_db)) -> TraceOut:
     return TraceOut(hops=hops_out, conservation=ConservationOut(
         incomingTotal=float(conservation.incoming_total), outgoingTotal=float(conservation.outgoing_total),
         fees=float(conservation.fees), remainder=float(conservation.remainder), reconciled=conservation.reconciled,
+        dataUnavailable=conservation.data_unavailable,
     ), attribution=attribution_out, innocence=innocence_out,
-       unreportedVictims=unreported_victims_out, bridgeLinks=bridge_links_out)
+       unreportedVictims=unreported_victims_out,
+       unreportedVictimsDataUnavailable=unreported_victims_data_unavailable,
+       bridgeLinks=bridge_links_out)

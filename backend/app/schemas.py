@@ -45,6 +45,11 @@ class ConservationOut(BaseModel):
     fees: float
     remainder: float
     reconciled: bool
+    # Task G3 (I-B): true when at least one terminal hop's own chain-API read failed rather
+    # than genuinely running out of further transfers -- that hop's taint is excluded from
+    # outgoingTotal (we never actually verified it stopped there) and reconciled is forced
+    # False, so "reconciled": true is never reported when the trace simply couldn't check.
+    dataUnavailable: bool
 
 class AttributionOut(BaseModel):
     walletAddress: str
@@ -85,4 +90,8 @@ class TraceOut(BaseModel):
     attribution: AttributionOut
     innocence: InnocenceOut
     unreportedVictims: list[UnreportedVictimOut]
+    # Task G3 (I-B, 4th instance found while fixing the 3 named ones): true when the
+    # backward victim-enumeration read failed, so unreportedVictims == [] means "we
+    # couldn't check", not "we checked and there are none".
+    unreportedVictimsDataUnavailable: bool
     bridgeLinks: list[BridgeLinkOut]

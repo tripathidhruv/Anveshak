@@ -20,7 +20,8 @@ class InnocenceResult:
     factors: list[InnocenceFactor]
 
 def compute_innocence(wallet_address: str, all_transfers: list[Transfer], incident_at: datetime,
-                       victim_amount: Decimal, asset: str) -> InnocenceResult:
+                       victim_amount: Decimal, asset: str,
+                       history_unavailable: bool = False) -> InnocenceResult:
     """The exculpatory counterpart to the risk score. Every KAIZEN risk factor accuses;
     this is the only check that can say 'not this one' -- same gating logic the deposit
     detector needs anyway (distinct payers, counter-flow, known-contract checks), surfaced
@@ -31,7 +32,15 @@ def compute_innocence(wallet_address: str, all_transfers: list[Transfer], incide
 
     Every InnocenceFactor.description below is written in plain English a non-technical
     reader can follow -- no engineering jargon like 'counterparties', 'commingled', or
-    'throughput'. See test_innocence.py's jargon-regression guard."""
+    'throughput'. See test_innocence.py's jargon-regression guard.
+
+    `history_unavailable` (Task G3, I-B): the caller couldn't actually read this wallet's
+    transaction history (a chain-API failure), so `all_transfers` is an empty stand-in, not
+    a genuine "we checked and found nothing". An empty list is otherwise indistinguishable
+    from real, checked history, and would make `no_pre_incident_history` fire as if "no
+    activity before the incident" were a confirmed fact -- so that factor is skipped, and an
+    honest "we couldn't check" factor is reported instead. Defaults to False so every
+    existing caller/test that passes real (possibly genuinely empty) history is unaffected."""
     factors: list[InnocenceFactor] = []
 
     incoming = [t for t in all_transfers if t.to_address == wallet_address]
@@ -76,14 +85,23 @@ def compute_innocence(wallet_address: str, all_transfers: list[Transfer], incide
             True, 0.2,
         ))
 
-    pre_existing = any(t.timestamp < incident_at - timedelta(days=1) for t in all_transfers)
-    if not pre_existing:
+    if history_unavailable:
         factors.append(InnocenceFactor(
-            "no_pre_incident_history",
-            "We found no activity for this wallet from before the date of the incident. That "
-            "fits a wallet that was set up just for this scam.",
-            False, 0.2,
+            "history_unavailable",
+            "We could not check this wallet's transaction history from before the incident "
+            "right now, so we can't say whether it's a wallet set up just for this scam or one "
+            "with a longer track record.",
+            False, 0.0,
         ))
+    else:
+        pre_existing = any(t.timestamp < incident_at - timedelta(days=1) for t in all_transfers)
+        if not pre_existing:
+            factors.append(InnocenceFactor(
+                "no_pre_incident_history",
+                "We found no activity for this wallet from before the date of the incident. That "
+                "fits a wallet that was set up just for this scam.",
+                False, 0.2,
+            ))
 
     if not factors:
         score = 0.1

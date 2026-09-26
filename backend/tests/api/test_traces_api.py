@@ -469,6 +469,135 @@ def assert_no_jargon(text: str):
     for word in JARGON_WORDS:
         assert word not in lowered, f"jargon word '{word}' found in: {text}"
 
+# ---------------------------------------------------------------------------
+# Task G3 (I-B): a chain-API read failure must never produce a false confident statement.
+# Three named instances (conservation, attribution's empty-candidates default message,
+# innocence's history-based factor -- the last one covered end-to-end here and at the unit
+# level in test_innocence.py) plus a 4th found while fixing the named three
+# (unreported-victims enumeration failure).
+# ---------------------------------------------------------------------------
+
+FAIL_WALLET = "TFailWalletVVVVVVVVVVVVVVVVVVVVVVVV"
+VICTIM_ENUM_FAILS = "TVictimEnumFailsWWWWWWWWWWWWWWWWWWWW"
+
+
+def test_conservation_excludes_unread_terminal_hop_and_flags_data_unavailable():
+    # SUSPECT's own history reads fine (forwards 150 to FAIL_WALLET), but FAIL_WALLET's own
+    # history read fails -- its hop becomes a terminal hop via stop_reason "api_read_failure",
+    # carrying the full 150 taint. Under the OLD behavior, that taint was summed into
+    # outgoingTotal like any other terminal hop, making conservation report a fully
+    # "reconciled" trail (remainder 0) as if the trace had verified the money stopped moving
+    # there -- when really it just couldn't check.
+    class ConservationFailureClient:
+        chain = "tron"
+
+        def get_transfers(self, address, since=None):
+            if address == FAIL_WALLET:
+                raise RuntimeError("chain API unavailable")
+            data = {SUSPECT: [mk(SUSPECT, FAIL_WALLET, 150, T0, "tx-suspect-to-fail")]}
+            return data.get(address, [])
+
+    case_id = _make_case()
+    with patch("app.api.v1.traces.get_chain_client", return_value=ConservationFailureClient()), \
+         patch("app.api.v1.traces.lookup_label", return_value=None):
+        response = client.post(f"/api/v1/cases/{case_id}/trace")
+
+    assert response.status_code == 200
+    body = response.json()
+
+    # The unread hop's taint must be excluded from outgoingTotal (never counted as "verified
+    # to have stopped here"), and the trace must never claim "reconciled" when a read failure,
+    # not a genuinely closed trail, is the real reason the money can't be accounted for.
+    assert body["conservation"]["outgoingTotal"] == pytest.approx(0.0)
+    assert body["conservation"]["dataUnavailable"] is True
+    assert body["conservation"]["reconciled"] is False
+    assert body["conservation"]["remainder"] == pytest.approx(150.0)
+
+
+def test_attribution_default_message_is_honest_when_first_hop_read_fails():
+    # The very first read (the suspect wallet's own outgoing transfers, inside tracer.py)
+    # fails, so `result.hops` never grows past hop 0 and `candidates` is empty. Under the OLD
+    # behavior this hit the hardcoded default "no wallet ever received any of the victim's
+    # money" -- confidently wrong, since the truth is simply that we couldn't read anything.
+    class SuspectReadFailsClient:
+        chain = "tron"
+
+        def get_transfers(self, address, since=None):
+            raise RuntimeError("chain API unavailable")
+
+    case_id = _make_case()
+    with patch("app.api.v1.traces.get_chain_client", return_value=SuspectReadFailsClient()), \
+         patch("app.api.v1.traces.lookup_label", return_value=None):
+        response = client.post(f"/api/v1/cases/{case_id}/trace")
+
+    assert response.status_code == 200
+    body = response.json()
+
+    assert body["attribution"]["entityName"] == "UNKNOWN"
+    assert body["attribution"]["breakdown"] == {"data_unavailable": True}
+    reasoning = body["attribution"]["reasoning"].lower()
+    assert "never received" not in reasoning
+    assert "could not read" in reasoning or "could not check" in reasoning
+
+
+def test_unreported_victims_enumeration_failure_flags_data_unavailable():
+    # The candidate's own history read succeeds well enough to be evaluated (or fails and is
+    # reported honestly, per the existing F3-followup fix), but the SEPARATE backward
+    # victim-enumeration read of the same wallet fails every time. Under the OLD behavior
+    # `unreportedVictims == []` was indistinguishable from "we checked this wallet's payers and
+    # genuinely found no other victims" -- the same false-confident-empty-list bug as the 3
+    # named instances, just surfacing as a list instead of a message or a number.
+    class RaisingForVictimEnumerationClient:
+        chain = "tron"
+
+        def get_transfers(self, address, since=None):
+            if address == VICTIM_ENUM_FAILS:
+                raise RuntimeError("chain API unavailable")
+            data = {SUSPECT: [mk(SUSPECT, VICTIM_ENUM_FAILS, 150, T0, "tx-suspect-to-venum")]}
+            return data.get(address, [])
+
+    case_id = _make_case()
+    with patch("app.api.v1.traces.get_chain_client", return_value=RaisingForVictimEnumerationClient()), \
+         patch("app.api.v1.traces.lookup_label", return_value=VETTED_LABEL_ANY):
+        response = client.post(f"/api/v1/cases/{case_id}/trace")
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["unreportedVictims"] == []
+    assert body["unreportedVictimsDataUnavailable"] is True
+
+
+def test_innocence_history_unavailable_when_suspect_refetch_fails():
+    # The tracer's OWN initial fetch of the suspect wallet succeeds (empty history, so the
+    # trace itself has nothing to follow); the LATER, separate refetch of the suspect's full
+    # history (used only for innocence scoring) fails. Under the OLD behavior this silently
+    # fed `[]` into compute_innocence, indistinguishable from a genuinely history-less wallet,
+    # firing the accusatory "no activity before the incident" factor as if it were a checked
+    # fact.
+    class RaisingOnSecondSuspectCallClient:
+        chain = "tron"
+
+        def __init__(self):
+            self._calls = 0
+
+        def get_transfers(self, address, since=None):
+            self._calls += 1
+            if self._calls == 1:
+                return []
+            raise RuntimeError("chain API unavailable")
+
+    case_id = _make_case()
+    with patch("app.api.v1.traces.get_chain_client", return_value=RaisingOnSecondSuspectCallClient()), \
+         patch("app.api.v1.traces.lookup_label", return_value=VETTED_LABEL_ANY):
+        response = client.post(f"/api/v1/cases/{case_id}/trace")
+
+    assert response.status_code == 200
+    body = response.json()
+    checks = [f["check"] for f in body["innocence"]["factors"]]
+    assert "no_pre_incident_history" not in checks
+    assert "history_unavailable" in checks
+
+
 def test_hop_role_and_flag_are_plain_english_not_raw_codes():
     case_id = _make_case()
     with patch("app.api.v1.traces.get_chain_client", return_value=FakeChainClient()), \
