@@ -39,6 +39,34 @@ def test_create_and_fetch_case():
     assert fetched.status_code == 200
     assert fetched.json()["suspectWallet"] == payload["suspectWallet"]
 
+def test_create_case_appends_a_case_create_audit_entry():
+    # This is the real `action="case.create"` audit entry -- traces.py's own
+    # `trace.run` entry is only a substitute for case-creation time, added by an
+    # earlier task that couldn't touch this file (see docs/TASKS.md's follow-up
+    # gaps). Goes through the real `/api/v1/audit` endpoint (not a raw DB
+    # session against this module's own `TestSession`) because `app`'s
+    # `dependency_overrides[get_db]` is a single global shared across every API
+    # test module -- whichever module's override was imported last "wins" for
+    # every client in the process, so a direct query against this module's own
+    # engine can silently miss rows a different module's override actually wrote.
+    before = client.get("/api/v1/audit").json()
+
+    payload = {
+        "ncrp": "NCRP-AUDIT", "complainant": "Test User", "location": "Delhi", "phone": "9999999999",
+        "incidentAt": "2026-01-01T00:00:00Z", "fraudType": "investment_scam",
+        "amountINR": 150000, "amountCrypto": 150.0, "asset": "USDT-TRC20", "chain": "tron",
+        "suspectWallet": "TScamWalletBBBBBBBBBBBBBBBBBBBBBBB",
+    }
+    created = client.post("/api/v1/cases", json=payload)
+    assert created.status_code == 201
+    case_id = created.json()["id"]
+
+    after = client.get("/api/v1/audit").json()
+    new_entries = after[len(before):]
+    case_create_entries = [e for e in new_entries if e["action"] == "case.create" and e["objectId"] == case_id]
+    assert len(case_create_entries) == 1
+    assert case_create_entries[0]["objectType"] == "case"
+
 def test_get_unknown_case_returns_404():
     response = client.get("/api/v1/cases/does-not-exist")
     assert response.status_code == 404

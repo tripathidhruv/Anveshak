@@ -2,6 +2,7 @@ import uuid
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.api.deps import get_db
+from app.audit.chain import append_entry
 from app.models import Case
 from app.schemas import CaseIn, CaseOut
 
@@ -44,6 +45,7 @@ def create_case(payload: CaseIn, db: Session = Depends(get_db)) -> CaseOut:
     db.add(case)
     db.commit()
     db.refresh(case)
+    append_entry(db, actor="system", action="case.create", object_type="case", object_id=case.id)
     return _to_out(case)
 
 @router.get("/{case_id}", response_model=CaseOut)

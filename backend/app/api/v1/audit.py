@@ -11,15 +11,11 @@ router = APIRouter(prefix="/api/v1/audit", tags=["audit"])
 # Scaffolded by Task H0 (docs/superpowers/plans/2026-09-26-backend-sprint2-3-completion.md).
 # Filled in by Task H6: hash-chained audit log + operational verify_chain().
 #
-# NOTE (deferred integration, see task-H6-report.md): no other endpoint in this
-# backend calls `append_entry()` yet. This task's brief originally asked for
-# 2-3 real call sites (case creation, attribution result, etc.), but 7 sibling
-# agents were simultaneously editing `cases.py`, `traces.py`, and other
-# routers for tasks H1-H5/H7-H8 in this same pass, so wiring call sites there
-# was deliberately left out of this task's file scope to avoid collisions.
+# `append_entry()` is now called from real request handlers: `cases.py`
+# (`action="case.create"`, at case-creation time) and `traces.py`
+# (`action="trace.run"` and `action="attribution.result"`, added by Task H11).
 # The audit module itself (`app/audit/chain.py`) is complete and tested
-# end-to-end via its own functions; it's just not yet invoked from request
-# handlers elsewhere. Wiring real call sites is follow-up work.
+# end-to-end via its own functions in `tests/test_audit_chain.py`.
 
 
 def _to_out(entry: AuditLogEntry) -> AuditLogEntryOut:
