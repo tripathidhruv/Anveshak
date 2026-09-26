@@ -1,5 +1,12 @@
 # Progress log
 
+## 2026-09-26 (idempotency fix + bridge-linking Tasks 1 & 4) · Dhruv + Claude
+**Did:** Fixed the `run_trace` non-idempotency bug the 3rd whole-branch review found (full delete-and-replace per `case_id` for `Hop`/`AttributionCandidate`, webhook/audit dedup on a repeat trace for an already-flagged wallet) — review caught a real atomicity gap in the first pass (an early standalone commit on the delete could permanently destroy evidence rows on a mid-loop exception with no replacement) and it was fixed before merging (`flush()` + single covering commit). Started the cross-chain bridge-linking plan: Task 1 (bridge registry) landed real, independently-triple-verified Allbridge Core TRON↔Ethereum USDT liquidity-pool addresses (Etherscan direct, TronScanAPI direct, Allbridge's own docs contract table all agree) — the implementer itself caught and discarded a hallucinated address from an earlier web-search summary before it ever reached the code, exactly the discipline this project has needed twice before. Task 4 confirmed the existing mock-mode demo data already renders a cross-chain bridge crossing correctly (violet diamond node, Route A/B toggle) — no code change needed, just documented.
+**Decided:** Nothing new.
+**Next:** Bridge-linking Tasks 2 (tracer BFS mechanism) and 3 (traces.py wiring) — in progress.
+**Blocked on:** Nothing.
+**Note for whoever's next:** 260/260 backend tests green throughout. All three finished pieces reviewed clean by an independent sonnet reviewer, no rubber-stamping.
+
 ## 2026-09-26 (3rd whole-branch review, finally run) · Dhruv + Claude · One real Important bug found (run_trace non-idempotent), two Minor, two probes clean
 **Did:** Ran the 3rd whole-branch review the user had previously chosen to skip (originally killed mid-dispatch for running on opus, violating the standing sonnet-only rule) — user asked for it to actually happen. Dispatched on sonnet, instructed to match the rigor of the prior two whole-branch reviews (written and EXECUTED probe scripts against real code, not just a read-through). Range: `a74c29f..6fcf5a3` (the G1-G6 fix pass), checked against current HEAD since substantial work (Sprint 2/3, Hop persistence, case.create audit, risk→VASP wiring) landed on top of it since.
 
