@@ -16,13 +16,16 @@ def get_chain_client(chain: Chain, asset: str | None = None) -> ChainClient:
     contract, not just its spoofable symbol string. Bitcoin has no contract-token
     attack surface, so its client takes no such parameter."""
     if chain == "tron":
-        contract = resolve_asset_contract(chain, asset)
+        resolution = resolve_asset_contract(chain, asset)
+        # TronChainClient only ever fetches TRC-20 (token) transfers -- it has no
+        # native-TRX mixing surface to distinguish "native" from "unknown" against, so
+        # it only needs the resolved contract address (or None to apply no filter).
         return TronChainClient(api_key=settings.trongrid_api_key, http=_shared_http,
-                                asset_contract=contract)
+                                asset_contract=resolution.contract)
     if chain == "ethereum":
-        contract = resolve_asset_contract(chain, asset)
+        resolution = resolve_asset_contract(chain, asset)
         return EvmChainClient(api_key=settings.etherscan_api_key, http=_shared_http,
-                               asset_contract=contract)
+                               asset_filter=resolution)
     if chain == "bitcoin":
         return BitcoinChainClient(http=_shared_http)
     raise ValueError(f"unsupported chain: {chain}")

@@ -8,13 +8,57 @@ actually defeats that attack. See Task F8 in
 docs/superpowers/plans/2026-09-26-backend-whole-branch-review-fixes.md.
 """
 
+from dataclasses import dataclass
+from typing import Literal
+
+# The three real cases a case's declared asset can resolve to, once we know which chain
+# and which display label it is:
+#   "native"  -- the asset IS known, and IS the chain's native coin (e.g. native ETH).
+#                There is no contract to filter token transfers against; instead, EVERY
+#                token-contract transfer must be excluded from this trace entirely, since
+#                the declared asset is specifically the native coin, not any ERC-20/TRC-20
+#                token.
+#   "contract" -- the asset IS known and IS a specific token contract. Token transfers
+#                should be filtered down to that exact contract address (defeats a spoofed
+#                spam token sharing the same symbol), AND native-coin transfers must be
+#                excluded entirely -- the declared asset is a token, never the native coin.
+#   "unknown"  -- the asset label didn't map to anything this module recognizes (or no
+#                label was given at all). Apply no filter -- the current permissive
+#                behavior, and a documented gap for an asset this system doesn't yet know
+#                how to reason about, not a silent narrowing.
+#
+# A single `contract: str | None` return value cannot distinguish "native" from "unknown"
+# -- both would return None -- so this type carries `kind` explicitly rather than relying
+# on the caller to infer it from an absent contract.
+AssetContractKind = Literal["native", "contract", "unknown"]
+
+
+@dataclass(frozen=True)
+class AssetContractResolution:
+    """Result of resolving a case's declared asset against this module's known-asset
+    tables. See `AssetContractKind` above for what each `kind` means. `contract` is only
+    ever set when `kind == "contract"`."""
+
+    kind: AssetContractKind
+    contract: str | None = None
+
+
 # Maps (chain, canonical asset label) -> the real token contract address to filter
-# transfers against. A missing entry means "no contract filter to apply" -- native
-# assets (BTC, native ETH) have no smart-contract token behind them, so there is no
-# analogous fake-token attack surface for them at this layer.
+# transfers against. A missing entry here means "not a specific known token contract" --
+# check NATIVE_ASSET_LABELS next before concluding the asset is unrecognized.
 KNOWN_ASSET_CONTRACTS: dict[tuple[str, str], str] = {
     ("tron", "USDT-TRC20"): "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
     ("ethereum", "USDT-ERC20"): "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+}
+
+# Canonical (chain, asset label) pairs whose asset is that chain's native coin -- no
+# smart-contract token behind it, so there is no analogous fake-token attack surface for
+# them at the contract-matching layer. This does NOT mean "no filter" -- it means "known,
+# and known to be native," which must exclude every token-contract transfer from a trace
+# declared against this asset (see AssetContractKind above).
+NATIVE_ASSET_LABELS: set[tuple[str, str]] = {
+    ("bitcoin", "BTC"),
+    ("ethereum", "ETH"),
 }
 
 # Bridges the frontend's case-creation display labels (CRYPTO_OPTIONS in
@@ -29,15 +73,24 @@ DISPLAY_LABEL_TO_ASSET_LABEL: dict[str, str] = {
 }
 
 
-def resolve_asset_contract(chain: str, display_label: str | None) -> str | None:
+def resolve_asset_contract(chain: str, display_label: str | None) -> AssetContractResolution:
     """Resolves a case's frontend display label (`case.asset`, e.g. `"USDT (TRC-20)"`)
-    to the known-good contract address to filter that chain's transfers against.
+    to how this chain's adapter should filter its fetched transfers.
 
-    Returns None when there's nothing to filter on -- no display label given, the label
-    doesn't map to a known asset, or the asset is a native asset with no contract
-    (e.g. `"BTC"`, native `"ETH"`). None means "apply no contract filter," not an error.
+    Returns an `AssetContractResolution`:
+    - `kind="contract"`, `contract=<address>` when the label maps to a known token
+      contract (filter token transfers to this address, exclude native-coin transfers).
+    - `kind="native"` when the label maps to this chain's native coin (exclude every
+      token-contract transfer; there is nothing to filter token transfers against).
+    - `kind="unknown"` when there's no label, or the label doesn't map to anything this
+      module recognizes -- apply no filter, the current permissive behavior.
     """
     if display_label is None:
-        return None
+        return AssetContractResolution(kind="unknown")
     asset_label = DISPLAY_LABEL_TO_ASSET_LABEL.get(display_label, display_label)
-    return KNOWN_ASSET_CONTRACTS.get((chain, asset_label))
+    contract = KNOWN_ASSET_CONTRACTS.get((chain, asset_label))
+    if contract is not None:
+        return AssetContractResolution(kind="contract", contract=contract)
+    if (chain, asset_label) in NATIVE_ASSET_LABELS:
+        return AssetContractResolution(kind="native")
+    return AssetContractResolution(kind="unknown")

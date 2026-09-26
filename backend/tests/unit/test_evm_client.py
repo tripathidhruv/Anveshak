@@ -5,6 +5,7 @@ import httpx
 import pytest
 from app.chains.http_client import AdaptiveHttpClient
 from app.chains.evm import EvmChainClient, ETHERSCAN_BASE, ETHERSCAN_MAINNET_CHAIN_ID
+from app.chains.known_assets import AssetContractResolution
 
 TOKENTX_FIXTURE = json.loads(
     (Path(__file__).parent.parent / "contract/fixtures/etherscan_tokentx_sample.json").read_text()
@@ -198,7 +199,11 @@ def test_asset_contract_filter_drops_spoofed_symbol_wrong_contract():
         ),
         min_interval_seconds=0.0,
     )
-    client = EvmChainClient(api_key="test-key", http=http, asset_contract=GENUINE_USDT_CONTRACT)
+    client = EvmChainClient(
+        api_key="test-key",
+        http=http,
+        asset_filter=AssetContractResolution(kind="contract", contract=GENUINE_USDT_CONTRACT),
+    )
 
     transfers = client.get_transfers("0xscammer000000000000000000000000000002")
 
@@ -206,10 +211,12 @@ def test_asset_contract_filter_drops_spoofed_symbol_wrong_contract():
     assert {t.tx_hash for t in transfers} == {"0xaaa111", "0xbbb222"}
 
 
-def test_asset_contract_filter_ignores_case_and_leaves_native_eth_alone():
+def test_asset_contract_filter_ignores_case_and_also_drops_native_eth():
     """Etherscan may return `contractAddress` in either case -- the comparison must be
-    case-insensitive. Native ETH transfers (no `contractAddress` at all) must never be
-    dropped by this filter."""
+    case-insensitive. A case whose declared asset is a specific ERC-20 contract must
+    ALSO drop native ETH (`txlist`) records entirely -- native ETH is never the
+    declared ERC-20 asset, so it must not be mixed into this trace's transfers either
+    (Task G1, the mirror direction of the native-ETH-excludes-tokens fix)."""
     tokentx_data = {
         "status": "1",
         "message": "OK",
@@ -225,18 +232,23 @@ def test_asset_contract_filter_ignores_case_and_leaves_native_eth_alone():
 
     http = AdaptiveHttpClient(transport=httpx.MockTransport(handler), min_interval_seconds=0.0)
     client = EvmChainClient(
-        api_key="test-key", http=http, asset_contract=GENUINE_USDT_CONTRACT.upper()
+        api_key="test-key",
+        http=http,
+        asset_filter=AssetContractResolution(
+            kind="contract", contract=GENUINE_USDT_CONTRACT.upper()
+        ),
     )
 
     transfers = client.get_transfers("0xscammer000000000000000000000000000002")
 
     hashes = {t.tx_hash for t in transfers}
-    assert hashes == {"0xaaa111", "0xbbb222", "0xnative111"}
+    assert hashes == {"0xaaa111", "0xbbb222"}
+    assert "0xnative111" not in hashes
 
 
 def test_no_asset_contract_filter_keeps_unfiltered_behavior():
-    """When `asset_contract` is None (not provided), the spam transfer is not filtered
-    out -- a regression guard for existing unfiltered callers."""
+    """When no `asset_filter` is provided at all (unchanged default), the spam transfer
+    is not filtered out -- a regression guard for existing unfiltered callers."""
     tokentx_data = {
         "status": "1",
         "message": "OK",
@@ -248,3 +260,77 @@ def test_no_asset_contract_filter_keeps_unfiltered_behavior():
 
     hashes = {t.tx_hash for t in transfers}
     assert hashes == {"0xaaa111", "0xbbb222", "0xspamtx001"}
+
+
+def test_unknown_asset_kind_explicitly_keeps_permissive_unfiltered_behavior():
+    """An asset label that didn't map to anything known (`kind="unknown"`, e.g. an
+    unrecognized display label) must still get the current permissive merge-both
+    behavior -- documented as a known gap, not silently tightened."""
+    tokentx_data = {
+        "status": "1",
+        "message": "OK",
+        "result": TOKENTX_FIXTURE + [SPAM_TOKEN_TX],
+    }
+    txlist_data = {"status": "1", "message": "OK", "result": [NATIVE_TX]}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        action = request.url.params.get("action")
+        if action == "tokentx":
+            return httpx.Response(200, json=tokentx_data)
+        return httpx.Response(200, json=txlist_data)
+
+    http = AdaptiveHttpClient(transport=httpx.MockTransport(handler), min_interval_seconds=0.0)
+    client = EvmChainClient(
+        api_key="test-key", http=http, asset_filter=AssetContractResolution(kind="unknown")
+    )
+
+    transfers = client.get_transfers("0xscammer000000000000000000000000000002")
+
+    hashes = {t.tx_hash for t in transfers}
+    assert hashes == {"0xaaa111", "0xbbb222", "0xspamtx001", "0xnative111"}
+
+
+def test_native_eth_case_excludes_spam_token_from_stealing_fifo_taint_budget():
+    """The Critical-finding probe from the second whole-branch review: a case whose
+    declared asset is native ETH must never let a spam ERC-20 transfer merge into the
+    same transfer list as the real ETH payment. A fake token transfer arriving 5s after
+    a real 1 ETH victim payment must not be present at all in this adapter's output --
+    if it were, the tracer's FIFO taint-budget math (app/tracing/tracer.py) would
+    compare `Transfer.amount`s across two incompatible denominations and could let the
+    spam record consume the real recipient's taint, leaving them at taint=0."""
+    real_eth_payment = {
+        "hash": "0xrealvictimpayment",
+        "from": "0xvictim0000000000000000000000000000001",
+        "to": "0xscammer000000000000000000000000000002",
+        "value": "1000000000000000000",  # 1 ETH, 18 decimals
+        "timeStamp": "1732000000",
+        "gasUsed": "21000",
+        "gasPrice": "20000000000",
+        "isError": "0",
+    }
+    spam_token_arriving_after = {
+        **SPAM_TOKEN_TX,
+        "timeStamp": "1732000005",  # 5s after the real payment
+    }
+    tokentx_data = {"status": "1", "message": "OK", "result": [spam_token_arriving_after]}
+    txlist_data = {"status": "1", "message": "OK", "result": [real_eth_payment]}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        action = request.url.params.get("action")
+        if action == "tokentx":
+            return httpx.Response(200, json=tokentx_data)
+        return httpx.Response(200, json=txlist_data)
+
+    http = AdaptiveHttpClient(transport=httpx.MockTransport(handler), min_interval_seconds=0.0)
+    client = EvmChainClient(
+        api_key="test-key", http=http, asset_filter=AssetContractResolution(kind="native")
+    )
+
+    transfers = client.get_transfers("0xscammer000000000000000000000000000002")
+
+    assert len(transfers) == 1
+    assert transfers[0].tx_hash == "0xrealvictimpayment"
+    assert transfers[0].asset == "ETH"
+    assert transfers[0].amount == 1
+    hashes = {t.tx_hash for t in transfers}
+    assert "0xspamtx001" not in hashes

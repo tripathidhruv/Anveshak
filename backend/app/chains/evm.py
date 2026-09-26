@@ -2,6 +2,7 @@ from datetime import datetime, timezone
 from decimal import Decimal
 from app.chains.base import Transfer
 from app.chains.http_client import AdaptiveHttpClient
+from app.chains.known_assets import AssetContractResolution
 
 # Etherscan API V1 (api.etherscan.io/api) was fully deprecated on 15 Aug 2025 and no
 # longer responds; all requests must go through V2, which is multichain and requires
@@ -26,36 +27,56 @@ class EvmChainClient:
     chain = "ethereum"
 
     def __init__(self, api_key: str | None = None, http: AdaptiveHttpClient | None = None,
-                 asset_contract: str | None = None):
+                 asset_filter: AssetContractResolution | None = None):
         self._api_key = api_key
         self._http = http or AdaptiveHttpClient()
-        # When set, filters `tokentx`-sourced results to only the token whose contract
-        # this is. This is the case's own declared asset resolved through
-        # app.chains.known_assets.resolve_asset_contract -- filtering by contract
-        # address (not the `tokenSymbol` string) is what actually resists a spoofed
-        # spam token claiming to be "USDT". None means no filter -- unchanged behavior.
-        # Never applies to native-ETH (`txlist`) records -- they have no contract at
-        # all and aren't the thing this filter is defending against.
-        self._asset_contract = asset_contract
+        # Resolved via app.chains.known_assets.resolve_asset_contract for the case's own
+        # declared asset. Governs how `tokentx` (ERC-20) and `txlist` (native ETH)
+        # results are combined -- see AssetContractKind in known_assets.py:
+        #   "native"   -- exclude ALL token-contract transfers; this trace is about the
+        #                  native coin specifically.
+        #   "contract" -- filter token transfers to this exact contract address (defeats
+        #                  a spoofed spam token sharing the same symbol) AND exclude
+        #                  native-ETH transfers entirely; the declared asset is a token,
+        #                  never the native coin.
+        #   "unknown"  -- no filter, current permissive merge-both behavior (default,
+        #                  also used when no asset_filter is given at all).
+        self._asset_filter = asset_filter or AssetContractResolution(kind="unknown")
 
     def get_transfers(self, address: str, since: datetime | None = None) -> list[Transfer]:
+        kind = self._asset_filter.kind
         token_records = self._fetch("tokentx", address)
         native_records = self._fetch("txlist", address)
-        token_transfers = [self._normalize(record) for record in token_records]
-        if self._asset_contract is not None:
-            wanted = self._asset_contract.lower()
-            token_transfers = [
-                t for t in token_transfers
-                if str(t.raw.get("contractAddress", "")).lower() == wanted
+
+        if kind == "native":
+            # The declared asset is native ETH -- every ERC-20 token transfer (genuine
+            # or spam) must be excluded, never merged in alongside native transfers.
+            token_transfers: list[Transfer] = []
+        else:
+            token_transfers = [self._normalize(record) for record in token_records]
+            if kind == "contract":
+                wanted = self._asset_filter.contract.lower()
+                token_transfers = [
+                    t for t in token_transfers
+                    if str(t.raw.get("contractAddress", "")).lower() == wanted
+                ]
+            # kind == "unknown": no filter, all parsed token transfers pass through.
+
+        if kind == "contract":
+            # The declared asset is a specific ERC-20 token -- native ETH is never the
+            # declared asset in that case, so exclude it entirely rather than mixing it
+            # into the same transfer list.
+            native_transfers: list[Transfer] = []
+        else:
+            native_transfers = [
+                self._normalize_native(record)
+                for record in native_records
+                # A reverted transaction still appears in txlist with its intended value,
+                # but no ETH actually moved — including it would fabricate a transfer.
+                if record.get("isError", "0") == "0"
             ]
-        transfers = token_transfers
-        transfers += [
-            self._normalize_native(record)
-            for record in native_records
-            # A reverted transaction still appears in txlist with its intended value,
-            # but no ETH actually moved — including it would fabricate a transfer.
-            if record.get("isError", "0") == "0"
-        ]
+
+        transfers = token_transfers + native_transfers
         if since is not None:
             transfers = [t for t in transfers if t.timestamp >= since]
         return sorted(transfers, key=lambda t: t.timestamp)
