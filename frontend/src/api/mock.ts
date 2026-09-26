@@ -163,6 +163,15 @@ function buildGraph(): GraphData {
       amt: DEMO.routeB.trail[1].amt,
       at: DEMO.routeB.trail[1].at,
     },
+    // Verified 2026-09-26 (SDD Task 4): this is the frontend-visible shape that exercises the
+    // backend's real cross-chain bridge-hop linking feature — node kind 'bridge' renders as a
+    // violet diamond in FundFlowGraph (shape-diamond + --node-accent: var(--color-violet)),
+    // matches GraphLegend's "Bridge (cross-chain)" entry, and graphLayout's computeRoutePaths
+    // correctly flags any path through it as crossesBridge (Route B). Confirmed by running the
+    // mock-mode demo case (KZN-2026-0417) end to end in a browser: the bridge node renders,
+    // clicking it opens the node-detail panel with the label "Bridge contract" (matching the
+    // backend's new role string from Task 3), and "Show Route A" / "Show Route B" correctly
+    // dim/highlight the two paths. No rendering bug found — no other code change was needed.
     { id: 'bridge', label: 'Bridge contract', sublabel: 'Currency exchange between blockchains', kind: 'bridge', accent: 'violet', addr: bridge.addr, amt: bridge.amt, at: bridge.at },
     ...DEMO.routeB.trail.slice(3, 5).map((hop) => ({
       id: `b-${hop.n}`,
