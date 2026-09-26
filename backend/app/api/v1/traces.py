@@ -242,17 +242,33 @@ def run_trace(case_id: str, db: Session = Depends(get_db)) -> TraceOut:
         # bug as instances 1-3, just surfacing here as a list instead of a message or a bool.
         # Thread the same shape of signal through to the API response instead of silently
         # returning an empty list either way.
-        try:
-            victims = enumerate_unreported_victims(client, hop.wallet_address,
-                                                    known_victim_addresses={h.wallet_address for h in result.hops})
-        except Exception:
-            victims = []
-            unreported_victims_data_unavailable = True
-        unreported_victims_out = [
-            UnreportedVictimOut(payerAddress=v.payer_address, chain=v.chain, totalAmount=float(v.total_amount),
-                                 transferCount=v.transfer_count, firstSeenAt=v.first_seen_at)
-            for v in victims
-        ]
+        # Task G4 (I-C): `hop` here may be the `evaluated[-1]` fallback -- an arbitrary
+        # last-candidate wallet picked only so attribution has *something* to report on when no
+        # candidate passed the full gate. With no vetted labels seeded (true for every live
+        # trace today), enumerating that unverified wallet's depositors and reporting them as
+        # "victims" of this case would implicate unrelated third parties on nothing more than
+        # having sent money through a wallet the traced funds merely happened to pass through.
+        # Only enumerate when the wallet has actually passed the deposit gate as a genuine
+        # collection point. Deliberately `gate.gate_passed`, not `final_gate_passed`:
+        # `final_gate_passed` also requires `sweep_signal.is_sweep`, which is a correctness
+        # signal for naming the wallet as an EXCHANGE specifically -- enough distinct payers
+        # (plus predecessor + vetted label) is already the right bar for "this is a real hub
+        # worth checking other depositors of," even when we're not confident enough to name it
+        # as an exchange. When the guard fails, `unreported_victims_out` simply stays the empty
+        # list it's already initialized to above -- no new code path needed for the negative case.
+        if gate is not None and gate.gate_passed:
+            try:
+                victims = enumerate_unreported_victims(
+                    client, hop.wallet_address,
+                    known_victim_addresses={h.wallet_address for h in result.hops})
+            except Exception:
+                victims = []
+                unreported_victims_data_unavailable = True
+            unreported_victims_out = [
+                UnreportedVictimOut(payerAddress=v.payer_address, chain=v.chain, totalAmount=float(v.total_amount),
+                                     transferCount=v.transfer_count, firstSeenAt=v.first_seen_at)
+                for v in victims
+            ]
 
     # The suspect wallet's own full transfer history (both directions), not just the
     # forward-followed outgoing transfers the trace happened to walk -- compute_innocence

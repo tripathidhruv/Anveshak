@@ -178,6 +178,11 @@ def test_trace_endpoint_withholds_attribution_when_sweep_does_not_hold():
     assert body["attribution"]["breakdown"]["sweep_confirmed"] is False
     assert body["attribution"]["breakdown"]["distinct_payers_ok"] is True
 
+    # Task G4: gate.gate_passed (payers + predecessor + vetted label) is True here even though
+    # final_gate_passed is False (no sweep) -- unreported-victim enumeration must still run on
+    # this wallet, proving the guard is gate.gate_passed specifically, not final_gate_passed.
+    assert len(body["unreportedVictims"]) == 3
+
 
 # ---------------------------------------------------------------------------
 # Task F3 (C2 + C3 + I9 + I1 + I6): candidate selection must be based on taint,
@@ -414,7 +419,11 @@ def test_unreported_victims_excludes_every_wallet_already_in_the_trace_path():
     # 3-hop trace: SUSPECT -> MIDDLE -> FINAL. MIDDLE is an intermediate hop in the criminal's
     # own path, but it's ALSO recorded as a payer into FINAL in the chain client's fixture --
     # it must be excluded from unreportedVictims (it's not a genuine additional victim).
-    # THIRDPARTY is a genuinely separate payer into FINAL and must still be included.
+    # THIRDPARTY (+ two more distinct payers, added for Task G4 so this wallet clears the
+    # deposit gate's distinct-payer bar and enumeration actually runs) are genuinely separate
+    # payers into FINAL and must still be included. Label patched to a vetted one so the
+    # remaining gate check (label_vetted) also clears -- this test is about the exclusion
+    # logic, not the gate itself, so the fixture must satisfy the gate to reach that logic.
     class MultiHopVictimClient:
         chain = "tron"
 
@@ -428,21 +437,26 @@ def test_unreported_victims_excludes_every_wallet_already_in_the_trace_path():
                        T0.fromtimestamp(T0.timestamp() + 10, tz=timezone.utc), "tx-middle-to-final"),
                     mk(THIRDPARTY, FINAL, 500,
                        T0.fromtimestamp(T0.timestamp() - 86400, tz=timezone.utc), "tx-thirdparty-to-final"),
+                    mk(OLD_PAYER_X, FINAL, 20,
+                       T0.fromtimestamp(T0.timestamp() - 90000, tz=timezone.utc), "tx-x-to-final"),
+                    mk(OLD_PAYER_Y, FINAL, 20,
+                       T0.fromtimestamp(T0.timestamp() - 90000, tz=timezone.utc), "tx-y-to-final"),
                 ],
             }
             return data.get(address, [])
 
     case_id = _make_case()
     with patch("app.api.v1.traces.get_chain_client", return_value=MultiHopVictimClient()), \
-         patch("app.api.v1.traces.lookup_label", return_value=None):
+         patch("app.api.v1.traces.lookup_label", return_value=VETTED_LABEL_ANY):
         response = client.post(f"/api/v1/cases/{case_id}/trace")
 
     assert response.status_code == 200
     body = response.json()
 
     assert body["attribution"]["walletAddress"] == FINAL
+    assert body["attribution"]["breakdown"]["distinct_payers_ok"] is True
     payer_addresses = {v["payerAddress"] for v in body["unreportedVictims"]}
-    assert payer_addresses == {THIRDPARTY}
+    assert payer_addresses == {THIRDPARTY, OLD_PAYER_X, OLD_PAYER_Y}
     assert MIDDLE not in payer_addresses
 
 
@@ -547,22 +561,48 @@ def test_unreported_victims_enumeration_failure_flags_data_unavailable():
     # `unreportedVictims == []` was indistinguishable from "we checked this wallet's payers and
     # genuinely found no other victims" -- the same false-confident-empty-list bug as the 3
     # named instances, just surfacing as a list instead of a message or a number.
-    class RaisingForVictimEnumerationClient:
+    #
+    # Task G4: enumeration now only runs when `gate.gate_passed` is True, so this fixture must
+    # make VICTIM_ENUM_FAILS's reads succeed enough times to actually reach and pass the gate
+    # before the enumeration read fails. VICTIM_ENUM_FAILS is read from THIS wallet address
+    # twice before enumeration ever runs: once by the tracer's own BFS (discovering this hop
+    # has no further causal outgoing edges) and once by the attribution loop's own gate-eval
+    # refetch (counting distinct payers). Only the THIRD read -- the separate call inside
+    # `enumerate_unreported_victims` -- must fail; otherwise the gate read failing too would
+    # make `gate is None` and this test would no longer be exercising the enumeration-failure
+    # path at all.
+    class RaisingOnThirdReadForVictimEnumerationClient:
         chain = "tron"
+
+        def __init__(self):
+            self._venum_calls = 0
 
         def get_transfers(self, address, since=None):
             if address == VICTIM_ENUM_FAILS:
-                raise RuntimeError("chain API unavailable")
+                self._venum_calls += 1
+                if self._venum_calls > 2:
+                    raise RuntimeError("chain API unavailable")
+                return [
+                    mk(SUSPECT, VICTIM_ENUM_FAILS, 150, T0, "tx-suspect-to-venum"),
+                    mk(PAYER1, VICTIM_ENUM_FAILS, 60,
+                       T0.fromtimestamp(T0.timestamp() - 40, tz=timezone.utc), "tx-p1-to-venum"),
+                    mk(PAYER2, VICTIM_ENUM_FAILS, 75,
+                       T0.fromtimestamp(T0.timestamp() - 20, tz=timezone.utc), "tx-p2-to-venum"),
+                ]
             data = {SUSPECT: [mk(SUSPECT, VICTIM_ENUM_FAILS, 150, T0, "tx-suspect-to-venum")]}
             return data.get(address, [])
 
     case_id = _make_case()
-    with patch("app.api.v1.traces.get_chain_client", return_value=RaisingForVictimEnumerationClient()), \
+    with patch("app.api.v1.traces.get_chain_client",
+               return_value=RaisingOnThirdReadForVictimEnumerationClient()), \
          patch("app.api.v1.traces.lookup_label", return_value=VETTED_LABEL_ANY):
         response = client.post(f"/api/v1/cases/{case_id}/trace")
 
     assert response.status_code == 200
     body = response.json()
+    # Confirms the gate itself passed (so enumeration was actually attempted, not skipped by
+    # the G4 guard) before asserting on the enumeration-failure signal.
+    assert body["attribution"]["breakdown"]["distinct_payers_ok"] is True
     assert body["unreportedVictims"] == []
     assert body["unreportedVictimsDataUnavailable"] is True
 
@@ -596,6 +636,57 @@ def test_innocence_history_unavailable_when_suspect_refetch_fails():
     checks = [f["check"] for f in body["innocence"]["factors"]]
     assert "no_pre_incident_history" not in checks
     assert "history_unavailable" in checks
+
+
+# ---------------------------------------------------------------------------
+# Task G4 (I-C): unreported-victim enumeration must not run on an unverified fallback wallet.
+# ---------------------------------------------------------------------------
+
+FALLBACK_WALLET = "TFallbackWalletXXXXXXXXXXXXXXXXXXXX"
+SPURIOUS_PAYER = "TSpuriousPayerYYYYYYYYYYYYYYYYYYYYYY"
+
+
+def test_unreported_victims_empty_when_no_candidate_passes_the_deposit_gate():
+    # FALLBACK_WALLET is the only candidate (taint > 0), and it never passes the deposit gate:
+    # only 2 distinct payers into it (SUSPECT + SPURIOUS_PAYER), well under
+    # MIN_DISTINCT_PAYERS=3. Attribution therefore falls back to `evaluated[-1]` -- this same
+    # unverified wallet. SPURIOUS_PAYER is a real inbound payer into it that is NOT already a
+    # known wallet in the trace's own hop list, so if unreported-victim enumeration ran
+    # unconditionally on this fallback wallet (the pre-fix behavior), SPURIOUS_PAYER would be
+    # reported to the officer as a "victim" of this case -- despite the wallet never having
+    # been confirmed as any kind of real collection hub. This is exactly the harm G4 exists to
+    # prevent.
+    class FallbackNoGateClient:
+        chain = "tron"
+
+        def get_transfers(self, address, since=None):
+            data = {
+                SUSPECT: [mk(SUSPECT, FALLBACK_WALLET, 150, T0, "tx-suspect-to-fallback")],
+                FALLBACK_WALLET: [
+                    mk(SUSPECT, FALLBACK_WALLET, 150, T0, "tx-suspect-to-fallback"),
+                    mk(SPURIOUS_PAYER, FALLBACK_WALLET, 40,
+                       T0.fromtimestamp(T0.timestamp() - 30, tz=timezone.utc), "tx-spurious-payer"),
+                ],
+            }
+            return data.get(address, [])
+
+    case_id = _make_case()
+    with patch("app.api.v1.traces.get_chain_client", return_value=FallbackNoGateClient()), \
+         patch("app.api.v1.traces.lookup_label", return_value=VETTED_LABEL_ANY):
+        response = client.post(f"/api/v1/cases/{case_id}/trace")
+
+    assert response.status_code == 200
+    body = response.json()
+
+    assert body["attribution"]["walletAddress"] == FALLBACK_WALLET
+    assert body["attribution"]["breakdown"]["distinct_payers_ok"] is False
+    assert body["attribution"]["gatePassed"] is False
+
+    # The real assertion: no spurious victims reported from this unverified fallback wallet.
+    assert body["unreportedVictims"] == []
+    payer_addresses = {v["payerAddress"] for v in body["unreportedVictims"]}
+    assert SPURIOUS_PAYER not in payer_addresses
+    assert body["unreportedVictimsDataUnavailable"] is False
 
 
 def test_hop_role_and_flag_are_plain_english_not_raw_codes():
