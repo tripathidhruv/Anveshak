@@ -12,7 +12,7 @@ from app.detectors.sweep import detect_sweep
 from app.detectors.deposit import evaluate_deposit_gate
 from app.detectors.innocence import compute_innocence
 from app.graph.backward import enumerate_unreported_victims
-from app.bridge.linker import find_bridge_links
+from app.bridge.registry import is_bridge_contract, KNOWN_BRIDGES
 from app.labels.seed_labels import lookup_label
 from app.sanctions.screen import screen_hops
 from app.vasp_feed import distribution as vasp_distribution
@@ -45,7 +45,38 @@ _STOP_REASON_PLAIN_ENGLISH = {
     "no_further_transfers": "This wallet has not moved this money any further yet",
     "hop_cap_reached": "We stopped following the money here to keep the search from going too deep",
     "api_read_failure": "We could not check this wallet's history right now",
+    "bridge_crossing_unconfirmed": (
+        "This wallet sent the money into a cross-chain bridge, but we could not confirm "
+        "exactly which withdrawal on the other blockchain it turned into"
+    ),
 }
+
+
+def _hop_role(h: TraceHop) -> str:
+    """A bridge-contract hop (Task 3, cross-chain bridge linking) gets its own plain-English
+    role string, distinct from an ordinary intermediate wallet -- it's not a wallet anyone
+    controls, it's the bridge protocol's own contract, so lumping it in with "wallet the
+    money passed through" would misrepresent what it is to a non-technical reader."""
+    if h.hop_index == 0:
+        return _ROLE_PLAIN_ENGLISH["suspect"]
+    if is_bridge_contract(h.wallet_address, h.chain) is not None:
+        return "Bridge contract"
+    return _ROLE_PLAIN_ENGLISH["intermediate"]
+
+
+def _client_for_chain(chain: str, case_chain: str, case_asset: str):
+    """Factory passed to `trace()` as `get_client_for_chain` (Task 2's tracer.py). Every
+    existing call is for the case's own chain, resolved exactly as before. The only other
+    chain `trace()` will ever ask for is the paired side of a confirmed bridge crossing
+    (TRON<->Ethereum only, per this plan's scope) -- recover that side's canonical asset
+    label from the registry entry that names `chain` as its `paired_chain`, so
+    `get_chain_client` filters the paired chain's client to the right token contract
+    instead of no filter at all."""
+    if chain == case_chain:
+        return get_chain_client(chain, case_asset)
+    match = next((b for b in KNOWN_BRIDGES if b.paired_chain == chain), None)
+    bridge_asset = match.paired_asset_label if match is not None else None
+    return get_chain_client(chain, bridge_asset)
 
 
 def _verified_predecessor(hops: list[TraceHop], terminal: TraceHop) -> str | None:
@@ -126,15 +157,18 @@ def run_trace(case_id: str, background_tasks: BackgroundTasks, db: Session = Dep
     append_entry(db, actor="system", action="trace.run", object_type="case", object_id=case.id)
 
     client = get_chain_client(case.chain, case.asset)
+
+    def get_client_for_chain(chain: str):
+        return _client_for_chain(chain, case.chain, case.asset)
+
     reported_amount = Decimal(str(case.amount_crypto))
     incident_at = case.incident_at if case.incident_at.tzinfo else case.incident_at.replace(tzinfo=timezone.utc)
 
     result = trace(client, start_address=case.suspect_wallet, reported_amount=reported_amount,
-                    start_time=incident_at)
+                    start_time=incident_at, get_client_for_chain=get_client_for_chain)
 
     hops_out = [
-        HopOut(n=h.hop_index, addr=h.wallet_address,
-               role=_ROLE_PLAIN_ENGLISH["suspect" if h.hop_index == 0 else "intermediate"],
+        HopOut(n=h.hop_index, addr=h.wallet_address, role=_hop_role(h),
                amt=float(h.taint), at=(h.funding_transfer.timestamp if h.funding_transfer else incident_at),
                flag=_STOP_REASON_PLAIN_ENGLISH.get(h.stop_reason), chain=h.chain, stopReason=h.stop_reason)
         for h in result.hops
@@ -233,7 +267,13 @@ def run_trace(case_id: str, background_tasks: BackgroundTasks, db: Session = Dep
     # money onward (and so was followed further by the tracer) must still be evaluated, since a
     # real deposit wallet sweeping a victim's own deposit is exactly what a wallet only stops
     # the trace by NOT doing (fixes C3).
-    candidates = [h for h in result.hops if h.hop_index > 0 and h.taint > Decimal("0")]
+    #
+    # Task 3 (cross-chain bridge linking): a bridge contract itself must never be evaluated as
+    # an attribution candidate, no matter how many distinct payers it has on-chain (it has
+    # many, by construction -- it's a bridge) -- it's the bridge protocol's own contract, not
+    # a collection wallet anyone controls.
+    candidates = [h for h in result.hops if h.hop_index > 0 and h.taint > Decimal("0")
+                  and is_bridge_contract(h.wallet_address, h.chain) is None]
 
     # Idempotency fix (whole-branch review, 2026-09-26): clear this case's previously-persisted
     # AttributionCandidate rows before writing whatever new set this run produces. Deliberately
@@ -474,18 +514,16 @@ def run_trace(case_id: str, background_tasks: BackgroundTasks, db: Session = Dep
         for hit in sanctions_hits
     ]
 
-    all_outgoing = [t for h in result.hops for t in h.outgoing_transfers]
-    # Bridge-hop linking (Task 10) is correct in isolation, but a single case only ever traces
-    # ONE chain in this architecture (Case.chain is one value; run_trace only ever constructs one
-    # ChainClient), so all_outgoing can never actually contain two different chains' transfers.
-    # This call is therefore currently always [], which is honest given the data available -- a
-    # real fix needs a case model that traces two chains and correlates between them (see
-    # docs/TASKS.md P3), not a change to this call site.
-    bridge_links = find_bridge_links(all_outgoing, all_outgoing)
+    # Task 3 (cross-chain bridge linking): `result.bridge_links` now holds every crossing the
+    # tracer itself actually confirmed and followed onto the paired chain (Task 2's tracer.py) --
+    # not every candidate find_bridge_links() might consider, only ones that cleared
+    # MIN_BRIDGE_LINK_CONFIDENCE. This replaces the old dead-in-practice call here, which
+    # re-derived (always-empty, single-chain) links from this request's own hop list instead of
+    # using the trace's real cross-chain result.
     bridge_links_out = [
         BridgeLinkOut(sideATxHash=b.side_a_tx_hash, sideAChain=b.side_a_chain,
                        sideBTxHash=b.side_b_tx_hash, sideBChain=b.side_b_chain, confidence=b.confidence)
-        for b in bridge_links if b.side_a_chain != b.side_b_chain
+        for b in result.bridge_links
     ]
 
     return TraceOut(hops=hops_out, conservation=ConservationOut(

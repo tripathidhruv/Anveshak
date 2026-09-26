@@ -874,3 +874,102 @@ def test_run_trace_twice_is_idempotent_for_hops_candidates_and_webhooks():
         # the wallet's gate-passed status (and FlaggedWallet.case_ids membership) hasn't changed
         # since the first run.
         assert mock_deliver.call_count == 1
+
+
+# ---------------------------------------------------------------------------
+# Task 3 (cross-chain bridge linking): wiring `get_client_for_chain` into the live trace path --
+# a real TRON deposit into the (real, verified) Allbridge Core bridge contract, confirmed by a
+# matching Ethereum-side withdrawal, must continue the SAME trace onto the Ethereum recipient,
+# tag the bridge contract's own hop with the "Bridge contract" role, and never evaluate the
+# bridge contract itself as an attribution candidate.
+# ---------------------------------------------------------------------------
+
+def test_trace_crosses_a_confirmed_bridge_onto_the_paired_chain():
+    from app.bridge.registry import KNOWN_BRIDGES
+    tron_bridge = next(b for b in KNOWN_BRIDGES if b.chain == "tron")
+
+    deposit = mk(SUSPECT, tron_bridge.contract_address, 150.0, T0, tx="tx-deposit-to-bridge")
+    withdrawal_ts = T0.fromtimestamp(T0.timestamp() + 600, tz=timezone.utc)
+    withdrawal = Transfer(
+        tx_hash="tx-bridge-withdrawal", chain="ethereum",
+        from_address=tron_bridge.paired_contract_address, to_address="0xethrecipient00000000000000000000000001",
+        amount=Decimal("147.5"), asset="USDT-ERC20", timestamp=withdrawal_ts, fee=Decimal("0"), raw={},
+    )
+
+    class TronSideClient:
+        chain = "tron"
+        def get_transfers(self, address, since=None):
+            data = {SUSPECT: [deposit], tron_bridge.contract_address: []}
+            rows = data.get(address, [])
+            return [t for t in rows if since is None or t.timestamp >= since]
+
+    class EthSideClient:
+        chain = "ethereum"
+        def get_transfers(self, address, since=None):
+            data = {tron_bridge.paired_contract_address: [withdrawal], "0xethrecipient00000000000000000000000001": []}
+            rows = data.get(address, [])
+            return [t for t in rows if since is None or t.timestamp >= since]
+
+    def fake_get_chain_client(chain, asset=None):
+        return {"tron": TronSideClient(), "ethereum": EthSideClient()}[chain]
+
+    case_id = _make_case()
+    with patch("app.api.v1.traces.get_chain_client", side_effect=fake_get_chain_client):
+        response = client.post(f"/api/v1/cases/{case_id}/trace")
+
+    assert response.status_code == 200
+    body = response.json()
+
+    chains_in_trail = {h["chain"] for h in body["hops"]}
+    assert chains_in_trail == {"tron", "ethereum"}
+
+    bridge_hop = next(h for h in body["hops"] if h["addr"] == tron_bridge.contract_address)
+    assert bridge_hop["role"] == "Bridge contract"
+
+    assert len(body["bridgeLinks"]) == 1
+    assert body["bridgeLinks"][0]["sideAChain"] == "tron"
+    assert body["bridgeLinks"][0]["sideBChain"] == "ethereum"
+    assert body["bridgeLinks"][0]["confidence"] >= 0.6
+
+    eth_hop = next(h for h in body["hops"] if h["addr"] == "0xethrecipient00000000000000000000000001")
+    assert eth_hop["amt"] == pytest.approx(147.5)  # fee-adjusted, not re-inflated to 150
+
+
+def test_bridge_contract_itself_is_never_evaluated_as_an_attribution_candidate():
+    from app.bridge.registry import KNOWN_BRIDGES
+    tron_bridge = next(b for b in KNOWN_BRIDGES if b.chain == "tron")
+
+    deposit = mk(SUSPECT, tron_bridge.contract_address, 150.0, T0, tx="tx-deposit-to-bridge")
+
+    class TronSideClient:
+        chain = "tron"
+        def get_transfers(self, address, since=None):
+            # Give the bridge contract itself plenty of distinct payers -- exactly the shape
+            # that could otherwise look like a fake deposit wallet if not explicitly excluded.
+            data = {
+                SUSPECT: [deposit],
+                tron_bridge.contract_address: [
+                    mk(f"payer{i}", tron_bridge.contract_address, 10, T0, tx=f"tx-payer-{i}")
+                    for i in range(5)
+                ] + [deposit],
+            }
+            rows = data.get(address, [])
+            return [t for t in rows if since is None or t.timestamp >= since]
+
+    class EthSideClient:
+        chain = "ethereum"
+        def get_transfers(self, address, since=None):
+            return []  # no matching withdrawal -- crossing stays unconfirmed
+
+    def fake_get_chain_client(chain, asset=None):
+        return {"tron": TronSideClient(), "ethereum": EthSideClient()}[chain]
+
+    case_id = _make_case()
+    with patch("app.api.v1.traces.get_chain_client", side_effect=fake_get_chain_client):
+        response = client.post(f"/api/v1/cases/{case_id}/trace")
+
+    assert response.status_code == 200
+    body = response.json()
+    # The bridge contract must never be named as the exchange/attribution wallet, no matter
+    # how many distinct payers it has -- it's a bridge, not a collection wallet.
+    assert body["attribution"]["walletAddress"] != tron_bridge.contract_address
