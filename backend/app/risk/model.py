@@ -15,6 +15,19 @@ Every caller of `score()` gets back a `SYNTHETIC_DATA_DISCLOSURE` string alongsi
 Task H8's brief treats omitting this disclosure from ANY API response that includes an ML
 score as equally serious as a Critical correctness bug -- `app/api/v1/risk.py` includes it in
 every response shape that carries `mlScore`.
+
+*** Blending in real fraud-wallet data was considered and rejected, not overlooked (2026-09-26). ***
+Before accepting this model as permanently synthetic-only, this codebase's every real,
+independently-verified fraud-adjacent address was counted: exactly THREE exist anywhere in
+this repo (`app/sanctions/data/sdn_seed.json`'s OFAC SDN entries -- two Bitcoin addresses
+tied to SamSam ransomware operators, one Ethereum address for the Lazarus Group's Ronin
+Bridge exploit). Three real examples against ~600 synthetic rows is not a credible sample to
+learn from -- blending them in would change the model's actual behavior by essentially
+nothing, while letting the disclosure text imply "real data was used" in a way a reader could
+reasonably over-trust. That trade (near-zero real signal for a materially weaker, easier-to-
+misread disclosure) was judged worse than staying honestly, unambiguously 100% synthetic. If
+a real labelled dataset of a size that could actually move a model ever becomes available,
+revisit this decision then -- not by adding a token handful of real rows for their own sake.
 """
 from dataclasses import dataclass, field
 import random
