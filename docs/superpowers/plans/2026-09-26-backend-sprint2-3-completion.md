@@ -307,6 +307,55 @@ infra task, its "test" is a real run, not a unit test file.
 
 ---
 
+## Task H11 (added after H1-H8 landed): wire live integration points into `traces.py`
+
+**Files:** `backend/app/api/v1/traces.py` ONLY (H1-H8 are all done and merged, so this file is
+now safe to edit — it was deliberately kept off-limits during the H1-H8 parallel wave).
+
+**Why this task exists:** every one of H1-H8's task reviews independently discovered the same
+systemic gap: `AttributionCandidate` is never persisted anywhere — `run_trace` computes
+attribution purely in-memory and never writes a row. This means, TODAY, on a live system:
+`GET /api/v1/campaigns` always returns `[]` (H1), the evidence pack (H5) and legal/SAHYOG
+payload (H7) can't find real attribution rows to build from, and the VASP feed's auto-flag
+(H2) and sanctions screening (H4) were built with no live call site wiring them into an actual
+trace. All 8 modules are individually correct and tested — they are just not yet connected to
+the one place a real trace actually runs. This task closes that gap.
+
+**Fix, in `run_trace` (or wherever the attribution/candidate loop currently lives):**
+1. **Persist `AttributionCandidate`.** When a candidate hop is evaluated (the existing
+   `gate`/`sweep_signal`/`final_gate_passed` logic already computes everything needed), write a
+   real `AttributionCandidate` row (`case_id`, `wallet_address`, `chain`, `gate_passed`,
+   `gate_breakdown`, `entity_name`, `reasoning`, `limitations`) — reuse the existing model from
+   `models.py`, don't invent a new one. This single change unblocks H1 (campaigns) immediately.
+2. **Call `screen_case_hops`** (Task H4, `backend/app/sanctions/screen.py`) after hops are
+   computed, and fold any sanctions matches into the trace's response (add a `sanctionsMatches`
+   field to `TraceOut` if H0's scaffolding didn't already anticipate one — check `schemas.py`
+   first, extend minimally if needed).
+3. **Call `auto_flag_wallet`** (Task H2, `backend/app/vasp_feed/distribution.py`) whenever a
+   candidate's `gate_passed=True` and its (real, now-available-from-H8) risk score clears the
+   flag threshold — replace H2's interim rule-based proxy scoring with a real call to H8's
+   `backend/app/risk/` scorer if that's a clean, low-risk change; if wiring the full ML risk
+   pipeline into the live trace path is too large a change to do safely in this task, keep H2's
+   documented interim proxy for now and say so explicitly — don't silently leave `auto_flag_wallet`
+   uncalled at all, since that's the actual gap this task exists to close.
+4. **Append an audit log entry** (Task H6, `backend/app/audit/chain.py`'s `append_entry`) for
+   the case-creation and attribution-result events, at minimum — the two call sites already
+   named as examples in H6's original brief.
+5. Do NOT touch H3 (freeze)/H7 (legal)'s own endpoints in this task — they already correctly
+   read `Case`/`Hop` data directly and don't need `AttributionCandidate` persistence to function
+   (freeze re-runs its own trace; legal reads whatever data it needs at request time). Confirm
+   this is still true before skipping them, don't just assume.
+
+**Tests:** running a full trace via `POST /api/v1/cases/{id}/trace` on a fixture that would
+pass the deposit gate results in: a real `AttributionCandidate` row queryable afterward; a
+subsequent `GET /api/v1/campaigns` call (given 2+ such cases sharing a hub) returns a real,
+non-empty campaign; a sanctioned-address fixture produces a non-empty `sanctionsMatches` in the
+trace response; a qualifying case results in a `FlaggedWallet` row (verify via the VASP feed's
+own pull API); at least one audit log entry exists and `verify_chain()` still passes clean
+afterward.
+
+---
+
 ## Task H10b (bundle with H10 or its own task, implementer's/controller's call): cheap frontend fixes
 
 **Files:** `frontend/src/components/report/ReportDocument.tsx`, `frontend/src/api/mock.ts`,
