@@ -13,6 +13,7 @@ from app.detectors.deposit import evaluate_deposit_gate
 from app.detectors.innocence import compute_innocence
 from app.graph.backward import enumerate_unreported_victims
 from app.bridge.registry import is_bridge_contract, KNOWN_BRIDGES
+from app.mixers.registry import is_mixer_contract
 from app.labels.seed_labels import lookup_label
 from app.sanctions.screen import screen_hops
 from app.vasp_feed import distribution as vasp_distribution
@@ -48,6 +49,11 @@ _STOP_REASON_PLAIN_ENGLISH = {
     "bridge_crossing_unconfirmed": (
         "This wallet sent the money into a cross-chain bridge, but we could not confirm "
         "exactly which withdrawal on the other blockchain it turned into"
+    ),
+    "entered_mixer": (
+        "This wallet sent the money into a cryptocurrency mixing service, which is "
+        "specifically designed to hide where money goes next — we cannot trace beyond "
+        "this point"
     ),
 }
 
@@ -278,8 +284,14 @@ def run_trace(case_id: str, background_tasks: BackgroundTasks, db: Session = Dep
     # an attribution candidate, no matter how many distinct payers it has on-chain (it has
     # many, by construction -- it's a bridge) -- it's the bridge protocol's own contract, not
     # a collection wallet anyone controls.
+    #
+    # Mixer-entry detection (docs/superpowers/specs/2026-09-26-mixer-entry-detection-design.md):
+    # same reasoning applies to a known mixer contract -- it has enormous numbers of distinct
+    # depositors by design, which is exactly the shape a fake exchange-collection-wallet
+    # candidate would need, so it must never be evaluated as one.
     candidates = [h for h in result.hops if h.hop_index > 0 and h.taint > Decimal("0")
-                  and is_bridge_contract(h.wallet_address, h.chain) is None]
+                  and is_bridge_contract(h.wallet_address, h.chain) is None
+                  and is_mixer_contract(h.wallet_address, h.chain) is None]
 
     # Idempotency fix (whole-branch review, 2026-09-26): clear this case's previously-persisted
     # AttributionCandidate rows before writing whatever new set this run produces. Deliberately

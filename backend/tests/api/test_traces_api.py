@@ -979,3 +979,55 @@ def test_bridge_contract_itself_is_never_evaluated_as_an_attribution_candidate()
     # The bridge contract must never be named as the exchange/attribution wallet, no matter
     # how many distinct payers it has -- it's a bridge, not a collection wallet.
     assert body["attribution"]["walletAddress"] != tron_bridge.contract_address
+
+
+# ---------------------------------------------------------------------------
+# Mixer-entry detection (docs/superpowers/specs/2026-09-26-mixer-entry-detection-design.md):
+# a real trace whose money enters a known (real, verified) Tornado Cash contract must stop
+# there honestly with the plain-English "entered_mixer" reason, and that mixer contract must
+# never be reported as the attribution wallet.
+# ---------------------------------------------------------------------------
+
+def test_trace_stops_honestly_when_money_enters_a_known_mixer():
+    from app.mixers.registry import KNOWN_MIXERS
+    mixer = KNOWN_MIXERS[0]
+    eth_suspect = "0xsuspectwallet00000000000000000000000001"
+
+    deposit = Transfer(
+        tx_hash="tx-deposit-to-mixer", chain="ethereum",
+        from_address=eth_suspect, to_address=mixer.contract_address,
+        amount=Decimal("0.1"), asset="ETH", timestamp=T0, fee=Decimal("0"), raw={},
+    )
+
+    class EthSuspectClient:
+        chain = "ethereum"
+        def get_transfers(self, address, since=None):
+            data = {eth_suspect: [deposit], mixer.contract_address: []}
+            rows = data.get(address, [])
+            return [t for t in rows if since is None or t.timestamp >= since]
+
+    payload = {
+        "ncrp": "NCRP-3", "complainant": "Test User", "location": "Delhi", "phone": "9999999999",
+        "incidentAt": "2026-01-01T00:00:00Z", "fraudType": "investment_scam",
+        "amountINR": 15000, "amountCrypto": 0.1, "asset": "ETH", "chain": "ethereum",
+        "suspectWallet": eth_suspect,
+    }
+    case_id = client.post("/api/v1/cases", json=payload).json()["id"]
+
+    with patch("app.api.v1.traces.get_chain_client", return_value=EthSuspectClient()):
+        response = client.post(f"/api/v1/cases/{case_id}/trace")
+
+    assert response.status_code == 200
+    body = response.json()
+
+    mixer_hop = next(h for h in body["hops"] if h["addr"].lower() == mixer.contract_address.lower())
+    assert mixer_hop["stopReason"] == "entered_mixer"
+    assert mixer_hop["flag"] == (
+        "This wallet sent the money into a cryptocurrency mixing service, which is "
+        "specifically designed to hide where money goes next — we cannot trace beyond "
+        "this point"
+    )
+
+    # The mixer contract must never be reported as the attribution/exchange wallet, no
+    # matter how many distinct depositors it has by design.
+    assert body["attribution"]["walletAddress"].lower() != mixer.contract_address.lower()

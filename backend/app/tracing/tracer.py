@@ -6,6 +6,7 @@ from typing import Callable
 from app.chains.base import ChainClient, Transfer
 from app.bridge.linker import BridgeLinkCandidate, find_bridge_links
 from app.bridge.registry import is_bridge_contract, MIN_BRIDGE_LINK_CONFIDENCE
+from app.mixers.registry import is_mixer_contract
 
 @dataclass
 class TraceHop:
@@ -84,6 +85,21 @@ def trace(chain_client: ChainClient, start_address: str, reported_amount: Decima
         if hop_index >= max_hops:
             result.hops.append(TraceHop(hop_index, address, active_client.chain, funding_transfer,
                                          [], taint, "hop_cap_reached"))
+            continue
+
+        # Real mixer-entry detection (docs/superpowers/specs/2026-09-26-mixer-entry-detection-
+        # design.md): unconditional, unlike the bridge-crossing check just below -- this makes
+        # no new chain-API call at all, it only checks the popped address against a static
+        # registry (app.mixers.registry.KNOWN_MIXERS) BEFORE the existing fetch, so it needs no
+        # opt-in parameter and runs for every caller, old and new alike. A known mixer contract
+        # is a dead end this codebase can honestly report reaching, never one it can see
+        # through (a mixer's whole design goal is breaking the on-chain deposit/withdrawal link
+        # -- see that spec for why this deliberately does NOT attempt de-anonymization the way
+        # find_bridge_links() legitimately does for a bridge's published correlation signals).
+        mixer = is_mixer_contract(address, active_client.chain)
+        if mixer is not None:
+            result.hops.append(TraceHop(hop_index, address, active_client.chain, funding_transfer,
+                                         [], taint, "entered_mixer"))
             continue
 
         bridge = is_bridge_contract(address, active_client.chain) if get_client_for_chain else None
