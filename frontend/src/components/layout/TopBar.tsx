@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { cn } from '@/lib/utils'
 import { Button } from '../ui/button'
 import { Badge } from '../ui/badge'
+import { useCaseStore } from '../../store/caseStore'
 import { useUIStore } from '../../store/uiStore'
 import { ROUTES } from '../../utils/constants'
 import { getPageTitle } from './routeMeta'
@@ -14,13 +15,12 @@ export function TopBar() {
   const judgeMode = useUIStore((state) => state.judgeMode)
   const toggleJudgeMode = useUIStore((state) => state.toggleJudgeMode)
   const showToast = useUIStore((state) => state.showToast)
+  const resetCaseStore = useCaseStore((state) => state.reset)
 
   const title = getPageTitle(location.pathname)
 
   function handleReset() {
-    // `caseStore` is scaffolded in Task 3 — this already navigates home and confirms the
-    // reset via toast; wiring `caseStore.reset()` in here is a one-line follow-up once that
-    // store exists, so Reset demo works end to end without waiting on it.
+    resetCaseStore()
     showToast('Demo reset')
     navigate(ROUTES.dashboard)
   }

@@ -69,7 +69,7 @@ export default function CaseClosed() {
             Case <span className="font-[family-name:var(--font-mono)]">{activeCase.id}</span> traced.
           </h1>
           <p className="max-w-lg text-[15px] text-muted-foreground">
-            From one wallet address to a named exchange and a signed notice — in 47 seconds.
+            From one wallet address to a named exchange and a signed notice — in 41 seconds.
           </p>
         </div>
 
@@ -106,7 +106,7 @@ export default function CaseClosed() {
             <div className="h-3.5 overflow-hidden rounded-full bg-muted">
               <div className="h-full w-[2%] min-w-[14px] rounded-full bg-moss" />
             </div>
-            <span className="text-right text-sm font-bold text-foreground">47 seconds</span>
+            <span className="text-right text-sm font-bold text-foreground">41 seconds</span>
           </div>
         </div>
 

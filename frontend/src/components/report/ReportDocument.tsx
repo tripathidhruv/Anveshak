@@ -139,9 +139,13 @@ export function ReportDocument({ data }: ReportDocumentProps) {
               This report was compiled by tracing on-chain transfers outward from the suspect wallet across every
               hop until funds reached an address matching a known exchange deposit pattern. Two independent paths
               were followed to the same cash-out point, including one that crossed a cross-chain bridge. Every
-              address, amount, and timestamp above was read directly from public blockchain data — none of it is
-              inferred or estimated. This case is one of {campaign.cases} sharing the same downstream wallet,
-              together totalling {formatINR(campaign.totalINR)} across {campaign.states} states.
+              address, amount, and timestamp above is presented exactly as returned by the trace — none of it is
+              re-derived or estimated by hand. This case is one of {campaign.cases} sharing the same downstream
+              wallet, together totalling {formatINR(campaign.totalINR)} across {campaign.states} states.
+              <br />
+              <strong>This is a demonstration report generated from synthetic prototype data</strong> — no real
+              complainant, wallet, or exchange information is included; see the DEMO DATA marker in the KAIZEN
+              application for this case.
             </p>
           </section>
 

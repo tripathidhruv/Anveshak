@@ -42,7 +42,7 @@ const DEMO = {
     amountCrypto: 14850,
     asset: 'USDT (TRC-20)',
     chain: 'TRON',
-    suspectWallet: 'TXk9mR4pQ2vL8nW3sD6fH1jK5bQ2aZ',
+    suspectWallet: 'TXk9mR4pQ2vL8nW3sD6fH',
   } satisfies Case,
 
   routeA: {

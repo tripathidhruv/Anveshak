@@ -3,7 +3,6 @@ import { Badge } from '../ui/badge'
 import { Button } from '../ui/button'
 import { Card } from '../ui/card'
 import type { GraphNode } from '../../types'
-import { formatINR } from '../../utils/format'
 
 const KIND_LABEL: Record<GraphNode['kind'], string> = {
   victim: 'Victim',
@@ -14,15 +13,20 @@ const KIND_LABEL: Record<GraphNode['kind'], string> = {
   exchange: 'Exchange',
 }
 
+const cryptoFormatter = new Intl.NumberFormat('en-IN')
+
 export interface NodeDrawerProps {
   node: GraphNode | null
   onClose: () => void
   onCopyAddress: (addr: string) => void
+  /** Short asset symbol (e.g. "USDT") for the amount-at-this-hop field — these amounts are
+   * denominated in crypto, never rupees, so they must never be run through `formatINR`. */
+  assetShort: string
 }
 
 /** Right-hand detail drawer that opens when a graph node is clicked — address, amount,
  * first-seen timestamp, and a copy-address action per the source spec. */
-export function NodeDrawer({ node, onClose, onCopyAddress }: NodeDrawerProps) {
+export function NodeDrawer({ node, onClose, onCopyAddress, assetShort }: NodeDrawerProps) {
   if (!node) {
     return (
       <Card className="flex min-h-[160px] w-[280px] flex-none items-center justify-center self-start p-6 text-center">
@@ -60,7 +64,9 @@ export function NodeDrawer({ node, onClose, onCopyAddress }: NodeDrawerProps) {
         {node.amt != null && (
           <div className="flex flex-col gap-0.5 rounded-lg bg-muted px-3 py-2.5">
             <dt className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Amount at this hop</dt>
-            <dd className="text-[13px] text-foreground">{formatINR(node.amt)}</dd>
+            <dd className="text-[13px] text-foreground">
+              {cryptoFormatter.format(node.amt)} {assetShort}
+            </dd>
           </div>
         )}
         {node.at && (

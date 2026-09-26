@@ -146,7 +146,12 @@ export default function Evidence() {
                     <div className="min-w-0 flex-1">
                       <FundFlowGraph graph={graph} onSelectNode={setSelectedNode} />
                     </div>
-                    <NodeDrawer node={selectedNode} onClose={() => setSelectedNode(null)} onCopyAddress={handleCopyAddress} />
+                    <NodeDrawer
+                      node={selectedNode}
+                      onClose={() => setSelectedNode(null)}
+                      onCopyAddress={handleCopyAddress}
+                      assetShort={activeCase.asset.split(' ')[0]}
+                    />
                   </div>
                 )}
 
