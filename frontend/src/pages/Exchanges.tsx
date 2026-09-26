@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowRight, Building2, ShieldAlert, Users } from 'lucide-react'
+import { ArrowRight, Building2, FolderOpen, Globe, ShieldAlert, ShieldCheck, Users } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
@@ -89,10 +89,21 @@ export default function Exchanges() {
         </div>
 
         <div className="grid grid-cols-2 gap-3.5 sm:grid-cols-4">
-          <Stat label="Jurisdiction" value={exchange.jurisdiction} />
-          <Stat label="FIU-IND registered" value={exchange.fiuRegistered ? 'YES' : 'NO'} />
-          <Stat label="Indian users" value={exchange.indianUsers} />
-          <Stat label="Linked cases" value={campaign.cases} hint="via one shared wallet" />
+          <Stat label="Jurisdiction" value={exchange.jurisdiction} icon={<Globe size={16} />} iconColor="sky" />
+          <Stat
+            label="FIU-IND registered"
+            value={exchange.fiuRegistered ? 'YES' : 'NO'}
+            icon={<ShieldCheck size={16} />}
+            iconColor={exchange.fiuRegistered ? 'moss' : 'vermillion'}
+          />
+          <Stat label="Indian users" value={exchange.indianUsers} icon={<Users size={16} />} iconColor="gold" />
+          <Stat
+            label="Linked cases"
+            value={campaign.cases}
+            hint="via one shared wallet"
+            icon={<FolderOpen size={16} />}
+            iconColor="vermillion"
+          />
         </div>
 
         {!exchange.fiuRegistered && (

@@ -302,20 +302,21 @@ export default function NewCase() {
                 {CRYPTO_OPTIONS.map((option) => {
                   const selected = form.cryptoLabel === option.label
                   return (
-                    <button
+                    <Button
                       key={option.label}
                       type="button"
+                      size="sm"
+                      variant="outline"
                       onClick={() => updateField('cryptoLabel', option.label)}
                       className={cn(
-                        'inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-sm font-semibold transition-colors',
                         selected
-                          ? 'border-primary bg-primary/10 text-primary'
-                          : 'border-border bg-card text-muted-foreground hover:bg-muted',
+                          ? 'border-primary bg-primary/10 text-primary hover:bg-primary/10'
+                          : 'text-muted-foreground',
                       )}
                     >
                       {selected && <Check size={13} />}
                       {option.label}
-                    </button>
+                    </Button>
                   )
                 })}
               </div>

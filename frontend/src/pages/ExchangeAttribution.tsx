@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Navigate, useNavigate, useParams } from 'react-router-dom'
-import { ArrowRight, CheckCircle2, ShieldAlert } from 'lucide-react'
+import { ArrowRight, CheckCircle2, Globe, ShieldAlert, ShieldCheck, Users } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { IconTile } from '@/components/ui/icon-tile'
@@ -96,9 +96,14 @@ export default function ExchangeAttribution() {
           </div>
 
           <div className="grid grid-cols-3 gap-3.5">
-            <Stat label="Registered in" value={exchange.jurisdiction} />
-            <Stat label="FIU-IND registered" value={exchange.fiuRegistered ? 'YES' : 'NO'} />
-            <Stat label="Indian users" value={exchange.indianUsers} />
+            <Stat label="Registered in" value={exchange.jurisdiction} icon={<Globe size={16} />} iconColor="sky" />
+            <Stat
+              label="FIU-IND registered"
+              value={exchange.fiuRegistered ? 'YES' : 'NO'}
+              icon={<ShieldCheck size={16} />}
+              iconColor={exchange.fiuRegistered ? 'moss' : 'vermillion'}
+            />
+            <Stat label="Indian users" value={exchange.indianUsers} icon={<Users size={16} />} iconColor="gold" />
           </div>
 
           {!exchange.fiuRegistered && (

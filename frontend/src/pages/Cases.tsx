@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { FolderOpen, Search } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { IconTile } from '@/components/ui/icon-tile'
 import { Input } from '@/components/ui/input'
@@ -87,19 +88,16 @@ export default function Cases() {
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex flex-wrap gap-2">
             {STATUS_FILTERS.map((status) => (
-              <button
+              <Button
                 key={status}
                 type="button"
+                size="sm"
+                variant={statusFilter === status ? 'default' : 'outline'}
                 onClick={() => setStatusFilter(status)}
-                className={cn(
-                  'rounded-full border px-3.5 py-1.5 text-xs font-semibold transition-colors',
-                  statusFilter === status
-                    ? 'border-primary bg-primary text-primary-foreground'
-                    : 'border-border bg-card text-muted-foreground hover:bg-muted',
-                )}
+                className={cn(statusFilter !== status && 'text-muted-foreground')}
               >
                 {status}
-              </button>
+              </Button>
             ))}
           </div>
           <div className="relative w-full sm:w-64">

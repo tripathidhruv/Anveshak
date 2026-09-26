@@ -84,7 +84,7 @@ export default function Campaigns() {
                 <span className="text-xs text-muted-foreground">Linked complaints</span>
               </Well>
               <Well className="flex flex-col items-center gap-2 p-5 text-center">
-                <IconTile color="vermillion" size="sm">
+                <IconTile color="sky" size="sm">
                   <MapPin size={18} />
                 </IconTile>
                 <span className="font-[family-name:var(--font-mono)] text-xl font-bold text-foreground">
@@ -93,7 +93,7 @@ export default function Campaigns() {
                 <span className="text-xs text-muted-foreground">States affected</span>
               </Well>
               <Well className="flex flex-col items-center gap-2 p-5 text-center">
-                <IconTile color="vermillion" size="sm">
+                <IconTile color="gold" size="sm">
                   <Landmark size={18} />
                 </IconTile>
                 <span className="font-[family-name:var(--font-mono)] text-xl font-bold text-foreground">
