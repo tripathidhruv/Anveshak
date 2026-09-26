@@ -937,6 +937,17 @@ def test_trace_crosses_a_confirmed_bridge_onto_the_paired_chain():
     assert body["bridgeLinks"][0]["sideBChain"] == "ethereum"
     assert body["bridgeLinks"][0]["confidence"] >= 0.6
 
+    # Every bridge link is a heuristic timing/amount correlation, never a confirmed match --
+    # each one must carry a non-trivial disclaimer saying so (mirrors the mandatory
+    # `disclaimer` field on SimilarOperatorsOut / SIMILARITY_DISCLAIMER for operator-fingerprint
+    # results). Checked by keyword, not exact string, so wording tweaks don't make this brittle.
+    for link in body["bridgeLinks"]:
+        disclaimer = link.get("disclaimer", "")
+        assert len(disclaimer.strip()) > 20
+        lowered = disclaimer.lower()
+        assert "not" in lowered
+        assert "verify" in lowered
+
     eth_hop = next(h for h in body["hops"] if h["addr"] == "0xethrecipient00000000000000000000000001")
     assert eth_hop["amt"] == pytest.approx(147.5)  # fee-adjusted, not re-inflated to 150
 

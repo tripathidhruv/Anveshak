@@ -83,6 +83,10 @@ class BridgeLinkOut(BaseModel):
     sideBTxHash: str
     sideBChain: str
     confidence: float
+    # Mandatory (not Optional) to match SimilarOperatorsOut's convention -- every bridge link
+    # that exists at all is a heuristic timing/amount correlation, never proof, so it must
+    # always carry this text (app.bridge.linker.BRIDGE_LINK_DISCLAIMER).
+    disclaimer: str
 
 # Moved above TraceOut (was originally defined further down, in the "Sprint 2/3 additions"
 # section below) so TraceOut can carry a `sanctionsMatches` field of this type -- Task H11

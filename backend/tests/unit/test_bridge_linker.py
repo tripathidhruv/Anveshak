@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 from app.chains.base import Transfer
-from app.bridge.linker import find_bridge_links
+from app.bridge.linker import find_bridge_links, BRIDGE_LINK_DISCLAIMER
 
 def mk(chain, from_addr, to_addr, amount, ts, tx="tx"):
     return Transfer(tx_hash=tx, chain=chain, from_address=from_addr, to_address=to_addr,
@@ -101,3 +101,12 @@ def test_closest_in_time_same_chain_self_match_loses_to_farther_valid_cross_chai
     assert len(links) == 1
     assert links[0].side_b_tx_hash == "b1"
     assert links[0].side_b_chain == "ethereum"
+
+def test_bridge_link_disclaimer_is_a_real_non_empty_string():
+    # Matches app.graph.operator_fingerprint.SIMILARITY_DISCLAIMER's convention -- every bridge
+    # link is a heuristic correlation, never proof, so this text must always exist and say so.
+    assert isinstance(BRIDGE_LINK_DISCLAIMER, str)
+    assert len(BRIDGE_LINK_DISCLAIMER.strip()) > 20
+    lowered = BRIDGE_LINK_DISCLAIMER.lower()
+    assert "not proof" in lowered
+    assert "verify" in lowered

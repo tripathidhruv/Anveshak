@@ -2,6 +2,16 @@ from dataclasses import dataclass
 from decimal import Decimal
 from app.chains.base import Transfer
 
+# Matches the epistemic status app.graph.operator_fingerprint.SIMILARITY_DISCLAIMER gives its
+# own suggested links: every bridge link that exists at all is a heuristic timing/amount
+# correlation, never a ground-truth match, so it must always carry this text into the API
+# response (a bridge doesn't publish a 1:1 deposit-to-withdrawal mapping).
+BRIDGE_LINK_DISCLAIMER = (
+    "This is a suggested cross-chain link based on timing and amount correlation, not proof of "
+    "a bridge transaction -- a bridge does not publish a 1:1 deposit-to-withdrawal mapping, so "
+    "an officer must independently verify this connection before acting on it."
+)
+
 @dataclass(frozen=True)
 class BridgeLinkCandidate:
     side_a_tx_hash: str

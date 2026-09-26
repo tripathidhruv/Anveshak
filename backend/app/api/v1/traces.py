@@ -18,6 +18,7 @@ from app.labels.seed_labels import lookup_label
 from app.sanctions.screen import screen_hops
 from app.vasp_feed import distribution as vasp_distribution
 from app.audit.chain import append_entry
+from app.bridge.linker import BRIDGE_LINK_DISCLAIMER
 from app.schemas import (
     TraceOut, HopOut, ConservationOut, AttributionOut, InnocenceOut,
     InnocenceFactorOut, UnreportedVictimOut, BridgeLinkOut, SanctionsMatchOut,
@@ -541,7 +542,8 @@ def run_trace(case_id: str, background_tasks: BackgroundTasks, db: Session = Dep
     # using the trace's real cross-chain result.
     bridge_links_out = [
         BridgeLinkOut(sideATxHash=b.side_a_tx_hash, sideAChain=b.side_a_chain,
-                       sideBTxHash=b.side_b_tx_hash, sideBChain=b.side_b_chain, confidence=b.confidence)
+                       sideBTxHash=b.side_b_tx_hash, sideBChain=b.side_b_chain, confidence=b.confidence,
+                       disclaimer=BRIDGE_LINK_DISCLAIMER)
         for b in result.bridge_links
     ]
 
