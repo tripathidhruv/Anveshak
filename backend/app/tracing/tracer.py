@@ -32,12 +32,19 @@ def trace(chain_client: ChainClient, start_address: str, reported_amount: Decima
     visited: set[str] = set()
     queue: deque[tuple[str, Decimal, datetime, int, Transfer | None]] = deque()
     queue.append((start_address, reported_amount, start_time, 0, None))
+    # Per-wallet FIFO fan-out bookkeeping: for each address that has been expanded at least
+    # once, how much of EACH of its own causal outgoing transfers (indexed the same as that
+    # hop's `outgoing_transfers`) has already been allocated downstream, across every wave
+    # (first expansion plus any later merges). This is what lets a later converging arrival
+    # re-run the same FIFO allocation for just its own increment without exceeding any single
+    # sibling transfer's real on-chain amount.
+    allocated_per_address: dict[str, list[Decimal]] = {}
 
     while queue:
         address, taint, since_ts, hop_index, funding_transfer = queue.popleft()
         if address in visited:
             # A second (or later) causal branch has converged on a wallet we already fully
-            # expanded once. Don't re-expand its outgoing edges again (that would double-count
+            # expanded once. Don't re-fetch its outgoing edges again (that would double-count
             # whatever it already forwarded downstream in its first expansion) — but don't
             # silently drop this arrival's taint either, or a hub that consolidates multiple
             # victims'/branches' funds would under-report exactly the value this project's
@@ -47,6 +54,23 @@ def trace(chain_client: ChainClient, start_address: str, reported_amount: Decima
             existing_hop = next((h for h in result.hops if h.wallet_address == address), None)
             if existing_hop is not None:
                 existing_hop.taint += taint
+                # Re-run this wallet's own FIFO fan-out, but only for the taint that JUST
+                # arrived — its children were already enqueued once, using only the first
+                # arrival's (smaller) budget, and that budget never gets a path forward
+                # otherwise. Reuse the already-known causal outgoing-transfer list from the
+                # first expansion rather than refetching. If any resulting child is itself
+                # already visited, it goes right back through this same branch on its next
+                # pop, so the re-emission cascades through the whole subgraph on its own.
+                per_transfer_allocated = allocated_per_address.get(address)
+                if per_transfer_allocated is not None:
+                    remaining_budget = taint
+                    for i, t in enumerate(existing_hop.outgoing_transfers):
+                        capacity = t.amount - per_transfer_allocated[i]
+                        next_taint = min(remaining_budget, capacity)
+                        remaining_budget -= next_taint
+                        per_transfer_allocated[i] += next_taint
+                        queue.append((t.to_address, next_taint, t.timestamp,
+                                      existing_hop.hop_index + 1, t))
             continue
         visited.add(address)
 
@@ -85,9 +109,12 @@ def trace(chain_client: ChainClient, start_address: str, reported_amount: Decima
         # the full inherited taint — otherwise summed downstream taint can exceed what the
         # wallet actually held and the victim actually reported.
         remaining_budget = taint
+        per_transfer_allocated = []
         for t in causal:
             next_taint = min(remaining_budget, t.amount)
             remaining_budget -= next_taint
+            per_transfer_allocated.append(next_taint)
             queue.append((t.to_address, next_taint, t.timestamp, hop_index + 1, t))
+        allocated_per_address[address] = per_transfer_allocated
 
     return result

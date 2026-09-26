@@ -128,3 +128,67 @@ def test_converging_paths_accumulate_taint_instead_of_dropping():
     # been dropped on merge under the old (buggy) behaviour.
     total_terminal_taint = sum((h.taint for h in result.terminal_hops), Decimal("0"))
     assert total_terminal_taint == Decimal("150")
+
+def test_revisited_wallet_taint_propagates_to_already_queued_children():
+    # "hub" is visited TWICE: first via branch_a with only 20 taint (not enough, alone, to
+    # reach "descendant" through hub's own 100-unit outgoing transfer to it -- FIFO would cap
+    # descendant's share at 20). Later, branch_b's causal transfer converges on the SAME hub
+    # wallet with an additional 80 taint. Combined (100), hub should be able to re-run its own
+    # FIFO fan-out for the newly-arrived 80 and forward it on to "descendant", which otherwise
+    # would stay stuck at whatever the first (smaller) wave alone could allocate.
+    t0 = datetime(2026, 1, 1, tzinfo=timezone.utc)
+    scammer_to_a = mk("scammer", "branch_a", 20, t0 + timedelta(seconds=1))
+    scammer_to_b = mk("scammer", "branch_b", 80, t0 + timedelta(seconds=2))
+    a_to_hub = mk("branch_a", "hub", 20, t0 + timedelta(seconds=10))
+    b_to_hub = mk("branch_b", "hub", 80, t0 + timedelta(seconds=20))
+    hub_to_descendant = mk("hub", "descendant", 100, t0 + timedelta(seconds=30))
+    client = FakeChainClient({
+        "scammer": [scammer_to_a, scammer_to_b],
+        "branch_a": [a_to_hub],
+        "branch_b": [b_to_hub],
+        "hub": [hub_to_descendant],
+        "descendant": [],
+    })
+
+    result = trace(client, start_address="scammer", reported_amount=Decimal("100"), start_time=t0, max_hops=5)
+
+    hub_hops = [h for h in result.hops if h.wallet_address == "hub"]
+    assert len(hub_hops) == 1
+    assert hub_hops[0].taint == Decimal("100")
+
+    descendant_hops = [h for h in result.hops if h.wallet_address == "descendant"]
+    assert len(descendant_hops) == 1
+    descendant_hop = descendant_hops[0]
+    assert descendant_hop.taint == Decimal("100")
+
+    candidates = [h for h in result.hops if h.hop_index > 0 and h.taint > Decimal("0")]
+    assert descendant_hop in candidates
+
+def test_revisited_wallet_taint_cascades_through_chain_of_visited_descendants():
+    # Same shape as above but 3 levels deep past the hub: hub -> mid -> leaf, and mid/leaf are
+    # ALSO reached (with zero-taint scraps) via the first, smaller wave, so both must be
+    # re-expanded for the second wave's increment, not just hub itself -- the re-emission has
+    # to cascade rather than stop one hop past the merge point.
+    t0 = datetime(2026, 1, 1, tzinfo=timezone.utc)
+    scammer_to_a = mk("scammer", "branch_a", 5, t0 + timedelta(seconds=1))
+    scammer_to_b = mk("scammer", "branch_b", 95, t0 + timedelta(seconds=2))
+    a_to_hub = mk("branch_a", "hub", 5, t0 + timedelta(seconds=10))
+    b_to_hub = mk("branch_b", "hub", 95, t0 + timedelta(seconds=20))
+    hub_to_mid = mk("hub", "mid", 100, t0 + timedelta(seconds=30))
+    mid_to_leaf = mk("mid", "leaf", 100, t0 + timedelta(seconds=40))
+    client = FakeChainClient({
+        "scammer": [scammer_to_a, scammer_to_b],
+        "branch_a": [a_to_hub],
+        "branch_b": [b_to_hub],
+        "hub": [hub_to_mid],
+        "mid": [mid_to_leaf],
+        "leaf": [],
+    })
+
+    result = trace(client, start_address="scammer", reported_amount=Decimal("100"), start_time=t0, max_hops=6)
+
+    taint_by_addr = {h.wallet_address: h.taint for h in result.hops if h.wallet_address in ("hub", "mid", "leaf")}
+    assert taint_by_addr["hub"] == Decimal("100")
+    assert taint_by_addr["mid"] == Decimal("100")
+    assert taint_by_addr["leaf"] == Decimal("100")
+    assert len([h for h in result.hops if h.wallet_address == "leaf"]) == 1
