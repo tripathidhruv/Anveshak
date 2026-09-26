@@ -126,9 +126,12 @@ def test_no_get_client_for_chain_means_bridge_detection_is_never_attempted():
 
 def test_confidence_below_threshold_is_treated_as_unconfirmed():
     deposit = mk("scammer", BRIDGE_TRON_SIDE, 100, T0)
-    # A withdrawal timed right at the edge of the 60-minute window with a large amount gap --
-    # constructed to score below MIN_BRIDGE_LINK_CONFIDENCE (0.6) on find_bridge_links' own
-    # formula, not a hand-picked outcome.
+    # A withdrawal with a 20% amount gap -- find_bridge_links' own amount_tolerance_pct
+    # (0.03) rejects this candidate outright before it ever reaches the confidence formula
+    # (linker.py's own "amount_delta_pct > amount_tolerance_pct: continue" pre-filter), so
+    # find_bridge_links returns [] here rather than a scored-but-low-confidence match. Either
+    # way the end result is the same: no link clears MIN_BRIDGE_LINK_CONFIDENCE, so the
+    # crossing is correctly left unconfirmed.
     weak_withdrawal = mk(BRIDGE_ETH_SIDE, "eth_recipient", 80, T0 + timedelta(minutes=55),
                           chain="ethereum", asset="USDT-ERC20")
     tron_transfers = {"scammer": [deposit], BRIDGE_TRON_SIDE: []}
