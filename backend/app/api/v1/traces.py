@@ -94,7 +94,7 @@ def _verified_predecessor(hops: list[TraceHop], terminal: TraceHop) -> str | Non
     return candidate if parent_exists else None
 
 
-def _evaluate_candidate_report(gate, sweep_signal, final_gate_passed):
+def _evaluate_candidate_report(gate, sweep_signal, final_gate_passed, distinct_payers):
     """Shared (breakdown, entity_name, reasoning, limitations) computation for ONE evaluated
     candidate hop -- factored out (Task H11) so the exact same logic that used to run only
     for the single hop `run_trace` ultimately reports on can also run for EVERY evaluated
@@ -121,7 +121,13 @@ def _evaluate_candidate_report(gate, sweep_signal, final_gate_passed):
         )
         return breakdown, entity_name, reasoning, limitations
 
-    breakdown = {**gate.breakdown, "sweep_confirmed": sweep_signal.is_sweep}
+    breakdown = {
+        **gate.breakdown,
+        "sweep_confirmed": sweep_signal.is_sweep,
+        "sweep_gap_seconds": sweep_signal.gap_seconds,
+        "sweep_value_preserved_pct": sweep_signal.value_preserved_pct,
+        "distinct_payer_count": distinct_payers,
+    }
     entity_name = gate.entity_name if final_gate_passed else None
     if final_gate_passed:
         reasoning, limitations = gate.reasoning, gate.limitations
@@ -321,7 +327,7 @@ def run_trace(case_id: str, background_tasks: BackgroundTasks, db: Session = Dep
                 history_read_failed = True
 
             if history_read_failed:
-                evaluated.append((hop, None, None, False))
+                evaluated.append((hop, None, None, False, 0))
                 continue
 
             incoming_to_hop = [t for t in full_history if t.to_address == hop.wallet_address]
@@ -338,7 +344,7 @@ def run_trace(case_id: str, background_tasks: BackgroundTasks, db: Session = Dep
             gate = evaluate_deposit_gate(hop, distinct_payer_count=distinct_payers, label=label,
                                           expected_predecessor=predecessor)
             final_gate_passed = gate.gate_passed and sweep_signal.is_sweep
-            evaluated.append((hop, gate, sweep_signal, final_gate_passed))
+            evaluated.append((hop, gate, sweep_signal, final_gate_passed, distinct_payers))
 
         # Task H11 (item 1 -- the change that unblocks campaigns/H1, evidence packs, legal
         # notices, etc.): persist a real `AttributionCandidate` row for EVERY evaluated
@@ -347,9 +353,9 @@ def run_trace(case_id: str, background_tasks: BackgroundTasks, db: Session = Dep
         # app/graph/campaigns.py's own module docstring, which documents exactly this gap and
         # the fact that `build_campaigns` silently returns `[]` until something populates this
         # table for real traces.
-        for c_hop, c_gate, c_sweep_signal, c_final_gate_passed in evaluated:
+        for c_hop, c_gate, c_sweep_signal, c_final_gate_passed, c_distinct_payers in evaluated:
             c_breakdown, c_entity_name, c_reasoning, c_limitations = _evaluate_candidate_report(
-                c_gate, c_sweep_signal, c_final_gate_passed)
+                c_gate, c_sweep_signal, c_final_gate_passed, c_distinct_payers)
             db.add(AttributionCandidate(
                 case_id=case.id, wallet_address=c_hop.wallet_address, chain=c_hop.chain,
                 gate_passed=c_final_gate_passed, gate_breakdown=c_breakdown,
@@ -362,10 +368,11 @@ def run_trace(case_id: str, background_tasks: BackgroundTasks, db: Session = Dep
         # candidate (closest to wherever the traceable money currently sits) so the failure
         # reasoning still points at the most useful next place to look.
         passed = next((e for e in evaluated if e[3]), None)
-        hop, gate, sweep_signal, final_gate_passed = passed if passed is not None else evaluated[-1]
+        hop, gate, sweep_signal, final_gate_passed, distinct_payers = (
+            passed if passed is not None else evaluated[-1])
 
         breakdown, entity_name, reasoning, limitations = _evaluate_candidate_report(
-            gate, sweep_signal, final_gate_passed)
+            gate, sweep_signal, final_gate_passed, distinct_payers)
 
         attribution_out = AttributionOut(
             walletAddress=hop.wallet_address, chain=hop.chain, gatePassed=final_gate_passed,

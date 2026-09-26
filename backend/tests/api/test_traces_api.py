@@ -131,6 +131,12 @@ def test_trace_endpoint_confirms_attribution_when_payers_and_sweep_both_hold():
     assert body["attribution"]["entityName"] == "Real Vetted Test Exchange"
     assert body["attribution"]["breakdown"]["sweep_confirmed"] is True
 
+    # Operator-fingerprinting plan: the raw sweep numbers must be persisted in the breakdown
+    # dict too, not just the boolean -- they were already computed here, just discarded before.
+    assert body["attribution"]["breakdown"]["sweep_gap_seconds"] == pytest.approx(30.0)
+    assert body["attribution"]["breakdown"]["sweep_value_preserved_pct"] == pytest.approx(147.0 / 148.5)
+    assert body["attribution"]["breakdown"]["distinct_payer_count"] == 4
+
     # Fix #3: conservation must compare the reported amount against terminal-hop taint, not
     # sum every hop's own funding transfer (which would double-count the suspect->terminal
     # hand-off). TERMINAL now forwards onward to COLD (per Task F3/C3, sweeping is no longer
