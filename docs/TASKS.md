@@ -8,7 +8,7 @@ Read `docs/PROGRESS.md` top entry for full narrative.
 
 1. **Frontend, React app (`frontend/`)** — all 9 screens built and functionally complete against mock data (Phase 1 of the original migration plan, `docs/plans/react-migration-plan.md`, Tasks 1-8 all done).
 2. **Frontend, UI v2 visual redesign — COMPLETE.** Full migration from the neumorphic CSS-Modules system to a Tailwind v4 + shadcn-style flat/white-card system (light theme, aurora page background). All 6 tasks in `docs/plans/ui-v2-redesign-plan.md` done, reviewed clean, dead neumorphic system fully deleted. `npm run build` zero errors. Since then, a pilot pass (primitives + Dashboard) pushed the visual language closer to a reference fintech dashboard: pill-shaped buttons/tabs, per-KPI multi-color icon tiles, recolored trace chart — not yet propagated to the other 12 screens.
-3. **Backend (`backend/`) — Sprint 1 (12/12) + both whole-branch fix passes (F1-F11, G1-G6) + Sprint 2/3 (H0-H8, H11) ALL COMPLETE.** Design spec approved: `docs/superpowers/specs/2026-09-25-backend-v2-competitive-design.md`. Real causal multi-chain tracing (TRON+Ethereum+Bitcoin), gated attribution, campaign clustering, VASP flagged-wallet feed, Tether freeze check, OFAC screening, reproducible evidence hashing, hash-chained audit log, legal notice templates + SAHYOG payload, ML risk scoring (LightGBM+SHAP, synthetic-data-disclosed) — all built, reviewed clean, and wired into the live trace path (Task H11). 240/240 backend tests green. Two known follow-up gaps, both honestly discovered mid-implementation and documented, not hidden: `Hop` rows are never persisted (affects evidence-pack completeness), and the 3rd whole-branch review (after G1-G6) was explicitly skipped by user decision — see `docs/PROGRESS.md` for both. Docker Compose (H9) and 5 cheap frontend fixes (H10b) are the only items left in `docs/superpowers/plans/2026-09-26-backend-sprint2-3-completion.md`.
+3. **Backend (`backend/`) — Sprint 1 (12/12) + both whole-branch fix passes (F1-F11, G1-G6) + Sprint 2/3 (H0-H9, H11) ALL COMPLETE — ENTIRE `2026-09-26-backend-sprint2-3-completion.md` PLAN DONE.** Design spec approved: `docs/superpowers/specs/2026-09-25-backend-v2-competitive-design.md`. Real causal multi-chain tracing (TRON+Ethereum+Bitcoin), gated attribution, campaign clustering, VASP flagged-wallet feed, Tether freeze check, OFAC screening, reproducible evidence hashing, hash-chained audit log, legal notice templates + SAHYOG payload, ML risk scoring (LightGBM+SHAP, synthetic-data-disclosed), Docker Compose — all built, reviewed clean, and wired into the live trace path (Task H11). 240/240 backend tests green. Frontend honesty fixes (Task H10b) also done, including a genuinely new bug find (Reset demo never called the store's reset). Known follow-up gaps, honestly discovered and documented, not hidden: `Hop` rows are never persisted (affects evidence-pack completeness), the 3rd whole-branch review (after G1-G6) was explicitly skipped by user decision, calibration (renumbered Task H12) was never built, and `docker compose up --build` needs a live run on a machine with Docker's engine actually running (couldn't be run in this sandbox, confirmed by both implementer and reviewer) — see `docs/PROGRESS.md` for all of these.
 
 ## P0 — UI v2 redesign (`docs/plans/ui-v2-redesign-plan.md`) — DONE
 - [x] Task 1: remaining primitives (Input/Toast/Gauge/Spinner/Well/PlainWords) + layout shell restyle @Claude
@@ -78,7 +78,7 @@ The mandatory post-plan whole-branch review (opus, with an executed probe script
 - [x] Fixed a real bug found during review: Reports' "View" button bounced to New Case because Evidence.tsx's route guard requires caseStore populated — now pre-fetches case+trace before navigating @Claude
 - [ ] Minor cleanup (non-blocking): `FULL_DATA_CASE_ID` constant duplicated across Cases/Reports/Trace/Exchanges instead of one shared constant; `STATUS_COLOUR`/`RISK_COLOUR` maps duplicated between Dashboard.tsx and Cases.tsx — from parallel-agent builds, worth consolidating if time allows @
 
-## P1.7 — Sprint 2/3 completion (2026-09-26) — plan: `docs/superpowers/plans/2026-09-26-backend-sprint2-3-completion.md` (tasks H0-H11) — H0-H8 + H11 ALL COMPLETE, all clean on first review pass. H9 (Docker) + H10b (frontend fixes) remain.
+## P1.7 — Sprint 2/3 completion (2026-09-26) — plan: `docs/superpowers/plans/2026-09-26-backend-sprint2-3-completion.md` (tasks H0-H9, H11) — ALL COMPLETE, every task clean on first review pass.
 - [x] H0 (controller-done, not a subagent): shared DB models/schemas/router scaffolding @Claude
 - [x] H1: campaign clustering (union-find on gate_passed hub convergence) @Claude
 - [x] H2: VASP flagged-wallet feed — pull API, push webhooks, demo receiver @Claude
@@ -89,8 +89,8 @@ The mandatory post-plan whole-branch review (opus, with an executed probe script
 - [x] H7: legal notice templates (BNSS§94/§106, BNS§223, BSA§63) + draft-approve-send FSM + SAHYOG payload @Claude
 - [x] H8: ML risk scoring (LightGBM+SHAP), gated behind data-quality check, synthetic training data disclosed in every response @Claude
 - [x] H11: wired H1/H2/H4/H6 into the live trace path — `AttributionCandidate` now actually persists, unblocking campaigns/evidence/legal @Claude
-- [ ] H9: Docker Compose (frontend, backend, postgres-or-honest-sqlite, redis-only-if-actually-used) @
-- [ ] H10b: 5 cheap frontend fixes, verify each claim against current code first (see below, may be partially stale) @
+- [x] H9: Docker Compose (frontend, backend, SQLite honestly not Postgres, BackgroundTasks honestly not Celery/Redis) @Claude
+- [x] H10b: 5 cheap frontend fixes, verified against current code first — 3 real fixes, 2 already stale, plus a new bug find (Reset demo) @Claude
 
 **Known follow-up gaps, found honestly mid-implementation, not hidden:**
 - `Hop` rows are never persisted anywhere in the backend (`tracer.py` only builds in-memory dataclasses) — found independently by both H4's and H11's implementers/reviewers. This means Task H4's `screen_case_hops(case_id, db)` DB-query helper would always return `[]`; H11 worked around it by calling the pure `screen_hops()` function on in-memory hops instead. It also means Task H5's evidence packs have an empty `hops` array for every real case. A future task should add real `Hop` persistence in `traces.py` (same place H11 added `AttributionCandidate` persistence) to close both gaps at once.
@@ -105,7 +105,7 @@ The mandatory post-plan whole-branch review (opus, with an executed probe script
 - [ ] Inconsistent timing claims (47s / 41s / "under a minute") — pick one or label illustrative
 
 ## P3 — Nice to have / deferred
-- [ ] Docker Compose: frontend, backend, postgres, redis, worker (deploy target: user's EC2) — Task H9, in progress
+- [x] Docker Compose: frontend, backend (Task H9, done) — no postgres/redis/worker shipped since neither is actually used (SQLite + BackgroundTasks, confirmed honestly). Live `docker compose up --build` still needs running on a machine with Docker's engine actually available — deploy target: user's EC2.
 - [x] BTC adapter — done, Bitcoin/Blockstream Esplora adapter (P1 Task 5)
 - [x] Full ML/SHAP risk model — done (Task H8), gated behind data-quality check, trained on disclosed synthetic data
 - [ ] Operator fingerprinting (Idea 2 from `THREE_BIG_IDEAS.md`) — own future design pass
