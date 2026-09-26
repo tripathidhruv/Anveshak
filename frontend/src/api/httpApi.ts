@@ -1,4 +1,5 @@
 import { request } from './client'
+import { createKeyedPromiseCache } from './traceCache'
 import type { Case, CaseInput, KaizenApi, Route, TraceResult } from '../types'
 
 interface BackendHop {
@@ -61,5 +62,15 @@ export const httpApiPartial: Partial<KaizenApi> = {
     }
     return { routeA: toRoute(trace), routeB }
   },
-  getRoutes: (caseId: string) => (httpApiPartial.startTrace as (id: string) => Promise<TraceResult>)(caseId),
+  getRoutes: (caseId: string) =>
+    routesCache.get(caseId, () => (httpApiPartial.startTrace as (id: string) => Promise<TraceResult>)(caseId)),
 }
+
+// `getRoutes` is called independently from up to 4 screens per case (Route Choice, Evidence,
+// Case Closed, Reports — see task-G6-report.md) — each re-running the ENTIRE live backend trace
+// from scratch for identical inputs otherwise. Cache the in-flight/most-recent promise per
+// `caseId` so repeated screen loads for the SAME case within a session reuse one real request.
+// Keyed by `caseId` (never global) so a different case, or a post-"Reset demo" new case (always
+// a fresh backend-issued uuid — see backend/app/api/v1/cases.py's `create_case`), never reuses
+// another case's cached result.
+const routesCache = createKeyedPromiseCache<TraceResult>()
