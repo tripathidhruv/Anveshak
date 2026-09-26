@@ -28,8 +28,20 @@ class TronChainClient:
         headers = {"TRON-PRO-API-KEY": self._api_key} if self._api_key else None
         records: list[dict] = []
         fingerprint: str | None = None
+        # TronGrid's real API (verified via its own docs) supports server-side time-window
+        # filtering on this endpoint via `min_timestamp`/`max_timestamp` (epoch milliseconds,
+        # aliases `min_block_timestamp`/`max_block_timestamp`) -- Task F7's own researched
+        # claim that no such parameter exists was factually wrong. Passing `min_timestamp`
+        # here bounds what the server returns in the first place, so the MAX_PAGES cap below
+        # is far less likely to truncate before reaching genuinely relevant records for a
+        # busy wallet. This does not replace pagination -- a busy wallet can still span many
+        # pages even within a time window -- so the existing fingerprint-cursor loop is kept
+        # as-is, just with a narrower server-side range to walk.
+        min_timestamp = int(since.timestamp() * 1000) if since is not None else None
         for _ in range(MAX_PAGES):
             params = {"limit": 200, "only_confirmed": "true", "order_by": "block_timestamp,asc"}
+            if min_timestamp is not None:
+                params["min_timestamp"] = min_timestamp
             if fingerprint:
                 params["fingerprint"] = fingerprint
             response = self._http.get(
@@ -43,15 +55,15 @@ class TronChainClient:
             if not page:
                 break
             records.extend(page)
-            # NOTE on `since`: we deliberately do NOT early-stop based on `since` here.
-            # This request is ordered ascending (order_by=block_timestamp,asc), so page 1
-            # is the OLDEST records and the fingerprint cursor only walks forward in that
-            # same direction — there is no way to jump straight to the records near `since`.
-            # Since `since` is a MINIMUM bound, every page from the one that first crosses
-            # it onward contains wanted (newer) records, so stopping early on `since` would
-            # mean skipping genuine history rather than skipping to it. The only safe
-            # termination signals are "no more fingerprint" / "empty page" / the page cap
-            # below.
+            # NOTE on `since`: we deliberately do NOT early-stop pagination based on `since`
+            # here, even though `min_timestamp` above already asks the server to only return
+            # records at or after `since`. This request is ordered ascending
+            # (order_by=block_timestamp,asc), so page 1 is the OLDEST matching record and the
+            # fingerprint cursor only walks forward in that same direction -- there is no
+            # later page to "jump to," and there is no guarantee the server actually honored
+            # `min_timestamp` correctly (hence the client-side `since` backstop filter below
+            # too -- trust but verify). The only safe termination signals remain "no more
+            # fingerprint" / "empty page" / the page cap below.
             fingerprint = (body.get("meta") or {}).get("fingerprint")
             if not fingerprint:
                 break

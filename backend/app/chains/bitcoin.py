@@ -29,9 +29,20 @@ class BitcoinChainClient:
         seen so far, stopping once a page has fewer than a full page of confirmed
         transactions (meaning we've reached the oldest history) or the page cap is hit.
 
+        Esplora's address-history endpoints (`/address/:a/txs` and
+        `/address/:a/txs/chain/:last_seen_txid`, per Blockstream/esplora's own API.md)
+        take no query parameters at all -- pagination is exclusively by `last_seen_txid`
+        cursor, and there is no `since`/timestamp/block-height equivalent to bound what
+        the server returns (verified directly against the upstream API docs, not assumed
+        -- this is the deliberate mirror of Task F7's mistake elsewhere: don't guess an
+        API's contract, check it). Unlike TronGrid, there is no server-side time-window
+        optimization available here to add; `since` remains a client-side post-fetch
+        filter only (below), same as before this task.
+
         Args:
             address: Bitcoin address to fetch transfers for.
-            since: Optional minimum timestamp filter (applied post-fetch).
+            since: Optional minimum timestamp filter (applied post-fetch -- no server-side
+                equivalent exists in Esplora's API, see above).
 
         Returns:
             List of Transfer objects, sorted ascending by timestamp.

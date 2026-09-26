@@ -146,6 +146,49 @@ def test_asset_contract_filter_drops_spoofed_symbol_wrong_contract():
     assert transfers[0].raw["token_info"]["address"] == GENUINE_USDT_CONTRACT
 
 
+def test_since_sends_min_timestamp_param_to_trongrid():
+    """When `since` is provided, the request actually sent to TronGrid must carry
+    `min_timestamp` (epoch milliseconds) so the server bounds what it returns in the
+    first place -- not just a client-side post-filter. This inspects the captured
+    request params directly (not just the returned data), per the discipline that
+    caught Task F7's wrong claim that TronGrid has no server-side time filtering."""
+    from datetime import datetime, timezone
+
+    since = datetime(2024, 11, 19, 0, 0, 0, tzinfo=timezone.utc)
+    expected_min_timestamp = int(since.timestamp() * 1000)
+    requests_seen: list[httpx.Request] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        requests_seen.append(request)
+        return httpx.Response(200, json={"data": FIXTURE, "success": True})
+
+    http = AdaptiveHttpClient(transport=httpx.MockTransport(handler), min_interval_seconds=0.0)
+    client = TronChainClient(http=http)
+
+    client.get_transfers("TScamWalletBBBBBBBBBBBBBBBBBBBBBBB", since=since)
+
+    assert len(requests_seen) == 1
+    assert requests_seen[0].url.params.get("min_timestamp") == str(expected_min_timestamp)
+
+
+def test_no_since_omits_min_timestamp_param():
+    """Without a `since` bound, no `min_timestamp` param should be sent at all --
+    regression guard against always sending a stale/zero value."""
+    requests_seen: list[httpx.Request] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        requests_seen.append(request)
+        return httpx.Response(200, json={"data": FIXTURE, "success": True})
+
+    http = AdaptiveHttpClient(transport=httpx.MockTransport(handler), min_interval_seconds=0.0)
+    client = TronChainClient(http=http)
+
+    client.get_transfers("TScamWalletBBBBBBBBBBBBBBBBBBBBBBB")
+
+    assert len(requests_seen) == 1
+    assert "min_timestamp" not in requests_seen[0].url.params
+
+
 def test_no_asset_contract_filter_keeps_unfiltered_behavior():
     """When `asset_contract` is None (not provided), both the genuine and the spam
     transfer survive -- a regression guard for existing unfiltered callers."""
