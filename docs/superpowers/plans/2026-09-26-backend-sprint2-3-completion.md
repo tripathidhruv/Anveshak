@@ -264,7 +264,7 @@ values; the "synthetic data" disclosure is present in every response that includ
 
 ---
 
-## Task H9: calibration pass
+## Task H12: calibration pass (renumbered from an original "H9" mislabel — see Task H9 below, which is Docker Compose and was already built/tracked under that number in docs/TASKS.md)
 
 **Files:** new `backend/scripts/calibrate.py` (or `backend/app/risk/calibrate.py` if it needs
 to be importable, implementer's call), reusing whatever synthetic labeled data Task H8 built
@@ -286,7 +286,7 @@ deliverable, "run it and get a real number" is the acceptance bar.
 
 ---
 
-## Task H10: Docker Compose deployment
+## Task H9: Docker Compose deployment
 
 **Files:** repo root `docker-compose.yml`, `backend/Dockerfile`, `frontend/Dockerfile` (if one
 doesn't exist), any `.dockerignore` needed.
