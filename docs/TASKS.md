@@ -93,16 +93,16 @@ The mandatory post-plan whole-branch review (opus, with an executed probe script
 - [x] H10b: 5 cheap frontend fixes, verified against current code first — 3 real fixes, 2 already stale, plus a new bug find (Reset demo) @Claude
 
 **Known follow-up gaps, found honestly mid-implementation, not hidden:**
-- `Hop` rows are never persisted anywhere in the backend (`tracer.py` only builds in-memory dataclasses) — found independently by both H4's and H11's implementers/reviewers. This means Task H4's `screen_case_hops(case_id, db)` DB-query helper would always return `[]`; H11 worked around it by calling the pure `screen_hops()` function on in-memory hops instead. It also means Task H5's evidence packs have an empty `hops` array for every real case. A future task should add real `Hop` persistence in `traces.py` (same place H11 added `AttributionCandidate` persistence) to close both gaps at once.
+- ~~`Hop` rows are never persisted~~ — **FIXED (2026-09-26, Hop-persistence task).** `traces.py`'s `run_trace()` now persists one `Hop` row per trace hop (same place H11 added `AttributionCandidate` persistence), with a commit that runs unconditionally for every trace, not just when attribution candidates exist. `screen_case_hops(case_id, db)` and `app/evidence/pack.py`'s hop query both now return real, non-empty results for a traced case — verified by reading both call sites, not just asserted. `traces.py` still calls the pure `screen_hops()` on in-memory hops rather than switching to `screen_case_hops` (equally correct, avoids a redundant DB round-trip; not a bug). 242/242 tests green (240 + 2 new covering the persisted rows and the zero-candidates commit-placement edge case).
 - A real `action="case.create"` audit entry at the true case-creation site (`cases.py`) is still missing — H11 used `trace.run` as the nearest in-scope substitute since `cases.py` was outside its file scope.
 - H2's VASP auto-flag still uses its original interim rule-based proxy score (`gate_passed -> 1.0/0.0`), not H8's real ML risk score — H11 deliberately did not wire this in, judging it unsafe to add a second full risk-feature computation to the hottest endpoint in the backend. `GET /api/v1/risk/{case_id}/score` is where the real score lives today; wiring it into auto-flag is a clean future task.
 
-## P2 — Frontend honesty fixes (cheap, do anytime, listed in backend v2 spec) — Task H10b
-- [ ] `ReportDocument.tsx` PDF claim ("read directly from public blockchain data") — make true or label as demo data
-- [ ] `mock.ts` — fix invalid address formats, double-counted Route A+B totals, duplicate node, suspect/scammer mismatch
-- [ ] `NodeDrawer.tsx` — USDT shown with a ₹ sign, wrong unit label
-- [ ] `Reset demo` doesn't actually reset the case store — real bug
-- [ ] Inconsistent timing claims (47s / 41s / "under a minute") — pick one or label illustrative
+## P2 — Frontend honesty fixes (cheap, do anytime, listed in backend v2 spec) — Task H10b — DONE
+- [x] `ReportDocument.tsx` PDF claim ("read directly from public blockchain data") — removed, visible synthetic-data disclosure added inside PDF body
+- [x] `mock.ts` — suspect/scammer wallet address mismatch fixed (30-char vs 21-char same address)
+- [x] `NodeDrawer.tsx` — USDT ₹ sign removed, `assetShort` threaded through from Evidence.tsx
+- [x] `Reset demo` doesn't actually reset the case store — fixed, now calls `useCaseStore`'s `reset()`
+- [x] Inconsistent timing claims — CaseClosed's "47 seconds" aligned to Dashboard's "41 seconds"
 
 ## P3 — Nice to have / deferred
 - [x] Docker Compose: frontend, backend (Task H9, done) — no postgres/redis/worker shipped since neither is actually used (SQLite + BackgroundTasks, confirmed honestly). Live `docker compose up --build` still needs running on a machine with Docker's engine actually available — deploy target: user's EC2.

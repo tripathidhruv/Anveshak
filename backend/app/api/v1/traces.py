@@ -3,7 +3,7 @@ from decimal import Decimal
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.api.deps import get_db
-from app.models import AttributionCandidate, Case
+from app.models import AttributionCandidate, Case, Hop
 from app.chains.registry import get_chain_client
 from app.tracing.tracer import trace, TraceHop
 from app.tracing.conservation import check_conservation
@@ -138,6 +138,32 @@ def run_trace(case_id: str, background_tasks: BackgroundTasks, db: Session = Dep
                flag=_STOP_REASON_PLAIN_ENGLISH.get(h.stop_reason), chain=h.chain, stopReason=h.stop_reason)
         for h in result.hops
     ]
+
+    # First-time `Hop` DB persistence (this task): one row per `result.hops` entry, mirroring
+    # `hops_out` above (same order, same length, same fields) rather than recomputing anything.
+    # This closes a real, already-documented gap: `app/api/v1/sanctions.py`'s
+    # `screen_case_hops(case_id, db)` and `app/evidence/pack.py`'s evidence-pack builder both
+    # already query `Hop` filtered by `case_id`, but until now nothing ever wrote a `Hop` row,
+    # so both always saw an empty result for every real case.
+    #
+    # `route_label` is always the literal "routeA": this backend only ever traces one chain /
+    # one route per case (see `bridge_links` below and its own comment for the same
+    # one-chain-per-case architectural fact) -- there is no second route to choose between.
+    for h, out in zip(result.hops, hops_out):
+        db.add(Hop(
+            case_id=case.id, route_label="routeA", hop_index=h.hop_index,
+            wallet_address=h.wallet_address, chain=h.chain,
+            tx_hash=(h.funding_transfer.tx_hash if h.funding_transfer else None),
+            amount=float(h.taint), at=out.at,
+            stop_reason=h.stop_reason, flag=out.flag,
+        ))
+    # Commit unconditionally here, regardless of whether any attribution candidates are found
+    # below -- the existing `db.commit()` further down (originally the only commit in this
+    # function) sits INSIDE the `if candidates:` branch, so a trace that produces zero
+    # candidates (e.g. the suspect wallet has no outgoing activity at all) would otherwise
+    # never commit these new `Hop` rows. That gap is exactly the bug this persistence exists
+    # to avoid re-introducing.
+    db.commit()
 
     terminal_hops = result.terminal_hops
     # Correction #3: compare the victim's reported amount against terminal-hop taint, not
@@ -378,14 +404,10 @@ def run_trace(case_id: str, background_tasks: BackgroundTasks, db: Session = Dep
     # H4). Calls `screen_hops` -- the pure, DB-independent function -- directly on this
     # request's own freshly-computed `result.hops`, rather than `app/api/v1/sanctions.py`'s
     # `screen_case_hops(case_id, db)` helper, which re-derives its hop list by querying the
-    # `Hop` DB table for `case_id`. That table is a SEPARATE, still-unclosed persistence gap
-    # (see app/evidence/pack.py's own module docstring: "H5 does not touch traces.py, it
-    # reads what's already there" -- an assumption that isn't actually true yet either) that
-    # is outside this task's brief (only `AttributionCandidate` persistence is asked for) and
-    # this task's file scope (`traces.py` ONLY) -- adding first-time `Hop` persistence here
-    # would be a second, materially larger and riskier change to the most heavily-tested file
-    # in this backend than this task's brief calls for. Screening the hops already sitting in
-    # memory is honest, correct, and needs no such write.
+    # `Hop` DB table for `case_id`. `Hop` rows ARE now persisted (see the block above, added by
+    # the Hop-persistence follow-up task), so `screen_case_hops` would work today -- this call
+    # site simply hasn't been switched over to it, since screening the hops already sitting in
+    # memory for this request is equally correct and avoids a redundant DB round-trip.
     sanctions_hits = screen_hops([(h.wallet_address, h.chain) for h in result.hops])
     now = datetime.now(timezone.utc)
     sanctions_matches_out = [

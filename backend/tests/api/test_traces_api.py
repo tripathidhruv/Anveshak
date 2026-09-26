@@ -7,6 +7,7 @@ from app.main import app
 from app.db import Base, get_db
 from app.chains.base import Transfer
 from app.labels.seed_labels import VaspLabelSeed
+from app.models import Hop
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
@@ -741,3 +742,80 @@ def test_hop_role_and_flag_are_plain_english_not_raw_codes():
     flagged = [h for h in hops if h["flag"] is not None]
     assert flagged, "expected at least one hop to carry a plain-English stop flag"
     assert all(h["flag"] == "This wallet never sent this money anywhere else" for h in flagged)
+
+
+# ---------------------------------------------------------------------------
+# Hop DB persistence (this task): `run_trace` must actually write `Hop` rows, not just
+# compute the in-memory `hops_out` list used for the API response -- `Hop` existed since
+# Task H0 scaffolding but nothing ever wrote to it, leaving `screen_case_hops` and
+# `app/evidence/pack.py`'s hop query permanently empty for every real case.
+# ---------------------------------------------------------------------------
+
+def test_trace_persists_hop_rows_matching_the_response():
+    case_id = _make_case()
+
+    with patch("app.api.v1.traces.get_chain_client", return_value=FakeChainClient()), \
+         patch("app.api.v1.traces.lookup_label", return_value=VETTED_LABEL):
+        response = client.post(f"/api/v1/cases/{case_id}/trace")
+
+    assert response.status_code == 200
+    body = response.json()
+
+    db = TestSession()
+    try:
+        rows = db.query(Hop).filter(Hop.case_id == case_id).order_by(Hop.hop_index).all()
+    finally:
+        db.close()
+
+    # At least one row was persisted, and the row count matches the number of hops the same
+    # call returned in its own response.
+    assert len(rows) > 0
+    assert len(rows) == len(body["hops"])
+
+    hops_out_by_index = {h["n"]: h for h in body["hops"]}
+    for row in rows:
+        out = hops_out_by_index[row.hop_index]
+        assert row.wallet_address == out["addr"]
+        assert row.chain == out["chain"]
+        assert row.hop_index == out["n"]
+        assert row.stop_reason == out["stopReason"]
+        assert row.flag == out["flag"]
+        assert row.route_label == "routeA"
+        assert row.amount == pytest.approx(out["amt"])
+
+
+def test_trace_persists_hop_rows_even_when_there_are_zero_attribution_candidates():
+    # This is the specific commit-placement bug this task fixes: the ORIGINAL only
+    # `db.commit()` in `run_trace` sits inside the `if candidates:` branch. A suspect wallet
+    # with no outgoing activity at all produces zero candidates (`result.hops` is just the
+    # single hop-0 suspect entry, which never satisfies `hop.hop_index > 0`), so that branch
+    # is never entered -- any `Hop` row added before it would never have been committed.
+    class NoOutgoingActivityClient:
+        chain = "tron"
+
+        def get_transfers(self, address, since=None):
+            return []
+
+    case_id = _make_case()
+    with patch("app.api.v1.traces.get_chain_client", return_value=NoOutgoingActivityClient()), \
+         patch("app.api.v1.traces.lookup_label", return_value=None):
+        response = client.post(f"/api/v1/cases/{case_id}/trace")
+
+    assert response.status_code == 200
+    body = response.json()
+
+    # Confirm this response really did hit the zero-candidates path (no wallet past the
+    # suspect ever received any of the victim's money), otherwise this test would not be
+    # exercising the bug it claims to.
+    assert body["attribution"]["breakdown"] == {}
+
+    db = TestSession()
+    try:
+        rows = db.query(Hop).filter(Hop.case_id == case_id).all()
+    finally:
+        db.close()
+
+    assert len(rows) > 0
+    assert len(rows) == len(body["hops"])
+    assert rows[0].wallet_address == SUSPECT
+    assert rows[0].tx_hash is None  # hop 0 has no funding_transfer
