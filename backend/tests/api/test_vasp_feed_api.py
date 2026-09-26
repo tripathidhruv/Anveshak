@@ -1,4 +1,5 @@
 import httpx
+import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -27,6 +28,21 @@ def override_get_db():
 
 app.dependency_overrides[get_db] = override_get_db
 client = TestClient(app)
+
+
+@pytest.fixture(autouse=True)
+def _reset_db_override():
+    # Task H11: `POST /api/v1/cases/{id}/trace` (tests/api/test_traces_api.py) now calls
+    # `auto_flag_wallet` for every gate-passed trace, writing real `FlaggedWallet` rows --
+    # previously this module's `flagged_wallets` table could only ever be touched by THIS
+    # file's own requests. This module's exact-count assertions (`total == 0`, etc.) need
+    # requests made here to land in THIS module's own engine, not whichever sibling
+    # `tests/api/test_*.py` module's override happened to be installed last at collection
+    # time (every such module sets `app.dependency_overrides[get_db]` at import time, and
+    # pytest imports every test module before executing any of them -- see
+    # tests/api/test_sanctions_api.py's identical fixture for the fuller explanation).
+    app.dependency_overrides[get_db] = override_get_db
+    yield
 
 
 def _flag_payload(case_id="case-1", address="TFlaggedWalletAAAAAAAAAAAAAAAAAAAAA",

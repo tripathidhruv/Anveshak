@@ -84,6 +84,18 @@ class BridgeLinkOut(BaseModel):
     sideBChain: str
     confidence: float
 
+# Moved above TraceOut (was originally defined further down, in the "Sprint 2/3 additions"
+# section below) so TraceOut can carry a `sanctionsMatches` field of this type -- Task H11
+# wires `traces.py`'s live trace path into Task H4's sanctions screening (see that task's
+# `app/api/v1/sanctions.py` module docstring, which names this exact integration gap) and
+# needed this shape available before TraceOut's own definition.
+class SanctionsMatchOut(BaseModel):
+    walletAddress: str
+    chain: str
+    listSource: str
+    matchedAt: datetime
+    listVersion: str
+
 class TraceOut(BaseModel):
     hops: list[HopOut]
     conservation: ConservationOut
@@ -95,6 +107,11 @@ class TraceOut(BaseModel):
     # couldn't check", not "we checked and there are none".
     unreportedVictimsDataUnavailable: bool
     bridgeLinks: list[BridgeLinkOut]
+    # Task H11: every hop in this trace screened against the OFAC SDN seed list (Task H4's
+    # `app.sanctions.screen.screen_hops`), not just the terminal/attributed wallet. Defaults
+    # to an empty list so this schema addition can never break a caller that doesn't know
+    # about it yet.
+    sanctionsMatches: list[SanctionsMatchOut] = []
 
 # --- Sprint 2/3 additions (docs/superpowers/plans/2026-09-26-backend-sprint2-3-completion.md) ---
 # Each Sprint 2/3 task (H1-H8) may extend these with its own request/response shapes as needed;
@@ -127,13 +144,6 @@ class FreezeCheckOut(BaseModel):
     checkedAt: datetime
     goldenHourMinutesRemaining: float | None
     dataUnavailable: bool
-
-class SanctionsMatchOut(BaseModel):
-    walletAddress: str
-    chain: str
-    listSource: str
-    matchedAt: datetime
-    listVersion: str
 
 class EvidencePackOut(BaseModel):
     caseId: str

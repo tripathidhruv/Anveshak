@@ -30,6 +30,21 @@ def override_get_db():
 app.dependency_overrides[get_db] = override_get_db
 client = TestClient(app)
 
+
+@pytest.fixture(autouse=True)
+def _reset_db_override():
+    # Task H11: `run_trace` now writes AttributionCandidate/FlaggedWallet/AuditLogEntry rows
+    # (previously it wrote nothing at all), so this module's requests must land in THIS
+    # module's own engine, not whichever sibling `tests/api/test_*.py` module's override
+    # happened to be installed last at collection time (every such module does
+    # `app.dependency_overrides[get_db] = <its own override>` at import time, and pytest
+    # imports every test module before executing any of them -- see
+    # tests/api/test_sanctions_api.py's identical fixture for the fuller explanation this
+    # comment is deliberately kept shorter than).
+    app.dependency_overrides[get_db] = override_get_db
+    yield
+
+
 SUSPECT = "TScamWalletBBBBBBBBBBBBBBBBBBBBBBB"
 TERMINAL = "TExchangeHotWalletCCCCCCCCCCCCCCCCC"
 COLD = "TColdStorageDDDDDDDDDDDDDDDDDDDDDDD"
