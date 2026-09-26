@@ -1,0 +1,40 @@
+{
+  "_comment": "Seed subset of OFAC's Specially Designated Nationals (SDN) list, digital-currency-address entries only. Format modeled on the REAL published schema, not invented: OFAC's sdn_advanced.xml encodes each address as a per-entry 'feature' whose type is literally the string 'Digital Currency Address - <SYMBOL>' (e.g. '- XBT' for Bitcoin, '- ETH' for Ethereum), per OFAC FAQ 559/563 (https://ofac.treasury.gov/faqs/563) -- 'up to 256 characters', tagged with the currency it corresponds to (Bitcoin/XBT, Ethereum/ETH, Litecoin/LTC, Neo/NEO, Dash/DASH, Ripple/XRP, Iota/MIOTA, Monero/XMR, Petro/PTR). The full feed is downloadable at https://sanctionslist.ofac.treas.gov/Home/SdnList (sdn_advanced.xml). This file is a small, real, publicly-sourced subset -- hackathon scope per task brief -- not a full mirror of the list.",
+  "list_version": "seed-2026-09-26",
+  "source_url": "https://sanctionslist.ofac.treas.gov/Home/SdnList",
+  "entries": [
+    {
+      "uid": "OFAC-SDN-19288",
+      "entity_name": "Ali Khorashadizadeh",
+      "program": "CYBER2 (SamSam ransomware / Iran)",
+      "chain": "bitcoin",
+      "asset_symbol": "XBT",
+      "address": "149w62rY42aZBox8fGcmqNsXUzSStKeq8C",
+      "designated_at": "2018-11-28",
+      "source_url": "https://home.treasury.gov/news/press-releases/sm577",
+      "status": "active"
+    },
+    {
+      "uid": "OFAC-SDN-19289",
+      "entity_name": "Mohammad Ghorbaniyan",
+      "program": "CYBER2 (SamSam ransomware / Iran)",
+      "chain": "bitcoin",
+      "asset_symbol": "XBT",
+      "address": "1AjZPMsnmpdK2Rv9KQNfMurTXinscVro9V",
+      "designated_at": "2018-11-28",
+      "source_url": "https://home.treasury.gov/news/press-releases/sm577",
+      "status": "active"
+    },
+    {
+      "uid": "OFAC-SDN-21309",
+      "entity_name": "Lazarus Group (Ronin Bridge exploiter address)",
+      "program": "DPRK3 (North Korea cyber)",
+      "chain": "ethereum",
+      "asset_symbol": "ETH",
+      "address": "0x098B716B8Aaf21512996dC57EB0615e2383E2f96",
+      "designated_at": "2022-04-14",
+      "source_url": "https://home.treasury.gov/news/press-releases/jy0714",
+      "status": "active"
+    }
+  ]
+}
