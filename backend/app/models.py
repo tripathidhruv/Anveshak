@@ -208,6 +208,14 @@ class DepositIndexEntry(Base):
                                                                         # wallet's own vetted label
     indexed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
+class UserRole(Base):
+    __tablename__ = "user_roles"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    email: Mapped[str] = mapped_column(String, unique=True, index=True)
+    role: Mapped[str] = mapped_column(String)  # "officer" | "exchange" | "citizen"
+    linked_subscriber_id: Mapped[int | None] = mapped_column(ForeignKey("vasp_subscribers.id"), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
 class AuditLogEntry(Base):
     __tablename__ = "audit_log_entries"
     id: Mapped[int] = mapped_column(primary_key=True)
