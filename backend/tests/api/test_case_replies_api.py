@@ -108,6 +108,23 @@ def test_handling_a_case_adds_no_ai_reply_when_narrative_unavailable():
     assert not any(r["authoredBy"] == "ai" for r in replies)
 
 
+def test_handling_a_case_survives_narrative_generation_raising():
+    # Defense-in-depth: generate_case_narrative's docstring promises "Never raises", but the
+    # call site must not trust that blindly -- an exception raised directly (a transient DB
+    # error, or a future edit that breaks the "never raises" contract) must not turn an
+    # already-committed status transition into a misleading 500.
+    _seed_officer_role()
+    case_id = _seed_case("case-reply-narrative-raises", status="in_progress")
+    with patch("app.api.v1.cases.generate_case_narrative", side_effect=RuntimeError("boom")):
+        response = client.patch(f"/api/v1/cases/{case_id}/status", json={"status": "handled"},
+                                 headers={"Authorization": f"Bearer {_officer_token()}"})
+    assert response.status_code == 200
+    assert response.json()["status"] == "handled"
+    replies = client.get(f"/api/v1/cases/{case_id}/replies",
+                          headers={"Authorization": f"Bearer {_officer_token()}"}).json()
+    assert not any(r["authoredBy"] == "ai" for r in replies)
+
+
 def test_replies_listed_in_created_order():
     _seed_officer_role()
     case_id = _seed_case("case-reply-order")

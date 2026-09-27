@@ -247,7 +247,17 @@ def update_case_status(
     db.commit()
     db.refresh(case)
     if payload.status == "handled":
-        narrative, available, _reason = generate_case_narrative(db, case_id)
+        # generate_case_narrative's own docstring promises "Never raises", but that contract is
+        # only enforced by its internal try/except around the OpenAI call -- the DB-read portion
+        # before that (case/hops/candidates lookups) is unguarded. The status transition above
+        # has already been committed by this point, so a defense-in-depth guard here (treating
+        # ANY exception the same as the documented `available=False` case) ensures a narrative-
+        # generation failure of any kind can never turn an already-successful status transition
+        # into a misleading 500.
+        try:
+            narrative, available, _reason = generate_case_narrative(db, case_id)
+        except Exception:  # noqa: BLE001 -- see comment above; must never risk the response below.
+            narrative, available = None, False
         if available and narrative:
             db.add(CaseReply(case_id=case_id, message=narrative, authored_by="ai"))
             db.commit()
