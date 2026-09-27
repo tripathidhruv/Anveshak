@@ -99,7 +99,12 @@ def _compute_recoverability(case: Case) -> tuple[RecoverabilityState, float | No
 
     # Only remaining stop reasons here are "no_outgoing_activity"/"no_further_transfers" --
     # the money genuinely stopped moving at `target`.
-    is_exchange = lookup_label(target.wallet_address, target.chain) is not None
+    # Only a VETTED label counts as "at an exchange" -- same gate app/api/v1/risk.py's
+    # `label_vetted` check already applies. seed_labels.py's one unvetted placeholder entry
+    # must never be presented as a real, named exchange here any more than it can be for
+    # attribution itself.
+    label = lookup_label(target.wallet_address, target.chain)
+    is_exchange = label is not None and label.vetting_status == "vetted"
     state: RecoverabilityState = "at_exchange" if is_exchange else "at_rest"
 
     # Tether's on-chain blacklist status only exists for USDT (TRC-20/ERC-20) -- the same gate
