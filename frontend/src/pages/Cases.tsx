@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input'
 import { Spinner } from '@/components/ui/spinner'
 import { api } from '../api'
 import { useUIStore } from '../store/uiStore'
-import type { CaseStatus, RecentCase, RiskBand } from '../types'
+import type { CaseStatus, RecentCase, RecoverabilityState, RiskBand } from '../types'
 import type { SemanticColour } from '../utils/constants'
 import { COLOUR_SEMANTICS, ROUTES } from '../utils/constants'
 import { formatINR } from '../utils/format'
@@ -26,6 +26,42 @@ const RISK_COLOUR: Partial<Record<RiskBand, SemanticColour>> = {
   HIGH: 'criminal',
   MEDIUM: 'exchange',
   LOW: 'safe',
+}
+
+// Colour semantics per CLAUDE.md: gold = exchange, moss = safe/done, vermillion = criminal
+// path/high risk. "Moving" money is still an active criminal flow (highest urgency, no
+// confirmed resting point yet), so it borrows the criminal-path colour rather than a new one.
+const RECOVERABILITY_COLOUR: Record<RecoverabilityState, SemanticColour> = {
+  at_rest: 'safe',
+  at_exchange: 'exchange',
+  moving: 'criminal',
+  unknown: 'info',
+}
+
+const RECOVERABILITY_LABEL: Record<RecoverabilityState, string> = {
+  at_rest: 'At rest',
+  at_exchange: 'At exchange',
+  moving: 'Moving',
+  unknown: 'Unknown',
+}
+
+/** Plain-English deadline text for a table cell — `null` means "don't show a deadline"
+ * (state known but no fixed resting point to measure one against, or no signal at all). */
+function formatRecoverabilityDeadline(minutes: number | null | undefined): string | null {
+  if (minutes == null) return null
+  if (minutes <= 0) return 'Window likely closed'
+  const hours = minutes / 60
+  return hours < 1 ? `~${Math.round(minutes)}m left` : `~${Math.round(hours)}h left`
+}
+
+/** Default sort: cases with a real deadline first (least time left = most urgent first),
+ * then still-moving cases, then cases with no traceable state last — mirrors the backend's
+ * own `_sort_key` in `backend/app/api/v1/cases.py` exactly (see that function's comment). */
+function recoverabilitySortKey(row: RecentCase): [number, number] {
+  const state = row.recoverabilityState ?? 'unknown'
+  const deadline = row.recoverabilityDeadlineMinutes
+  if (deadline != null) return [0, deadline]
+  return [state === 'moving' ? 1 : 2, 0]
 }
 
 /** The case with full backing trace/risk/evidence data in this demo — see `mock.ts`. */
@@ -58,11 +94,20 @@ export default function Cases() {
 
   const filtered = useMemo(() => {
     if (!cases) return []
-    return cases.filter((row) => {
-      if (statusFilter !== 'All' && row.status !== statusFilter) return false
-      if (query.trim() && !row.id.toLowerCase().includes(query.trim().toLowerCase()) && !row.who.toLowerCase().includes(query.trim().toLowerCase())) return false
-      return true
-    })
+    return cases
+      .filter((row) => {
+        if (statusFilter !== 'All' && row.status !== statusFilter) return false
+        if (query.trim() && !row.id.toLowerCase().includes(query.trim().toLowerCase()) && !row.who.toLowerCase().includes(query.trim().toLowerCase())) return false
+        return true
+      })
+      // Default sort — most recoverable / most urgent first (see recoverabilitySortKey).
+      // The status filter above still narrows the rows; this only orders what's left.
+      .slice()
+      .sort((a, b) => {
+        const [tierA, valueA] = recoverabilitySortKey(a)
+        const [tierB, valueB] = recoverabilitySortKey(b)
+        return tierA !== tierB ? tierA - tierB : valueA - valueB
+      })
   }, [cases, statusFilter, query])
 
   function handleRowClick(row: RecentCase) {
@@ -134,6 +179,7 @@ export default function Cases() {
                   <th className="border-b border-border px-3 pb-2.5 text-left text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Chain</th>
                   <th className="border-b border-border px-3 pb-2.5 text-left text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Status</th>
                   <th className="border-b border-border px-3 pb-2.5 text-left text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Risk</th>
+                  <th className="border-b border-border px-3 pb-2.5 text-left text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Recoverability</th>
                 </tr>
               </thead>
               <tbody>
@@ -163,6 +209,22 @@ export default function Cases() {
                       <td className="whitespace-nowrap border-b border-border px-3 py-3">
                         {row.risk ? (
                           <Badge variant={COLOUR_SEMANTICS[RISK_COLOUR[row.risk]!]}>{row.risk}</Badge>
+                        ) : (
+                          <span className="text-muted-foreground">—</span>
+                        )}
+                      </td>
+                      <td className="whitespace-nowrap border-b border-border px-3 py-3">
+                        {row.recoverabilityState ? (
+                          <div className="flex flex-col gap-1">
+                            <Badge variant={COLOUR_SEMANTICS[RECOVERABILITY_COLOUR[row.recoverabilityState]]}>
+                              {RECOVERABILITY_LABEL[row.recoverabilityState]}
+                            </Badge>
+                            {formatRecoverabilityDeadline(row.recoverabilityDeadlineMinutes) && (
+                              <span className="text-[11px] text-muted-foreground">
+                                {formatRecoverabilityDeadline(row.recoverabilityDeadlineMinutes)}
+                              </span>
+                            )}
+                          </div>
                         ) : (
                           <span className="text-muted-foreground">—</span>
                         )}

@@ -1,6 +1,6 @@
 import { request } from './client'
 import { createKeyedPromiseCache } from './traceCache'
-import type { Case, CaseInput, KaizenApi, Route, TraceResult } from '../types'
+import type { Case, CaseInput, KaizenApi, RecentCase, RecoverabilityState, Route, TraceResult } from '../types'
 
 interface BackendHop {
   n: number
@@ -11,6 +11,47 @@ interface BackendHop {
   flag: string | null
   chain: string
   stopReason: string | null
+}
+
+/** Mirrors `backend/app/api/v1/cases.py`'s `CaseListItemOut` (the `CaseOut` fields plus the
+ * two recoverability additions) exactly. */
+interface BackendCaseListItem {
+  id: string
+  ncrp: string
+  complainant: string
+  location: string
+  phone: string
+  incidentAt: string
+  reportedAt: string
+  fraudType: string
+  amountINR: number
+  amountCrypto: number
+  asset: string
+  chain: string
+  suspectWallet: string
+  recoverabilityState: RecoverabilityState
+  recoverabilityDeadlineMinutes: number | null
+}
+
+function toRecentCase(item: BackendCaseListItem): RecentCase {
+  return {
+    id: item.id,
+    who: item.complainant,
+    amt: item.amountINR,
+    chain: item.chain,
+    // The backend has no persisted case-workflow-status column at all (see CaseListItemOut's
+    // own module docstring) -- nothing in this codebase currently transitions a case away from
+    // "New" once created, so reporting anything else here would be inventing data this system
+    // doesn't actually track yet. Known gap, not an oversight (CLAUDE.md's "Known gaps" rule).
+    status: 'New',
+    // Real per-case risk scoring is a separate, expensive live trace + ML call
+    // (GET /api/v1/risk/{caseId}/score) this list endpoint deliberately does not also run for
+    // every case on every request -- `null` here is honest "not computed here", matching the
+    // mock data's own `null` for cases that haven't been scored yet.
+    risk: null,
+    recoverabilityState: item.recoverabilityState,
+    recoverabilityDeadlineMinutes: item.recoverabilityDeadlineMinutes,
+  }
 }
 
 interface BackendTraceOut {
@@ -46,6 +87,13 @@ function toRoute(trace: BackendTraceOut): Route {
 export const httpApiPartial: Partial<KaizenApi> = {
   createCase: (input: CaseInput) => request<Case>('/api/v1/cases', { method: 'POST', body: input }),
   getCase: (id: string) => request<Case>(`/api/v1/cases/${id}`),
+  listCases: async (): Promise<RecentCase[]> => {
+    const items = await request<BackendCaseListItem[]>('/api/v1/cases')
+    // The backend already returns these sorted by recoverability (most urgent/actionable
+    // first) -- see cases.py's `list_cases` -- so this is a straight field mapping, no
+    // client-side re-sort here.
+    return items.map(toRecentCase)
+  },
   startTrace: async (caseId: string): Promise<TraceResult> => {
     const trace = await request<BackendTraceOut>(`/api/v1/cases/${caseId}/trace`, { method: 'POST' })
     // routeB is an honest "not computed" placeholder — an independent literal, never a spread

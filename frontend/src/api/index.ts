@@ -14,7 +14,7 @@ function notImplemented(method: string): never {
 const httpApi: KaizenApi = {
   createCase: httpApiPartial.createCase!,
   getCase: httpApiPartial.getCase!,
-  listCases: () => notImplemented('listCases'),
+  listCases: httpApiPartial.listCases!,
   startTrace: httpApiPartial.startTrace!,
   getRoutes: httpApiPartial.getRoutes!,
   getExchange: () => notImplemented('getExchange'),

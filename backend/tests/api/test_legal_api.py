@@ -1,3 +1,5 @@
+from unittest.mock import patch
+
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
@@ -7,6 +9,7 @@ from sqlalchemy.pool import StaticPool
 from app.db import Base, get_db
 from app.legal import notice_fsm
 from app.main import app
+from app.mixers.registry import KNOWN_MIXERS
 
 engine = create_engine("sqlite:///:memory:", connect_args={"check_same_thread": False},
                         poolclass=StaticPool)
@@ -178,3 +181,38 @@ def test_create_notice_not_blocked_when_case_was_never_traced():
     case_id = _create_case("LEGAL-CASE-NEVER-TRACED")
     response = client.post("/api/v1/legal/notices", json={"caseId": case_id, "citationId": "bnss_94"})
     assert response.status_code == 201, response.text
+
+
+def test_notice_gate_blocks_a_real_end_to_end_trace_through_a_known_mixer_wallet():
+    # Unlike the tests above (which hand-set case.innocence_score to prove the threshold
+    # comparison in isolation, per review feedback), this test proves the FULL real path: a
+    # real trace computes a real innocence score via compute_innocence's own known-mixer-
+    # contract check (weight 1.0, app/detectors/innocence.py), persists it onto the case row
+    # via POST /trace (app/api/v1/traces.py), and only THEN does create_notice see it and
+    # refuse -- no hand-set DB value anywhere in this test.
+    mixer = KNOWN_MIXERS[0]
+    payload = {
+        "ncrp": "NCRP-LEGAL-E2E", "complainant": "Test User", "location": "Delhi",
+        "phone": "9999999999", "incidentAt": "2026-01-01T00:00:00Z",
+        "fraudType": "investment_scam", "amountINR": 150000, "amountCrypto": 1.0,
+        "asset": "ETH", "chain": "ethereum",
+        "suspectWallet": mixer.contract_address,
+    }
+    created = client.post("/api/v1/cases", json=payload)
+    assert created.status_code == 201, created.text
+    case_id = created.json()["id"]
+
+    class NoActivityClient:
+        chain = "ethereum"
+        def get_transfers(self, address, since=None):
+            return []
+
+    with patch("app.api.v1.traces.get_chain_client", return_value=NoActivityClient()):
+        trace_response = client.post(f"/api/v1/cases/{case_id}/trace")
+    assert trace_response.status_code == 200, trace_response.text
+    assert trace_response.json()["innocence"]["innocenceScore"] >= 0.6
+
+    response = client.post("/api/v1/legal/notices", json={"caseId": case_id, "citationId": "bnss_94"})
+    assert response.status_code == 409, response.text
+    assert "not a personal wallet" in response.json()["detail"] or "bridge" in response.json()["detail"].lower() \
+        or "mixer" in response.json()["detail"].lower()

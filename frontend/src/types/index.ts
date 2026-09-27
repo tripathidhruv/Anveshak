@@ -1,4 +1,4 @@
-export type { Case, CaseInput, CaseStatus, RiskBand, DashboardKpi, RecentCase, DashboardData, CampaignSummary } from './case'
+export type { Case, CaseInput, CaseStatus, RiskBand, DashboardKpi, RecentCase, RecoverabilityState, DashboardData, CampaignSummary } from './case'
 
 export type {
   Hop,

@@ -123,12 +123,18 @@ const DEMO = {
       { label: 'Value traced', value: '₹18.4 Cr', delta: '+₹3.1 Cr this quarter', dir: 'up' },
       { label: 'Median trace time', value: '41 s', delta: 'was 4-6 weeks', dir: 'down' },
     ],
+    // `recoverabilityState`/`recoverabilityDeadlineMinutes` below are additive placeholder
+    // demo values (same synthetic-data status as the rest of DEMO — see CLAUDE.md rule 1),
+    // added only so the Cases screen's recoverability sort/badges have something varied to
+    // render in mock mode. They mirror the real backend's small honest enum
+    // (`backend/app/api/v1/cases.py`'s `RecoverabilityState`) in shape only, not in how they
+    // were computed -- a live trace never actually ran for this demo data.
     recentCases: [
-      { id: 'KZN-2026-0417', who: 'Rekha Sharma', amt: 1240000, chain: 'TRON', status: 'New', risk: null },
-      { id: 'KZN-2026-0416', who: 'Arun Menon', amt: 860000, chain: 'TRON', status: 'Traced', risk: 'HIGH' },
-      { id: 'KZN-2026-0415', who: 'Fatima Qureshi', amt: 2150000, chain: 'Ethereum', status: 'Traced', risk: 'HIGH' },
-      { id: 'KZN-2026-0414', who: 'S. Balaji', amt: 430000, chain: 'Bitcoin', status: 'Notice sent', risk: 'MEDIUM' },
-      { id: 'KZN-2026-0413', who: 'Priya Nair', amt: 1780000, chain: 'TRON', status: 'Closed', risk: 'HIGH' },
+      { id: 'KZN-2026-0417', who: 'Rekha Sharma', amt: 1240000, chain: 'TRON', status: 'New', risk: null, recoverabilityState: 'moving', recoverabilityDeadlineMinutes: null },
+      { id: 'KZN-2026-0416', who: 'Arun Menon', amt: 860000, chain: 'TRON', status: 'Traced', risk: 'HIGH', recoverabilityState: 'at_rest', recoverabilityDeadlineMinutes: 45 },
+      { id: 'KZN-2026-0415', who: 'Fatima Qureshi', amt: 2150000, chain: 'Ethereum', status: 'Traced', risk: 'HIGH', recoverabilityState: 'at_exchange', recoverabilityDeadlineMinutes: 180 },
+      { id: 'KZN-2026-0414', who: 'S. Balaji', amt: 430000, chain: 'Bitcoin', status: 'Notice sent', risk: 'MEDIUM', recoverabilityState: 'at_exchange', recoverabilityDeadlineMinutes: 600 },
+      { id: 'KZN-2026-0413', who: 'Priya Nair', amt: 1780000, chain: 'TRON', status: 'Closed', risk: 'HIGH', recoverabilityState: 'unknown', recoverabilityDeadlineMinutes: null },
     ],
   } satisfies DashboardData,
 }
