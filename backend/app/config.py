@@ -7,6 +7,10 @@ class Settings(BaseSettings):
     trongrid_api_key: str | None = None
     etherscan_api_key: str | None = None
     openai_api_key: str | None = None
+    # Shared-secret JWT verification for officer login (E:/API's Lighthouse Auth API issues
+    # the token; this backend only verifies it, never issues one itself). Must be set to the
+    # exact same value as E:/API's own JWT_SECRET or every login silently fails verification.
+    auth_jwt_secret: str | None = None
     max_trace_hops: int = 6
     http_timeout_seconds: float = 10.0
     http_min_interval_seconds: float = 0.34  # ~3 req/s per host, safe for free tiers

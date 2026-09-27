@@ -1,6 +1,8 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { PageShell } from './components/layout'
+import { RequireAuth } from './components/auth/RequireAuth'
 import { ROUTES } from './utils/constants'
+import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
 import NewCase from './pages/NewCase'
 import Tracing from './pages/Tracing'
@@ -26,23 +28,28 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route element={<PageShell />}>
-          <Route path={ROUTES.dashboard} element={<Dashboard />} />
-          <Route path={ROUTES.newCase} element={<NewCase />} />
-          <Route path={ROUTES.tracing(':id')} element={<Tracing />} />
-          <Route path={ROUTES.routes(':id')} element={<RouteChoice />} />
-          <Route path={ROUTES.exchange(':id')} element={<ExchangeAttribution />} />
-          <Route path={ROUTES.risk(':id')} element={<RiskScore />} />
-          <Route path={ROUTES.evidence(':id')} element={<Evidence />} />
-          <Route path={ROUTES.closed(':id')} element={<CaseClosed />} />
-          <Route path={ROUTES.campaign(':id')} element={<Campaign />} />
-          <Route path={ROUTES.cases} element={<Cases />} />
-          <Route path={ROUTES.trace} element={<Trace />} />
-          <Route path={ROUTES.campaigns} element={<Campaigns />} />
-          <Route path={ROUTES.reports} element={<Reports />} />
-          <Route path={ROUTES.exchanges} element={<Exchanges />} />
+        {/* Unguarded: an officer with no token yet must be able to reach the login page. */}
+        <Route path="/login" element={<Login />} />
 
-          <Route path="*" element={<Navigate to={ROUTES.dashboard} replace />} />
+        <Route element={<RequireAuth />}>
+          <Route element={<PageShell />}>
+            <Route path={ROUTES.dashboard} element={<Dashboard />} />
+            <Route path={ROUTES.newCase} element={<NewCase />} />
+            <Route path={ROUTES.tracing(':id')} element={<Tracing />} />
+            <Route path={ROUTES.routes(':id')} element={<RouteChoice />} />
+            <Route path={ROUTES.exchange(':id')} element={<ExchangeAttribution />} />
+            <Route path={ROUTES.risk(':id')} element={<RiskScore />} />
+            <Route path={ROUTES.evidence(':id')} element={<Evidence />} />
+            <Route path={ROUTES.closed(':id')} element={<CaseClosed />} />
+            <Route path={ROUTES.campaign(':id')} element={<Campaign />} />
+            <Route path={ROUTES.cases} element={<Cases />} />
+            <Route path={ROUTES.trace} element={<Trace />} />
+            <Route path={ROUTES.campaigns} element={<Campaigns />} />
+            <Route path={ROUTES.reports} element={<Reports />} />
+            <Route path={ROUTES.exchanges} element={<Exchanges />} />
+
+            <Route path="*" element={<Navigate to={ROUTES.dashboard} replace />} />
+          </Route>
         </Route>
       </Routes>
     </BrowserRouter>
