@@ -133,6 +133,26 @@ Backend test count through this pass: 279 → 318, every task independently revi
 - [x] **Real cross-chain bridge-hop linking — DONE (2026-09-26).** Plan: `docs/superpowers/plans/2026-09-26-cross-chain-bridge-linking-plan.md`, all 4 tasks complete, every task reviewed clean by an independent sonnet reviewer. No `Case` schema change needed after all (see design spec's "Why no Case change") — `tracer.py`'s `trace()` gained an optional, backward-compatible `get_client_for_chain` factory parameter instead; `test_tracer_causality.py` (the pre-existing suite) passed completely unmodified, proving true backward compatibility. Real, independently-triple-verified Allbridge Core TRON↔Ethereum USDT liquidity-pool contract addresses (not synthetic placeholders — Etherscan direct, TronScanAPI direct, and Allbridge's own docs table all agree). A confirmed bridge crossing now continues the same causal trace onto the new chain, fee-adjusted, with a real `bridgeLinks` output that was previously always `[]`. A bridge contract itself is correctly excluded from ever being evaluated as an attribution candidate (proven by tracing the fallback-attribution consequence if the exclusion were removed). Task 3's review was the most exhaustive of the whole plan given its proximity to the just-fixed idempotency/atomicity bugs in the same file — confirmed line-by-line that none of that scaffolding was touched. 267/267 backend tests green.
 - [x] Calibration pass (Task H12, done 2026-09-26) — `backend/scripts/calibrate.py`: runs the real `evaluate_deposit_gate()` + `detect_sweep()` combination (same gate `traces.py` uses) against 300 synthetic held-out cases across 6 scenarios (1 true-positive shape, 5 distinct failure modes). Result: precision 1.0, recall 1.0 (TP=50, FP=0, TN=250, FN=0) — a real, reproducible, honest number on unambiguous synthetic cases (each case isolates exactly one gate/sweep check), not a hand-picked confidence constant. Synthetic-data disclosure printed alongside every precision/recall line, every run. Run via `backend/.venv/Scripts/python.exe scripts/calibrate.py` from `backend/`.
 
+## P5 — Unified role-based portal + backlog cleanup (2026-09-27) — plan: `docs/superpowers/plans/2026-09-27-unified-role-based-portal-plan.md`
+- [x] Task 1: real USDT-TRC20 contract address replaced with a synthetic placeholder (CLAUDE.md compliance) @Claude — also caught a pre-existing test that pinned the real address in place, fixed too
+- [x] Task 2: `UserRole` model, `require_role`/`get_current_identity` authorization layer, `GET /api/v1/me` @Claude
+- [x] Task 3: persisted `Case.status`, officer-gated `PATCH /{id}/status` with a real transition FSM @Claude
+- [x] Task 4: `CaseReply` model, officer manual replies, AI auto-reply on transition to `handled` @Claude — needed 1 fix (an unguarded exception path from narrative generation's DB-read portion)
+- [x] Task 5: citizen/guest case filing, `GET /mine`, `GET /ticket/{token}` @Claude
+- [x] Task 5b: guest ticket-scoped `GET /replies` (no auth, token is the auth) — follow-up closing a gap Task 5's review found (guests have no JWT, so the identity-gated replies endpoint was unreachable for them) @Claude
+- [x] Task 6: officer-facing flagged-wallets endpoint @Claude — real route collision found with a pre-existing public endpoint at the same path; resolved at `/flagged-wallets/all`, `/replies` also swapped from bare-JWT to role-gated
+- [x] Task 7: Inverted Deposit Index Task B — wired into the live trace path, index hit never bypasses the sweep check @Claude
+- [x] Task 8: tracer `since`-param re-investigated (already correct, no bug — a prior fix had been correctly reverted) + `unreportedVictimsAttempted` disambiguator added @Claude
+- [x] Task 9: seed script for officer/exchange/citizen roles + actual root-cause fix for "cntcitachi@gmail.com not receiving an OTP" (that email was never provisioned in the separate auth service at all — VASP access had only ever used a token-link, not login) @Claude
+- [ ] Task 10: frontend `authStore`, guest login, role-based route tree — not started
+- [ ] Task 11: frontend officer Flagged Wallets page + richer VASP reply/portal detail — not started
+- [ ] Task 12: frontend citizen complaint filing + My Complaints / My Ticket — not started
+- [ ] Task 13: frontend officer Tickets page (status tabs, reply box, transition actions) — not started
+- [ ] Task 14: frontend notice-drafting page — not started
+- [ ] Task 15: Docker Compose live smoke test — Docker Desktop's engine not running on this machine, deferred
+
+Every task 1-9 (+5b) reviewed clean by an independent sonnet reviewer; 4 of 10 needed one real fix pass (Task 4's exception guard, Task 5's/5b's guest-replies gap treated as its own follow-up rather than a fix). Backend test count: 342 → 374 across this pass.
+
 ## Blocked
 - [!] (nothing currently)
 
