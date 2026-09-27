@@ -131,13 +131,39 @@ function toRecentCase(item: BackendCaseListItem): RecentCase {
   }
 }
 
+/** Mirrors `backend/app/schemas.py`'s `BridgeLinkOut` exactly (`disclaimer` is
+ * `app/bridge/linker.py`'s `BRIDGE_LINK_DISCLAIMER`, always present). */
+interface BackendBridgeLink {
+  sideATxHash: string
+  sideAChain: string
+  sideBTxHash: string
+  sideBChain: string
+  confidence: number
+  disclaimer: string
+}
+
+/** Mirrors `backend/app/schemas.py`'s `SanctionsMatchOut` exactly. */
+interface BackendSanctionsMatch {
+  walletAddress: string
+  chain: string
+  listSource: string
+  matchedAt: string
+  listVersion: string
+}
+
+/** Mirrors `backend/app/schemas.py`'s `TraceOut` exactly (the shape `POST /{case_id}/trace`,
+ * `backend/app/api/v1/traces.py`'s `run_trace`, actually returns) -- every field this endpoint
+ * serves, not just the subset `toRoute()` originally copied out. `innocence`/`bridgeLinks`/
+ * `sanctionsMatches` were already fetched off the wire before this fix but silently dropped on
+ * the floor by `toRoute()` below; they're kept here and now actually copied through. */
 interface BackendTraceOut {
   hops: BackendHop[]
   conservation: { incomingTotal: number; outgoingTotal: number; fees: number; remainder: number; reconciled: boolean }
   attribution: { walletAddress: string; chain: string; gatePassed: boolean; entityName: string; reasoning: string; limitations: string }
   innocence: { innocenceScore: number; factors: { check: string; description: string; supportsInnocence: boolean; weight: number }[] }
   unreportedVictims: { payerAddress: string; chain: string; totalAmount: number; transferCount: number; firstSeenAt: string }[]
-  bridgeLinks: { sideATxHash: string; sideAChain: string; sideBTxHash: string; sideBChain: string; confidence: number }[]
+  bridgeLinks: BackendBridgeLink[]
+  sanctionsMatches: BackendSanctionsMatch[]
 }
 
 function toRoute(trace: BackendTraceOut): Route {
@@ -154,7 +180,14 @@ function toRoute(trace: BackendTraceOut): Route {
     hops: trace.hops.length,
     trail: trace.hops.map((h) => ({
       n: h.n, addr: h.addr, role: h.role, amt: h.amt, at: h.at, flag: h.flag, chain: h.chain,
+      stopReason: h.stopReason,
     })),
+    // Previously fetched off the wire into `trace.innocence`/`trace.bridgeLinks` above but
+    // never copied onto the `Route` components actually consume -- audit finding this task
+    // fixes (see interface doc comment above).
+    innocence: trace.innocence,
+    bridgeLinks: trace.bridgeLinks,
+    sanctionsMatches: trace.sanctionsMatches,
   }
 }
 
@@ -338,6 +371,198 @@ export function postCaseReply(caseId: string, message: string, token: string): P
     body: { message },
     headers: { Authorization: `Bearer ${token}` },
   })
+}
+
+// --- Risk scoring, operator fingerprinting, campaigns, sanctions, audit log, evidence pack ---
+// (audit finding: real backend endpoints with no client function at all). None of these routers
+// have a `require_role`/`get_current_officer` dependency today (verified by reading each file
+// below directly) -- only `cases.py` and `vasp_feed.py` do among `backend/app/api/v1/*` -- so
+// none of these take a bearer token, unlike the officer-gated calls above.
+
+/** Mirrors `backend/app/api/v1/risk.py`'s `RuleBasedScoreOut` exactly. */
+export interface RuleBasedScoreOut {
+  score: number
+  breakdown: Record<string, number>
+  reasoning: string
+}
+
+/** Mirrors `backend/app/api/v1/risk.py`'s `MlScoreOut` exactly. */
+export interface MlScoreOut {
+  score: number
+  shapBreakdown: Record<string, number>
+}
+
+/** Mirrors `backend/app/api/v1/risk.py`'s `RiskScoreOut` exactly. `mlScore` is `null` whenever
+ * `dataQualitySufficientForMl` is false (`app/risk/data_quality.py`'s gate) -- callers must
+ * handle the null case rather than assuming the ML score always ran. `syntheticDataDisclosure`
+ * is mandatory on every response (`app/risk/model.py`'s `SYNTHETIC_DATA_DISCLOSURE`), whether or
+ * not the ML score actually ran, per that file's own doc comment. */
+export interface RiskScoreOut {
+  caseId: string
+  walletAddress: string
+  chain: string
+  ruleBasedScore: RuleBasedScoreOut
+  dataQualitySufficientForMl: boolean
+  dataQualityReasons: string[]
+  mlScore: MlScoreOut | null
+  combinedScore: number
+  syntheticDataDisclosure: string
+}
+
+/** `GET /api/v1/cases/{id}/score` (`backend/app/api/v1/risk.py`'s `get_risk_score`) -- runs a
+ * full live trace again server-side (`_build_trace_features`) to build the rule-based +
+ * (data-quality-gated) ML risk score for this case's suspect wallet. Not cached client-side the
+ * way `getRoutes`/`startTrace` is -- a separate, deliberate call, not wired into that cache. */
+export function getRiskScore(caseId: string): Promise<RiskScoreOut> {
+  return request<RiskScoreOut>(`/api/v1/cases/${caseId}/score`)
+}
+
+/** Mirrors `backend/app/api/v1/operator_fingerprint.py`'s `SimilarOperatorResultOut` exactly. */
+export interface SimilarOperatorResultOut {
+  caseId: string
+  similarityScore: number
+  featureBreakdown: Record<string, unknown>
+}
+
+/** Mirrors `backend/app/api/v1/operator_fingerprint.py`'s `SimilarOperatorsOut` exactly.
+ * `disclaimer` is that module's `SIMILARITY_DISCLAIMER`, always present regardless of whether
+ * `results` is empty (e.g. the target case has no fingerprint yet). */
+export interface SimilarOperatorsOut {
+  caseId: string
+  results: SimilarOperatorResultOut[]
+  disclaimer: string
+}
+
+/** `GET /api/v1/cases/{id}/similar-operators` (`backend/app/api/v1/operator_fingerprint.py`'s
+ * `get_similar_operators`) -- behavioural-similarity ranking against every other case's
+ * fingerprint (see `app/graph/operator_fingerprint.py`'s module docstring). */
+export function getSimilarOperators(caseId: string): Promise<SimilarOperatorsOut> {
+  return request<SimilarOperatorsOut>(`/api/v1/cases/${caseId}/similar-operators`)
+}
+
+/** Mirrors `backend/app/schemas.py`'s `CampaignOut` exactly (the H0-scaffolded shared shape
+ * `backend/app/api/v1/campaigns.py`'s `list_campaigns` returns as-is). */
+export interface CampaignOut {
+  id: string
+  hubAddress: string
+  chain: string
+  caseIds: string[]
+  totalAmountINR: number
+}
+
+/** Mirrors `backend/app/api/v1/campaigns.py`'s `CampaignDetailOut` exactly -- `CampaignOut` plus
+ * `statesTouched`, honestly derived from `Case.location`'s distinct values per cluster (that
+ * file's own doc comment: never a fabricated administrative "state" field the data model
+ * doesn't have). */
+export interface CampaignDetailOut extends CampaignOut {
+  statesTouched: string[]
+}
+
+/** `GET /api/v1/campaigns` (`backend/app/api/v1/campaigns.py`'s `list_campaigns`) -- every
+ * consolidation cluster `app/graph/campaigns.py`'s `build_campaigns` currently finds. */
+export function getCampaignsList(): Promise<CampaignOut[]> {
+  return request<CampaignOut[]>('/api/v1/campaigns')
+}
+
+/** `GET /api/v1/campaigns/{id}` (`backend/app/api/v1/campaigns.py`'s `get_campaign`) -- 404s
+ * (`ApiError`) if no built campaign has this id. */
+export function getCampaignDetail(campaignId: string): Promise<CampaignDetailOut> {
+  return request<CampaignDetailOut>(`/api/v1/campaigns/${campaignId}`)
+}
+
+/** Mirrors `backend/app/schemas.py`'s `SanctionsMatchOut` exactly -- same shape as
+ * `BackendTraceOut.sanctionsMatches` above, kept as its own named export here since this is a
+ * standalone endpoint response, not a nested trace field. */
+export interface SanctionsMatchOut {
+  walletAddress: string
+  chain: string
+  listSource: string
+  matchedAt: string
+  listVersion: string
+}
+
+/** `GET /api/v1/sanctions/matches/{case_id}` (`backend/app/api/v1/sanctions.py`'s
+ * `get_case_sanctions_matches`) -- real path is `/api/v1/sanctions/matches/{case_id}`, NOT
+ * `/api/v1/cases/{id}/sanctions` or similar (this router's prefix is `/api/v1/sanctions`, and
+ * the route itself is `/matches/{case_id}`). Screens every persisted `Hop` for this case against
+ * the OFAC SDN seed list on every call (`screen_case_hops`) -- not a cached read. */
+export function getSanctionsMatches(caseId: string): Promise<SanctionsMatchOut[]> {
+  return request<SanctionsMatchOut[]>(`/api/v1/sanctions/matches/${caseId}`)
+}
+
+/** Mirrors `backend/app/schemas.py`'s `AuditLogEntryOut` exactly. */
+export interface AuditLogEntryOut {
+  actor: string
+  action: string
+  objectType: string
+  objectId: string
+  hash: string
+  createdAt: string
+}
+
+/** `GET /api/v1/audit` (`backend/app/api/v1/audit.py`'s `list_audit_entries`) -- every entry in
+ * the hash-chained audit log, oldest first (`AuditLogEntry.id.asc()`). */
+export function getAuditLog(): Promise<AuditLogEntryOut[]> {
+  return request<AuditLogEntryOut[]>('/api/v1/audit')
+}
+
+/** Mirrors `backend/app/schemas.py`'s `AuditVerifyOut` exactly. `brokenAtEntryId` is `null` when
+ * `valid` is true; otherwise the id of the first entry whose hash no longer matches. */
+export interface AuditVerifyOut {
+  valid: boolean
+  brokenAtEntryId: number | null
+  checkedEntries: number
+}
+
+/** `GET /api/v1/audit/verify` (`backend/app/api/v1/audit.py`'s `verify_audit_chain`) -- walks
+ * the full chain from genesis (`app/audit/chain.py`'s `verify_chain`) and reports exactly where
+ * it broke, if it did. */
+export function verifyAuditChain(): Promise<AuditVerifyOut> {
+  return request<AuditVerifyOut>('/api/v1/audit/verify')
+}
+
+/** Mirrors `backend/app/schemas.py`'s `EvidencePackOut` exactly. `manifestEntries` is `list[dict]`
+ * server-side (untyped/free-form per source entry -- source URL, wallet address, chain, raw
+ * response hash, fetched-at), so it's typed here as a loose record array rather than guessed
+ * fields. */
+export interface EvidencePackOut {
+  caseId: string
+  packHash: string
+  manifestEntries: Record<string, unknown>[]
+  createdAt: string
+}
+
+/** `GET /api/v1/evidence/{id}/pack` (`backend/app/api/v1/evidence.py`'s `get_evidence_pack`) --
+ * builds (and persists a fresh `EvidenceManifest` row for) this case's canonical,
+ * content-only-hashed evidence pack. Calling this again for the same case creates ANOTHER
+ * manifest row (not idempotent/cached) -- `verifyEvidencePack` below always checks the most
+ * recently created one. */
+export function getEvidencePack(caseId: string): Promise<EvidencePackOut> {
+  return request<EvidencePackOut>(`/api/v1/evidence/${caseId}/pack`)
+}
+
+/** Mirrors `backend/app/api/v1/evidence.py`'s own `EvidenceVerifyOut` exactly (defined in that
+ * file, not `schemas.py`, per that file's own comment: Task H5's file scope excluded
+ * `schemas.py`). `dataUnavailable` true forces `valid` false -- verification never claims success
+ * on a source it couldn't actually re-fetch just now. */
+export interface EvidenceVerifyOut {
+  caseId: string
+  valid: boolean
+  packHashMatches: boolean
+  sourcesChecked: number
+  sourcesReproduced: number
+  dataUnavailable: boolean
+  details: Record<string, unknown>[]
+}
+
+/** `POST /api/v1/evidence/{id}/verify` (`backend/app/api/v1/evidence.py`'s
+ * `verify_evidence_pack`) -- a real correctness check, not a comparison of stored hashes: it
+ * re-fetches each of the case's most recent evidence manifest's recorded sources right now and
+ * recomputes both the pack hash and each source's raw-response hash. Method is POST (not GET) --
+ * this call re-runs live chain reads with side effects worth not caching/prefetching casually.
+ * 404s (`ApiError`) if no evidence pack has ever been generated for this case. */
+export function verifyEvidencePack(caseId: string): Promise<EvidenceVerifyOut> {
+  return request<EvidenceVerifyOut>(`/api/v1/evidence/${caseId}/verify`, { method: 'POST' })
 }
 
 // `getRoutes` is called independently from up to 4 screens per case (Route Choice, Evidence,

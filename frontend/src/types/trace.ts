@@ -19,6 +19,13 @@ export interface Hop {
   gapSec?: number
   /** Only present on Route B hops, which cross from TRON to Ethereum. */
   chain?: string
+  /** The raw, machine-readable stop-reason code behind `flag`'s plain-English translation
+   * (e.g. `"entered_mixer"`, `"hop_cap_reached"`) -- mirrors `backend/app/schemas.py`'s
+   * `HopOut.stopReason` exactly (see `backend/app/api/v1/traces.py`'s `_STOP_REASON_PLAIN_ENGLISH`
+   * map, which is what produces `flag` from this same code). Optional because `mock.ts`'s
+   * synthetic hops have no backing stop-reason code to report -- only a live backend trace
+   * populates this. */
+  stopReason?: string | null
 }
 
 /**
@@ -37,6 +44,58 @@ export interface Route {
   durationMin: number
   hops: number
   trail: Hop[]
+  /** The suspect wallet's innocence assessment -- mirrors `backend/app/schemas.py`'s
+   * `InnocenceOut` exactly (`GET /{case_id}/trace`'s `innocence` field, computed by
+   * `app/detectors/innocence.py`'s `compute_innocence`). Optional: only a live backend
+   * trace (`toRoute()` in `api/httpApi.ts`) populates this -- `mock.ts`'s synthetic routes
+   * have no backing innocence computation to report. */
+  innocence?: Innocence
+  /** Every cross-chain bridge crossing this trace actually confirmed and followed --
+   * mirrors `backend/app/schemas.py`'s `BridgeLinkOut` list (`TraceOut.bridgeLinks`)
+   * field-for-field, including the disclaimer every entry always carries
+   * (`app/bridge/linker.py`'s `BRIDGE_LINK_DISCLAIMER`). Optional for the same
+   * live-trace-only reason as `innocence` above. */
+  bridgeLinks?: BridgeLink[]
+  /** Every hop of this trace that matched the OFAC SDN seed list -- mirrors
+   * `backend/app/schemas.py`'s `SanctionsMatchOut` list (`TraceOut.sanctionsMatches`)
+   * field-for-field. Optional for the same live-trace-only reason as `innocence` above. */
+  sanctionsMatches?: SanctionsMatch[]
+}
+
+/** One contributing factor to the suspect wallet's innocence score -- mirrors
+ * `backend/app/schemas.py`'s `InnocenceFactorOut` exactly. */
+export interface InnocenceFactor {
+  check: string
+  description: string
+  supportsInnocence: boolean
+  weight: number
+}
+
+/** Mirrors `backend/app/schemas.py`'s `InnocenceOut` exactly. */
+export interface Innocence {
+  innocenceScore: number
+  factors: InnocenceFactor[]
+}
+
+/** Mirrors `backend/app/schemas.py`'s `BridgeLinkOut` exactly -- `disclaimer` is mandatory
+ * on the wire (every bridge link is a heuristic timing/amount correlation, never proof), not
+ * optional here despite the field being new. */
+export interface BridgeLink {
+  sideATxHash: string
+  sideAChain: string
+  sideBTxHash: string
+  sideBChain: string
+  confidence: number
+  disclaimer: string
+}
+
+/** Mirrors `backend/app/schemas.py`'s `SanctionsMatchOut` exactly. */
+export interface SanctionsMatch {
+  walletAddress: string
+  chain: string
+  listSource: string
+  matchedAt: string
+  listVersion: string
 }
 
 /** Result of a completed trace — the two routes discovered. */
