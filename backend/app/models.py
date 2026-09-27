@@ -1,5 +1,5 @@
 from datetime import datetime, timezone
-from sqlalchemy import String, Float, Boolean, DateTime, ForeignKey, JSON, Text
+from sqlalchemy import String, Float, Boolean, DateTime, ForeignKey, JSON, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.db import Base
 
@@ -158,8 +158,21 @@ class DepositIndexEntry(Base):
     a real schema addition, not a per-hop computed value (see the design doc's own note on
     why this differs from bridge-linking, which specifically avoided one). Looked up via
     app.index.deposit_index.lookup_indexed_deposit(), a pure DB query mirroring
-    app.bridge.registry.is_bridge_contract / app.mixers.registry.is_mixer_contract in style."""
+    app.bridge.registry.is_bridge_contract / app.mixers.registry.is_mixer_contract in style.
+
+    A single depositor address can genuinely feed MULTIPLE different vetted hot wallets (e.g.
+    it is a customer of both Kraken and Coinbase) -- that is not a duplicate, it is two real,
+    distinct deposit relationships, so the row identity is `(chain, address, hot_wallet_address)`,
+    not `(chain, address)`. `lookup_indexed_deposit` therefore returns a list, not a single
+    row/None -- see its own docstring for why silently collapsing to "the" one match would be
+    misleading (CLAUDE.md rule 4, "nothing is a black box")."""
     __tablename__ = "deposit_index_entries"
+    __table_args__ = (
+        UniqueConstraint(
+            "chain", "address", "hot_wallet_address",
+            name="uq_deposit_index_chain_address_hot_wallet",
+        ),
+    )
     id: Mapped[int] = mapped_column(primary_key=True)
     address: Mapped[str] = mapped_column(String, index=True)          # the depositor address
     chain: Mapped[str] = mapped_column(String)

@@ -5,9 +5,15 @@ For each `vetted` entry in `app.labels.seed_labels.SEED_LABELS`, fetches that ho
 OWN inbound transfer history via the same, already-existing chain-adapter method every other
 feature in this project uses (`get_chain_client(chain, asset=None).get_transfers(...)` --
 no new API integration), collects every distinct depositor (`from_address`) that paid
-directly into it, and upserts one `DepositIndexEntry` row per distinct address -- skipping
-addresses already indexed, so re-running this script is a no-op for previously-seen
-depositors rather than creating duplicate rows.
+directly into it, and upserts one `DepositIndexEntry` row per distinct (address, hot wallet)
+pair -- skipping pairs already indexed, so re-running this script against the SAME hot wallet
+is a no-op for previously-seen depositors rather than creating duplicate rows.
+
+The dedupe/upsert key is `(chain, address, hot_wallet_address)`, NOT `(chain, address)`: the
+same depositor address can genuinely feed multiple different vetted hot wallets (e.g. it paid
+into both Kraken and Coinbase -- a real customer of both). Keying only on `(chain, address)`
+would let whichever hot wallet is processed first in `SEED_LABELS` order claim that depositor,
+silently dropping the other exchange's real deposit relationship.
 
 Honest scoping (see the design doc's own "what this is NOT" section): this is a real,
 re-runnable script in the same vein as `backend/scripts/calibrate.py`, not a continuously
@@ -58,8 +64,14 @@ def _normalize(address: str, chain: str) -> str:
 
 def index_hot_wallet(db: Session, label: VaspLabelSeed, chain_client: ChainClient) -> int:
     """Fetches `label`'s hot wallet's own inbound history via `chain_client` and upserts one
-    DepositIndexEntry per distinct depositor address not already indexed. Returns how many
-    NEW rows were written (0 on a re-run against already-indexed depositors)."""
+    DepositIndexEntry per distinct (depositor address, hot wallet) pair not already indexed.
+    Returns how many NEW rows were written (0 on a re-run against the same hot wallet for
+    already-indexed depositors).
+
+    Dedupe/upsert key is `(chain, address, hot_wallet_address)` -- deliberately NOT
+    `(chain, address)` alone -- so a depositor that genuinely feeds a DIFFERENT vetted hot
+    wallet (indexed in a separate call/run) still gets its own row here, instead of being
+    skipped because some other exchange already has a row for that address."""
     hot_wallet = _normalize(label.address, label.chain)
     transfers = chain_client.get_transfers(label.address)
     inbound_depositors = sorted({
@@ -72,7 +84,11 @@ def index_hot_wallet(db: Session, label: VaspLabelSeed, chain_client: ChainClien
     for depositor in inbound_depositors:
         existing = (
             db.query(DepositIndexEntry)
-            .filter(DepositIndexEntry.chain == label.chain, DepositIndexEntry.address == depositor)
+            .filter(
+                DepositIndexEntry.chain == label.chain,
+                DepositIndexEntry.address == depositor,
+                DepositIndexEntry.hot_wallet_address == hot_wallet,
+            )
             .first()
         )
         if existing is not None:

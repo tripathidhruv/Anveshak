@@ -4,6 +4,7 @@ from decimal import Decimal
 from pathlib import Path
 
 from app.chains.base import Transfer
+from app.index.deposit_index import lookup_indexed_deposit
 from app.labels.seed_labels import VaspLabelSeed
 from app.models import DepositIndexEntry
 
@@ -79,6 +80,51 @@ def test_index_hot_wallet_rerun_does_not_create_duplicate_rows(db_session):
     assert second_written == 0
     rows = db_session.query(DepositIndexEntry).filter_by(address="0xpayer1").all()
     assert len(rows) == 1
+
+
+def test_index_hot_wallet_same_depositor_feeding_two_different_hot_wallets_gets_both_rows(db_session):
+    """The exact bug this fix closes: `0xsharedpayer` genuinely pays into TWO different vetted
+    hot wallets (e.g. it is a customer of both Kraken and Coinbase). Before the fix, the
+    dedupe/upsert key was `(chain, address)` alone, so indexing the second hot wallet would
+    see the first hot wallet's row for this address already exists and skip writing its own
+    -- silently dropping a real deposit relationship. After the fix, keying on
+    `(chain, address, hot_wallet_address)` means BOTH relationships get their own row, AND a
+    re-run against either hot wallet individually still does not duplicate that hot wallet's
+    own row."""
+    t0 = datetime(2026, 1, 1, tzinfo=timezone.utc)
+    kraken = _vetted_label(address="0xkrakenhotwallet", entity_name="Kraken")
+    coinbase = _vetted_label(address="0xcoinbasehotwallet", entity_name="Coinbase")
+    kraken_client = FakeChainClient(
+        "ethereum", [mk("ethereum", "0xsharedpayer", "0xkrakenhotwallet", 100, t0)])
+    coinbase_client = FakeChainClient(
+        "ethereum", [mk("ethereum", "0xsharedpayer", "0xcoinbasehotwallet", 50, t0)])
+
+    kraken_written = index_hot_wallet(db_session, kraken, kraken_client)
+    coinbase_written = index_hot_wallet(db_session, coinbase, coinbase_client)
+
+    # Both real deposit relationships were written -- the bug this fix closes would have made
+    # coinbase_written == 0 here, because "0xsharedpayer" already had a (chain, address) row
+    # from Kraken's indexing pass.
+    assert kraken_written == 1
+    assert coinbase_written == 1
+    rows = db_session.query(DepositIndexEntry).filter_by(address="0xsharedpayer").all()
+    assert len(rows) == 2
+    hot_wallets = {r.hot_wallet_address for r in rows}
+    assert hot_wallets == {"0xkrakenhotwallet", "0xcoinbasehotwallet"}
+
+    # lookup_indexed_deposit now surfaces both real matches, not just whichever was indexed first.
+    found = lookup_indexed_deposit(db_session, "0xsharedpayer", "ethereum")
+    assert len(found) == 2
+    assert {row.entity_name for row in found} == {"Kraken", "Coinbase"}
+
+    # A re-run against EITHER hot wallet individually still does not create a duplicate for
+    # that specific (chain, address, hot_wallet_address) combination.
+    kraken_rerun_written = index_hot_wallet(db_session, kraken, kraken_client)
+    coinbase_rerun_written = index_hot_wallet(db_session, coinbase, coinbase_client)
+    assert kraken_rerun_written == 0
+    assert coinbase_rerun_written == 0
+    rows_after_rerun = db_session.query(DepositIndexEntry).filter_by(address="0xsharedpayer").all()
+    assert len(rows_after_rerun) == 2
 
 
 def test_index_hot_wallet_normalizes_ethereum_case(db_session):
