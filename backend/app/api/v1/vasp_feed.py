@@ -8,7 +8,7 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_db
-from app.auth.jwt import OfficerClaims, get_current_officer
+from app.auth.identity import Identity, require_role
 from app.models import FlaggedWallet, VaspSubscriber, VaspWalletReply, utcnow
 from app.schemas import FlaggedWalletOut, VaspSubscriberIn
 from app.vasp_feed import demo_receiver, distribution
@@ -156,6 +156,23 @@ def list_flagged_wallets(chain: str | None = None, since: datetime | None = None
                                  limit=limit, offset=offset)
 
 
+@feed_router.get("/flagged-wallets/all", response_model=list[FlaggedWalletOut])
+def list_all_flagged_wallets(
+    identity: Identity = Depends(require_role("officer")),
+    db: Session = Depends(get_db),
+) -> list[FlaggedWalletOut]:
+    """Officer-facing, system-wide view of every flagged wallet -- full untruncated address,
+    chain, risk score, related case IDs, and flagged timestamp. Deliberately a distinct path
+    from `GET /flagged-wallets` above: that one is the unauthenticated VASP pull API (paginated,
+    `FlaggedWalletListOut` shape) already relied on by existing subscribers/tests, so this
+    officer view can't reuse the exact same path+method without either shadowing it or being
+    permanently unreachable itself."""
+    wallets = db.execute(
+        select(FlaggedWallet).order_by(FlaggedWallet.flagged_at.desc())
+    ).scalars().all()
+    return [_to_out(w) for w in wallets]
+
+
 def _subscriber_out(subscriber: VaspSubscriber) -> VaspSubscriberOut:
     return VaspSubscriberOut(id=subscriber.id, name=subscriber.name,
                               webhookUrl=subscriber.webhook_url, active=subscriber.active,
@@ -230,11 +247,11 @@ def create_portal_reply(access_token: str, payload: VaspWalletReplyIn,
 
 
 @feed_router.get("/replies", response_model=list[VaspWalletReplyOut])
-def list_replies(current_officer: OfficerClaims = Depends(get_current_officer),
+def list_replies(identity: Identity = Depends(require_role("officer")),
                   db: Session = Depends(get_db)) -> list[VaspWalletReplyOut]:
-    """KAIZEN-officers-only endpoint (Feature 1's JWT gate) -- every reply across every
-    subscriber, for officers to review. The one endpoint this pass's auth actually protects,
-    per the spec's disclosed scope limit."""
+    """KAIZEN-officers-only endpoint -- every reply across every subscriber, for officers to
+    review. Gated on the resolved KAIZEN role (`require_role`), not just a valid JWT, now that
+    non-officer roles (citizen/exchange) can also hold one -- see `app/auth/identity.py`."""
     rows = db.execute(
         select(VaspWalletReply).order_by(VaspWalletReply.replied_at.desc())
     ).scalars().all()

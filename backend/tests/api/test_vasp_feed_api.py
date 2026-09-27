@@ -338,7 +338,16 @@ def test_portal_reply_is_accepted_and_visible_only_via_internal_replies_endpoint
     anon = client.get("/api/v1/vasp-feed/replies")
     assert anon.status_code == 401
 
-    # ...only visible to a logged-in officer.
+    # ...only visible to a logged-in officer. `/replies` is now gated on the resolved KAIZEN
+    # role (`require_role("officer")`), not just a valid JWT (Task 6), so the officer's email
+    # must have an `officer` UserRole row -- otherwise `resolve_role` would auto-create it as
+    # the "citizen" default and this would 403.
+    with TestSession() as session:
+        from app.models import UserRole
+        if session.query(UserRole).filter_by(email="officer@example.com").one_or_none() is None:
+            session.add(UserRole(email="officer@example.com", role="officer"))
+            session.commit()
+
     with patch("app.auth.jwt.settings.auth_jwt_secret", TEST_JWT_SECRET):
         token = _officer_token()
         seen = client.get("/api/v1/vasp-feed/replies", headers={"Authorization": f"Bearer {token}"})
