@@ -7,8 +7,26 @@ import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { IconTile } from '@/components/ui/icon-tile'
 import { AuroraBackground } from '@/components/ui/aurora-background'
-import { setAuthToken } from '@/lib/authToken'
+import { setAuthToken, clearAuthToken, setGuestMode } from '@/lib/authToken'
+import { getMe, type MeResponse } from '@/api/httpApi'
+import { useAuthStore } from '@/store/authStore'
 import { ROUTES } from '../utils/constants'
+
+/** Where each role lands right after sign-in (unified-role-based-portal design doc's
+ * "Frontend shape" section). A logged-in citizen goes to their complaints list, not the
+ * complaint-filing form -- that's the guest-only landing page (see the "Continue as guest"
+ * button below), since a citizen who already has an account presumably wants to check on
+ * what they already filed at least as often as file something new. */
+function roleHome(role: MeResponse['role']): string {
+  switch (role) {
+    case 'officer':
+      return ROUTES.dashboard
+    case 'exchange':
+      return ROUTES.exchangeHome
+    case 'citizen':
+      return ROUTES.citizenMyComplaints
+  }
+}
 
 const AUTH_API_URL = import.meta.env.VITE_AUTH_API_URL
 const TENANT = 'kaizen'
@@ -92,13 +110,34 @@ function Login() {
         otpInputs.current[0]?.focus()
         return
       }
-      setAuthToken(data.access_token as string)
-      navigate(ROUTES.dashboard, { replace: true })
+      const token = data.access_token as string
+      setAuthToken(token)
+      try {
+        const me = await getMe(token)
+        useAuthStore.getState().setIdentity(me.email, me.role)
+        navigate(roleHome(me.role), { replace: true })
+      } catch {
+        // Signed in with a valid identity, but KAIZEN's own backend couldn't resolve a role
+        // for it (backend down, network blip, etc.) -- never fall back to treating this as an
+        // officer by default (that was the old, role-unaware behaviour this task replaces).
+        clearAuthToken()
+        setError('Signed in, but could not confirm your account access. Please try again.')
+        setOtp(Array(OTP_LENGTH).fill(''))
+        otpInputs.current[0]?.focus()
+      }
     } catch {
       setError('Could not reach the auth service. Check your connection and try again.')
     } finally {
       setSubmitting(false)
     }
+  }
+
+  /** Task 10 brief / design doc's "Guest citizens" section: no OTP, no JWT, no `UserRole` row
+   * -- just a local flag and a straight navigation to the complaint-filing form. */
+  function continueAsGuest() {
+    setGuestMode()
+    useAuthStore.getState().setGuest()
+    navigate(ROUTES.citizenComplaintNew, { replace: true })
   }
 
   function handleOtpChange(index: number, value: string) {
@@ -265,6 +304,13 @@ function Login() {
             )}
           </AnimatePresence>
         </Card>
+
+        <div className="mt-6 flex flex-col items-center gap-2">
+          <p className="text-xs text-muted-foreground">Filing a complaint and don&rsquo;t have an account?</p>
+          <Button type="button" variant="outline" onClick={continueAsGuest} className="w-full max-w-xs">
+            Continue as guest
+          </Button>
+        </div>
       </div>
     </AuroraBackground>
   )

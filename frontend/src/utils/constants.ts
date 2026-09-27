@@ -20,6 +20,22 @@ export const ROUTES = {
   // Public, unguarded route -- an external exchange visitor's own opaque access_token, never
   // an officer. Mounted OUTSIDE RequireAuth in App.tsx.
   vaspPortal: (token: string) => `/vasp-portal/${token}`,
+  // Unified role-based portal (Task 10 on): the login-based `exchange`-role landing view
+  // (distinct from vaspPortal above, which needs no login at all -- see the design doc's
+  // "existing public VASP token-link portal is kept, not replaced" section). Placeholder
+  // route/page for now; Task 11 builds the real screen at this same path.
+  exchangeHome: '/exchange',
+  // The citizen/guest complaint-filing form (adapted from NewCase.tsx per the design doc).
+  // The "Continue as guest" button on Login.tsx navigates straight here. Placeholder route/
+  // page for now; Task 12 builds the real screen at this same path.
+  citizenComplaintNew: '/complaint/new',
+  // A logged-in citizen's own complaints list (keyed off their verified JWT email -- no
+  // token needed, unlike the guest path below). Placeholder for now; Task 12 builds it.
+  citizenMyComplaints: '/my-complaints',
+  // A guest's own bookmarkable ticket-status page, keyed off the opaque guest_ticket_token
+  // the backend issues on complaint submission -- same UX pattern as vaspPortal above, reused
+  // rather than reinvented (design doc's "Guest citizens" section). Placeholder for now.
+  myTicket: (token: string) => `/my-ticket/${token}`,
 } as const
 
 export interface RailStep {

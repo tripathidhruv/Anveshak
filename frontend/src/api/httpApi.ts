@@ -1,6 +1,27 @@
 import { request } from './client'
 import { createKeyedPromiseCache } from './traceCache'
+import type { Role } from '../store/authStore'
 import type { Case, CaseInput, KaizenApi, RecentCase, RecoverabilityState, Route, TraceResult } from '../types'
+
+export interface MeResponse {
+  email: string
+  role: Role
+}
+
+/** `GET /api/v1/me` (Task 2, `backend/app/api/v1/me.py`) -- resolves the verified JWT's email
+ * to its KAIZEN role. Called directly from `pages/Login.tsx` right after `verifyOtp` stores
+ * the token, and again by `RequireRole` to rehydrate `useAuthStore` after a hard refresh
+ * (the zustand store is in-memory only and doesn't survive a reload, unlike the token itself).
+ * Not routed through the mock/real `api` switch in `api/index.ts` -- that switch is for the
+ * case/trace data layer (`KaizenApi`), which stays mockable independent of identity, and this
+ * only exists against the real backend either way (no mock identity concept). Matches the
+ * bearer-attachment pattern `VaspReplies.tsx` already established for the one other endpoint
+ * that needs `Authorization: Bearer <token>` today. */
+export function getMe(token: string): Promise<MeResponse> {
+  return request<MeResponse>('/api/v1/me', {
+    headers: { Authorization: `Bearer ${token}` },
+  })
+}
 
 interface BackendHop {
   n: number

@@ -32,3 +32,36 @@ export function clearAuthToken(): void {
 export function hasAuthToken(): boolean {
   return getAuthToken() !== null
 }
+
+/** Guest-mode flag -- a citizen who clicked "Continue as guest" (unified-role-based-portal
+ * design doc's "Guest citizens" section) has no email, no OTP, no JWT at all, so there is no
+ * token for `hasAuthToken()` to find. Persisting a plain marker in localStorage (same
+ * mechanism as the officer token above, not sessionStorage/in-memory-only) means a guest who
+ * refreshes the complaint-filing page mid-form stays a guest instead of being bounced back to
+ * /login -- `RequireRole` reads this to rehydrate `useAuthStore`'s `isGuest` after a reload,
+ * exactly like it reads `getAuthToken()` to rehydrate an officer/exchange/citizen's role. */
+const GUEST_MODE_KEY = 'kaizen_guest_mode'
+
+export function setGuestMode(): void {
+  try {
+    window.localStorage.setItem(GUEST_MODE_KEY, '1')
+  } catch {
+    // see setAuthToken -- worst case, a refresh mid-guest-session re-prompts /login
+  }
+}
+
+export function isGuestMode(): boolean {
+  try {
+    return window.localStorage.getItem(GUEST_MODE_KEY) === '1'
+  } catch {
+    return false
+  }
+}
+
+export function clearGuestMode(): void {
+  try {
+    window.localStorage.removeItem(GUEST_MODE_KEY)
+  } catch {
+    // see setAuthToken
+  }
+}
