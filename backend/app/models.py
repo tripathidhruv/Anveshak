@@ -228,6 +228,20 @@ class UserRole(Base):
     linked_subscriber_id: Mapped[int | None] = mapped_column(ForeignKey("vasp_subscribers.id"), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
+class CaseReply(Base):
+    """A reply thread entry on one case -- either an officer's manual message or the AI
+    narrative auto-posted when a case transitions to "handled" (see
+    `app.api.v1.cases.update_case_status`). Unlike VaspWalletReply (a single flat message per
+    subscriber/wallet), this is an ordered, growing thread per case, read back in
+    `created_at` order by `GET /{case_id}/replies` -- so `authored_by` distinguishes the two
+    sources ("officer" | "ai") for the UI rather than needing a separate table per source."""
+    __tablename__ = "case_replies"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    case_id: Mapped[str] = mapped_column(ForeignKey("cases.id"), index=True)
+    message: Mapped[str] = mapped_column(Text)
+    authored_by: Mapped[str] = mapped_column(String)  # "officer" | "ai"
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
 class AuditLogEntry(Base):
     __tablename__ = "audit_log_entries"
     id: Mapped[int] = mapped_column(primary_key=True)

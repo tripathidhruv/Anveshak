@@ -9,15 +9,16 @@ from sqlalchemy.orm import Session
 
 from app.api.deps import get_db
 from app.audit.chain import append_entry
-from app.auth.identity import Identity, require_role
+from app.auth.identity import Identity, get_current_identity, require_role
 from app.chains.known_assets import resolve_asset_contract
 from app.chains.registry import get_chain_client
 from app.config import settings
 from app.freeze import tether
 from app.api.v1.freeze import _pick_target_wallet
 from app.labels.seed_labels import lookup_label
-from app.models import Case
-from app.schemas import CaseIn, CaseOut, CaseStatusUpdateIn
+from app.models import Case, CaseReply
+from app.narrative.summary import generate_case_narrative
+from app.schemas import CaseIn, CaseOut, CaseReplyIn, CaseReplyOut, CaseStatusUpdateIn
 from app.tracing.tracer import trace
 
 router = APIRouter(prefix="/api/v1/cases", tags=["cases"])
@@ -245,5 +246,47 @@ def update_case_status(
     case.status = payload.status
     db.commit()
     db.refresh(case)
-    # Task 4 wires the AI auto-reply here, on the transition into "handled".
+    if payload.status == "handled":
+        narrative, available, _reason = generate_case_narrative(db, case_id)
+        if available and narrative:
+            db.add(CaseReply(case_id=case_id, message=narrative, authored_by="ai"))
+            db.commit()
     return _to_out(case)
+
+
+def _reply_to_out(reply: CaseReply) -> CaseReplyOut:
+    return CaseReplyOut(id=reply.id, caseId=reply.case_id, message=reply.message,
+                         authoredBy=reply.authored_by, createdAt=reply.created_at)
+
+
+@router.post("/{case_id}/replies", response_model=CaseReplyOut, status_code=201)
+def create_case_reply(
+    case_id: str,
+    payload: CaseReplyIn,
+    db: Session = Depends(get_db),
+    identity: Identity = Depends(require_role("officer")),
+) -> CaseReplyOut:
+    case = db.get(Case, case_id)
+    if case is None:
+        raise HTTPException(status_code=404, detail="case not found")
+    reply = CaseReply(case_id=case_id, message=payload.message, authored_by="officer")
+    db.add(reply)
+    db.commit()
+    db.refresh(reply)
+    return _reply_to_out(reply)
+
+
+@router.get("/{case_id}/replies", response_model=list[CaseReplyOut])
+def list_case_replies(
+    case_id: str,
+    db: Session = Depends(get_db),
+    identity: Identity = Depends(get_current_identity),
+) -> list[CaseReplyOut]:
+    case = db.get(Case, case_id)
+    if case is None:
+        raise HTTPException(status_code=404, detail="case not found")
+    # Task 5 tightens this to "officer, or the case's own citizen/guest" -- left open to any
+    # authenticated identity here since Task 5 hasn't built the citizen-ownership check yet;
+    # Task 5 MUST add that check before this endpoint is considered done for citizen use.
+    replies = db.query(CaseReply).filter(CaseReply.case_id == case_id).order_by(CaseReply.created_at).all()
+    return [_reply_to_out(r) for r in replies]

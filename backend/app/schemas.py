@@ -38,6 +38,16 @@ class CaseOut(BaseModel):
     suspectWallet: str
     status: str
 
+class CaseReplyIn(BaseModel):
+    message: str
+
+class CaseReplyOut(BaseModel):
+    id: int
+    caseId: str
+    message: str
+    authoredBy: str
+    createdAt: datetime
+
 class HopOut(BaseModel):
     n: int
     addr: str
