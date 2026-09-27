@@ -21,6 +21,18 @@ class Case(Base):
     asset: Mapped[str] = mapped_column(String)
     chain: Mapped[str] = mapped_column(String)
     suspect_wallet: Mapped[str] = mapped_column(String)
+    # Innocence-score persistence (this task): exactly one innocence score per case, computed
+    # fresh on every `POST /{case_id}/trace` (app/api/v1/traces.py's run_trace) and now written
+    # here so a LATER, separate request -- app/api/v1/legal.py's create_notice -- can gate
+    # notice-drafting on it without re-running a trace. Added directly to `Case` rather than as
+    # a new table: unlike Hop/AttributionCandidate (one-to-many, a list per case), there is
+    # never more than one innocence score per case, so a separate table would only ever hold a
+    # single row per case_id -- pure overhead (a join, an extra idempotency-delete step) for no
+    # relational benefit. `innocence_factors` mirrors AttributionCandidate.gate_breakdown's
+    # existing JSON-column pattern for the same reason: a small, case-specific, non-relational
+    # blob that's only ever read back whole, never queried by its contents.
+    innocence_score: Mapped[float | None] = mapped_column(Float, nullable=True)
+    innocence_factors: Mapped[list | None] = mapped_column(JSON, nullable=True)
 
 class Wallet(Base):
     __tablename__ = "wallets"

@@ -15,6 +15,19 @@ router = APIRouter(prefix="/api/v1/legal", tags=["legal"])
 # Scaffolded by Task H0 (docs/superpowers/plans/2026-09-26-backend-sprint2-3-completion.md).
 # Filled in by Task H7: legal notice templates + draft->approve->send workflow + SAHYOG payload.
 
+# Innocence gate (this task): the threshold above which drafting an accusatory legal notice
+# becomes irresponsible without an officer's explicit awareness. Chosen at 0.6 because that is
+# where app/detectors/innocence.py's own factor weights start requiring real corroboration to
+# reach: the single strongest individual factor (long_history_many_counterparties) tops out at
+# 0.55 -- below this bar -- so crossing 0.6 means either that factor has already stacked with
+# something else (e.g. + counter_flow_to_payer's 0.25, or + negligible_fraction_of_throughput's
+# 0.2), or the wallet is a known bridge/mixer contract (this task's new
+# known_infrastructure_contract factor, weight 1.0, which clears the bar by itself and rightly
+# so -- that case is not "a person who probably isn't the scammer", it's "not a person's wallet
+# at all"). Either way, by 0.6 enough independent exculpatory evidence has accumulated that an
+# officer needs to see it before a notice naming this wallet goes out, not after.
+INNOCENCE_GATE_THRESHOLD = 0.6
+
 
 class NoticeCreateIn(BaseModel):
     caseId: str
@@ -78,6 +91,28 @@ def create_notice(payload: NoticeCreateIn, db: Session = Depends(get_db)) -> Not
     case = db.get(Case, payload.caseId)
     if case is None:
         raise HTTPException(status_code=404, detail="case not found")
+
+    # Innocence gate (this task): a case that was never traced has `innocence_score is None`
+    # (Case's default) -- that must NOT be treated as "known-high innocence" and must NOT block
+    # drafting; the gate only fires when there's a real, persisted, known-high score. See
+    # INNOCENCE_GATE_THRESHOLD's own comment above for why 0.6 was chosen.
+    if case.innocence_score is not None and case.innocence_score >= INNOCENCE_GATE_THRESHOLD:
+        supporting = [
+            f for f in (case.innocence_factors or [])
+            if f.get("supportsInnocence")
+        ]
+        factor_summary = "; ".join(f["description"] for f in supporting) or "no factor detail available"
+        raise HTTPException(
+            status_code=409,
+            detail=(
+                f"This case's suspect wallet has a high innocence score "
+                f"({case.innocence_score:.2f}, at or above the {INNOCENCE_GATE_THRESHOLD} threshold "
+                "for refusing to auto-draft an accusatory notice). Multiple exculpatory factors "
+                "from the most recent trace point away from this wallet being the scammer's own "
+                f"collection wallet: {factor_summary}. An officer must review this evidence before "
+                "a notice naming this wallet is drafted."
+            ),
+        )
 
     attribution = _confirmed_attribution(db, case.id)
     context = {

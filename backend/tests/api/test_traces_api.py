@@ -999,6 +999,61 @@ def test_bridge_contract_itself_is_never_evaluated_as_an_attribution_candidate()
 # never be reported as the attribution wallet.
 # ---------------------------------------------------------------------------
 
+# ---------------------------------------------------------------------------
+# Innocence-score persistence (this task): a real trace must write the innocence score/factors
+# onto the case row, not just return them in the response -- a LATER, separate request
+# (app/api/v1/legal.py's create_notice) has no other way to see a case's innocence score.
+# ---------------------------------------------------------------------------
+
+def test_trace_persists_innocence_score_onto_the_case_row():
+    from app.models import Case
+
+    case_id = _make_case()
+    with patch("app.api.v1.traces.get_chain_client", return_value=FakeChainClient()), \
+         patch("app.api.v1.traces.lookup_label", return_value=VETTED_LABEL):
+        response = client.post(f"/api/v1/cases/{case_id}/trace")
+
+    assert response.status_code == 200
+    body = response.json()
+
+    db = TestSession()
+    try:
+        case = db.get(Case, case_id)
+    finally:
+        db.close()
+
+    assert case.innocence_score == pytest.approx(body["innocence"]["innocenceScore"])
+    assert case.innocence_factors is not None
+    persisted_checks = {f["check"] for f in case.innocence_factors}
+    response_checks = {f["check"] for f in body["innocence"]["factors"]}
+    assert persisted_checks == response_checks
+
+
+def test_run_trace_twice_overwrites_the_case_innocence_fields_without_error():
+    # Repeat trace runs must just overwrite the case's own single innocence score/factors --
+    # no delete step is needed the way there is for Hop/AttributionCandidate (list-shaped
+    # tables), but a second run must not error out or leave stale data mismatched with the
+    # freshest response.
+    from app.models import Case
+
+    case_id = _make_case()
+    with patch("app.api.v1.traces.get_chain_client", return_value=FakeChainClient()), \
+         patch("app.api.v1.traces.lookup_label", return_value=VETTED_LABEL):
+        first = client.post(f"/api/v1/cases/{case_id}/trace")
+        second = client.post(f"/api/v1/cases/{case_id}/trace")
+
+    assert first.status_code == 200
+    assert second.status_code == 200
+
+    db = TestSession()
+    try:
+        case = db.get(Case, case_id)
+    finally:
+        db.close()
+
+    assert case.innocence_score == pytest.approx(second.json()["innocence"]["innocenceScore"])
+
+
 def test_trace_stops_honestly_when_money_enters_a_known_mixer():
     from app.mixers.registry import KNOWN_MIXERS
     mixer = KNOWN_MIXERS[0]

@@ -3,6 +3,8 @@ from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 from app.chains.base import Transfer
 from app.detectors.innocence import compute_innocence
+from app.bridge.registry import KNOWN_BRIDGES
+from app.mixers.registry import KNOWN_MIXERS
 
 def mk(ts, from_addr, to_addr, amount):
     return Transfer(tx_hash="tx", chain="tron", from_address=from_addr, to_address=to_addr,
@@ -105,6 +107,64 @@ def test_history_unavailable_false_by_default_preserves_existing_behavior():
     checks = [f.check for f in result.factors]
     assert "no_pre_incident_history" in checks
     assert "history_unavailable" not in checks
+
+# ---------------------------------------------------------------------------
+# Known-infrastructure factor (this task): a real bridge/mixer contract must never be
+# mistaken for a person's fraud-collection wallet -- the exact real-world failure mode named
+# in this file's own docstring (a rival team's tool labeling a Uniswap router as a suspect's
+# wallet).
+# ---------------------------------------------------------------------------
+
+def test_known_bridge_contract_gets_high_innocence_known_infrastructure_factor():
+    bridge = next(b for b in KNOWN_BRIDGES if b.chain == "ethereum")
+    incident = datetime(2026, 1, 1, tzinfo=timezone.utc)
+    # A single fresh transfer, exactly the shape that (without the new factor) would score
+    # low innocence under test_low_innocence_for_fresh_wallet_with_one_counterparty above.
+    single = [mk(incident, "victim", bridge.contract_address, 150)]
+    result = compute_innocence(bridge.contract_address, single, incident_at=incident,
+                                victim_amount=Decimal("150"), asset="USDT-TRC20", chain="ethereum")
+    factor = next(f for f in result.factors if f.check == "known_infrastructure_contract")
+    assert factor.supports_innocence is True
+    assert factor.weight >= 0.9
+    assert result.innocence_score >= 0.9
+    assert bridge.name in factor.description
+    assert_no_jargon(factor.description)
+
+
+def test_known_mixer_contract_gets_high_innocence_known_infrastructure_factor():
+    mixer = KNOWN_MIXERS[0]
+    incident = datetime(2026, 1, 1, tzinfo=timezone.utc)
+    single = [mk(incident, "victim", mixer.contract_address, 150)]
+    result = compute_innocence(mixer.contract_address, single, incident_at=incident,
+                                victim_amount=Decimal("150"), asset="ETH", chain="ethereum")
+    factor = next(f for f in result.factors if f.check == "known_infrastructure_contract")
+    assert factor.supports_innocence is True
+    assert factor.weight >= 0.9
+    assert result.innocence_score >= 0.9
+    assert mixer.name in factor.description
+    assert_no_jargon(factor.description)
+
+
+def test_known_infrastructure_factor_skipped_when_chain_not_provided():
+    # Backward compatibility: every existing caller/test that doesn't pass `chain` must be
+    # unaffected -- the check is simply skipped, not evaluated as a false "no match".
+    bridge = next(b for b in KNOWN_BRIDGES if b.chain == "ethereum")
+    incident = datetime(2026, 1, 1, tzinfo=timezone.utc)
+    single = [mk(incident, "victim", bridge.contract_address, 150)]
+    result = compute_innocence(bridge.contract_address, single, incident_at=incident,
+                                victim_amount=Decimal("150"), asset="USDT-TRC20")
+    checks = [f.check for f in result.factors]
+    assert "known_infrastructure_contract" not in checks
+
+
+def test_ordinary_wallet_address_does_not_get_known_infrastructure_factor():
+    incident = datetime(2026, 1, 1, tzinfo=timezone.utc)
+    single = [mk(incident, "victim", "burner", 150)]
+    result = compute_innocence("burner", single, incident_at=incident, victim_amount=Decimal("150"),
+                                asset="USDT-TRC20", chain="tron")
+    checks = [f.check for f in result.factors]
+    assert "known_infrastructure_contract" not in checks
+
 
 def test_descriptions_are_plain_english_across_all_scenarios():
     incident = datetime(2026, 1, 1, tzinfo=timezone.utc)

@@ -510,13 +510,28 @@ def run_trace(case_id: str, background_tasks: BackgroundTasks, db: Session = Dep
         suspect_history_read_failed = True
     innocence = compute_innocence(case.suspect_wallet, suspect_history,
                                    incident_at=incident_at, victim_amount=reported_amount,
-                                   asset=case.asset, history_unavailable=suspect_history_read_failed)
+                                   asset=case.asset, history_unavailable=suspect_history_read_failed,
+                                   chain=case.chain)
     innocence_out = InnocenceOut(
         innocenceScore=innocence.innocence_score,
         factors=[InnocenceFactorOut(check=f.check, description=f.description,
                                      supportsInnocence=f.supports_innocence, weight=f.weight)
                  for f in innocence.factors],
     )
+
+    # Persist the innocence score/factors onto the case row (this task): today this was
+    # computed fresh every request and returned in the response, but never written anywhere,
+    # so a LATER, separate request (app/api/v1/legal.py's create_notice) had no way to know a
+    # case's innocence score. One value per case (not a list like Hop/AttributionCandidate
+    # above), so a repeat trace run just overwrites these two columns in place -- no
+    # delete-then-reinsert step is needed the way there is for those list-shaped tables.
+    case.innocence_score = innocence.innocence_score
+    case.innocence_factors = [
+        {"check": f.check, "description": f.description,
+         "supportsInnocence": f.supports_innocence, "weight": f.weight}
+        for f in innocence.factors
+    ]
+    db.commit()
 
     # Task H11 (item 2): screen every hop in this trace against the OFAC SDN seed list (Task
     # H4). Calls `screen_hops` -- the pure, DB-independent function -- directly on this
