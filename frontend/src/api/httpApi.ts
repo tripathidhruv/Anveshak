@@ -1,7 +1,7 @@
 import { request } from './client'
 import { createKeyedPromiseCache } from './traceCache'
 import type { Role } from '../store/authStore'
-import type { Case, CaseInput, KaizenApi, RecentCase, RecoverabilityState, Route, TraceResult } from '../types'
+import type { Case, CaseInput, KaizenApi, RecentCase, RecoverabilityState, Route, TicketStatus, TraceResult } from '../types'
 
 export interface MeResponse {
   email: string
@@ -21,6 +21,49 @@ export function getMe(token: string): Promise<MeResponse> {
   return request<MeResponse>('/api/v1/me', {
     headers: { Authorization: `Bearer ${token}` },
   })
+}
+
+/** Mirrors `backend/app/schemas.py`'s `CaseReplyOut` exactly. `authoredBy` is `'officer'` for a
+ * reply an officer typed through `POST /{case_id}/replies`, or `'ai'` for the auto-generated
+ * narrative `update_case_status` attaches when a case moves to `'handled'` — the two need
+ * visually distinct treatment wherever replies are shown (Task 12 brief). */
+export interface CaseReplyOut {
+  id: number
+  caseId: string
+  message: string
+  authoredBy: string
+  createdAt: string
+}
+
+/** `GET /api/v1/cases/mine` (Task 5) — a logged-in citizen's own cases, matched server-side by
+ * their verified JWT email. Bearer-token pattern mirrors `getMe` above / `VaspReplies.tsx`.
+ * Returns the shared `Case` type (its `status`/`filedByRole`/`guestTicketToken` fields, added
+ * for the officer Tickets page, are exactly the `CaseOut` shape this endpoint returns too). */
+export function getMyCases(token: string): Promise<Case[]> {
+  return request<Case[]>('/api/v1/cases/mine', {
+    headers: { Authorization: `Bearer ${token}` },
+  })
+}
+
+/** `GET /api/v1/cases/{id}/replies` (Task 5) — requires the citizen's own bearer token; the
+ * backend checks `complainant_email` ownership itself (403s otherwise), so no client-side
+ * ownership check is needed here. */
+export function getCaseReplies(caseId: string, token: string): Promise<CaseReplyOut[]> {
+  return request<CaseReplyOut[]>(`/api/v1/cases/${caseId}/replies`, {
+    headers: { Authorization: `Bearer ${token}` },
+  })
+}
+
+/** `GET /api/v1/cases/ticket/{token}` (Task 5) — no-auth lookup for a guest-filed case; the
+ * opaque `guest_ticket_token` itself is the credential, same convention as `/vasp-portal/:token`. */
+export function getCaseByTicket(token: string): Promise<Case> {
+  return request<Case>(`/api/v1/cases/ticket/${token}`)
+}
+
+/** `GET /api/v1/cases/ticket/{token}/replies` (Task 5b) — the no-auth counterpart to
+ * `getCaseReplies` above, for a guest who has no JWT to present. */
+export function getTicketReplies(token: string): Promise<CaseReplyOut[]> {
+  return request<CaseReplyOut[]>(`/api/v1/cases/ticket/${token}/replies`)
 }
 
 interface BackendHop {
@@ -50,8 +93,23 @@ interface BackendCaseListItem {
   asset: string
   chain: string
   suspectWallet: string
+  status: TicketStatus
   recoverabilityState: RecoverabilityState
   recoverabilityDeadlineMinutes: number | null
+}
+
+// Unified role-based portal (Task 3) added a real, persisted `status` column -- the comment
+// this replaced ("no persisted status column, always report 'New'") is stale as of that task.
+// `RecentCase.status` (the older, four-value display enum -- also used by Dashboard.tsx's mock-
+// only mini-table) is kept only because that field is mandatory on the shared `RecentCase`
+// type; it is NOT a faithful rendering of the real three-value workflow, so it is never shown by
+// the officer Tickets page (`Cases.tsx`) any more -- that screen reads `ticketStatus` (the real
+// value, verbatim) instead. This mapping exists purely so the mandatory field is filled with
+// something in the same spirit rather than a fabricated constant.
+const LEGACY_STATUS_FOR_TICKET_STATUS: Record<TicketStatus, RecentCase['status']> = {
+  new: 'New',
+  in_progress: 'Traced',
+  handled: 'Closed',
 }
 
 function toRecentCase(item: BackendCaseListItem): RecentCase {
@@ -60,11 +118,9 @@ function toRecentCase(item: BackendCaseListItem): RecentCase {
     who: item.complainant,
     amt: item.amountINR,
     chain: item.chain,
-    // The backend has no persisted case-workflow-status column at all (see CaseListItemOut's
-    // own module docstring) -- nothing in this codebase currently transitions a case away from
-    // "New" once created, so reporting anything else here would be inventing data this system
-    // doesn't actually track yet. Known gap, not an oversight (CLAUDE.md's "Known gaps" rule).
-    status: 'New',
+    status: LEGACY_STATUS_FOR_TICKET_STATUS[item.status],
+    // The real, persisted workflow status (Task 13) -- see the type's own doc comment.
+    ticketStatus: item.status,
     // Real per-case risk scoring is a separate, expensive live trace + ML call
     // (GET /api/v1/risk/{caseId}/score) this list endpoint deliberately does not also run for
     // every case on every request -- `null` here is honest "not computed here", matching the
@@ -133,6 +189,155 @@ export const httpApiPartial: Partial<KaizenApi> = {
   },
   getRoutes: (caseId: string) =>
     routesCache.get(caseId, () => (httpApiPartial.startTrace as (id: string) => Promise<TraceResult>)(caseId)),
+}
+
+// --- Legal notice drafting (Task 14, `backend/app/api/v1/legal.py`) ---------------------------
+// This backend module has NO auth dependency today (see `notice_fsm.py`'s own docstring: no
+// User model, no login, no session/token middleware anywhere in `app/` yet) -- a disclosed,
+// existing scope limit per this project's conventions, not something to silently "fix" here by
+// bolting on an Authorization header nothing else in this module expects.
+
+export interface LegalCitation {
+  id: string
+  statute: string
+  section: string
+  title: string
+  unverified: boolean
+}
+
+/** Mirrors `legal.py`'s `NoticeOut`. `state` is the draft->approve->(reject|send) FSM's
+ * `NoticeState` value (`notice_fsm.py`). */
+export interface LegalNoticeOut {
+  id: string
+  caseId: string
+  citationId: string
+  body: string
+  state: 'draft' | 'approved' | 'sent' | 'rejected'
+  createdAt: string
+  approvedBy: string | null
+  approvedAt: string | null
+  rejectedReason: string | null
+  sentAt: string | null
+}
+
+export interface CreateNoticeInput {
+  caseId: string
+  citationId: string
+  exchangeName?: string
+  exchangeJurisdiction?: string
+}
+
+/** `GET /api/v1/legal/citations` -- the real template/citation options (BNSS S94/S106, BNS
+ * S223, BSA S63) for NoticeDrafting.tsx's picker. Fetched rather than hard-coded client-side:
+ * the citation list/wording is `backend/app/legal/citations.py`'s to own (Architecture rule 1). */
+export function getLegalCitations(): Promise<LegalCitation[]> {
+  return request<LegalCitation[]>('/api/v1/legal/citations')
+}
+
+/** `POST /api/v1/legal/notices`. Can reject with a 409 `ApiError` whose `body` is
+ * `{detail: string}` -- the case's suspect wallet cleared the innocence-gate threshold
+ * (`legal.py`'s `INNOCENCE_GATE_THRESHOLD`, 0.6). Callers must show that `detail` string
+ * (the plain-English reason, already composed server-side) rather than a raw error blob. */
+export function createNotice(input: CreateNoticeInput): Promise<LegalNoticeOut> {
+  return request<LegalNoticeOut>('/api/v1/legal/notices', { method: 'POST', body: input })
+}
+
+export function getNotice(noticeId: string): Promise<LegalNoticeOut> {
+  return request<LegalNoticeOut>(`/api/v1/legal/notices/${noticeId}`)
+}
+
+/** `GET /api/v1/legal/cases/{caseId}/notices` -- every notice already drafted for this case,
+ * so re-opening NoticeDrafting.tsx for a case shows its existing drafts instead of losing them. */
+export function listNoticesForCase(caseId: string): Promise<LegalNoticeOut[]> {
+  return request<LegalNoticeOut[]>(`/api/v1/legal/cases/${caseId}/notices`)
+}
+
+/** `POST /api/v1/legal/notices/{id}/approve`. `approvedBy` is a free-text name/id, not a real
+ * identity check (see `notice_fsm.py`'s docstring) -- the FSM only enforces that *someone* is
+ * named before a notice can be sent. Can 409 (`ApiError`) if the notice isn't in `draft` state. */
+export function approveNotice(noticeId: string, approvedBy: string): Promise<LegalNoticeOut> {
+  return request<LegalNoticeOut>(`/api/v1/legal/notices/${noticeId}/approve`, {
+    method: 'POST',
+    body: { approvedBy },
+  })
+}
+
+/** `POST /api/v1/legal/notices/{id}/reject`. Can 409 if the notice is already `sent`/`rejected`. */
+export function rejectNotice(noticeId: string, reason?: string): Promise<LegalNoticeOut> {
+  return request<LegalNoticeOut>(`/api/v1/legal/notices/${noticeId}/reject`, {
+    method: 'POST',
+    body: { reason },
+  })
+}
+
+/** `POST /api/v1/legal/notices/{id}/send`. Named `sendLegalNotice` (not `sendNotice`) to stay
+ * distinct from the unrelated mock-only `KaizenApi.sendNotice(caseId, NoticeType)` already used
+ * by `components/action/LawfulActionTab.tsx` -- same English verb, different notices/FSM
+ * entirely. Never sends anything for real; only flips the in-memory FSM to `sent`, and only
+ * succeeds if the notice was already `approved` (`legal.py`'s `send_notice` docstring). */
+export function sendLegalNotice(noticeId: string): Promise<LegalNoticeOut> {
+  return request<LegalNoticeOut>(`/api/v1/legal/notices/${noticeId}/send`, { method: 'POST' })
+}
+
+/** `GET /api/v1/legal/notices/{id}/sahyog-payload` -- a loosely-typed JSON export shown
+ * read-only in NoticeDrafting.tsx. Per `backend/app/legal/sahyog_payload.py`'s own docstring,
+ * this is "NOT verified against SAHYOG's actual published API" -- shaped from this project's
+ * own schema, not a confirmed-compatible SAHYOG submission. */
+export function getSahyogPayload(noticeId: string): Promise<Record<string, unknown>> {
+  return request<Record<string, unknown>>(`/api/v1/legal/notices/${noticeId}/sahyog-payload`)
+}
+
+/** Mirrors `backend/app/schemas.py`'s `FlaggedWalletOut` exactly -- the officer-facing,
+ * system-wide flagged-wallet shape returned by `GET /flagged-wallets/all` (Task 6). No `id`
+ * field (the schema never exposes one) -- callers correlate by address+chain instead. */
+export interface BackendFlaggedWallet {
+  address: string
+  chain: string
+  riskScore: number
+  caseIds: string[]
+  flaggedAt: string
+  broadcastStatus: Record<string, unknown>
+}
+
+/** `GET /api/v1/vasp-feed/flagged-wallets/all` (Task 6, officer-gated via `require_role`) --
+ * the system-wide flagged-wallet list behind Task 11's `FlaggedWallets.tsx` and behind
+ * `VaspReplies.tsx`'s reply-detail dialog (correlating a reply's wallet with its risk score
+ * and related case IDs, which `GET /replies` itself doesn't return). Takes the token as an
+ * explicit param, matching `getMe`'s shape above, rather than reading `getAuthToken()` itself
+ * -- every caller already holds the token from that same helper. */
+export function getFlaggedWallets(token: string): Promise<BackendFlaggedWallet[]> {
+  return request<BackendFlaggedWallet[]>('/api/v1/vasp-feed/flagged-wallets/all', {
+    headers: { Authorization: `Bearer ${token}` },
+  })
+}
+
+// --- Officer Tickets page (Task 13) -------------------------------------------------------
+
+/** `PATCH /api/v1/cases/{id}/status` (Task 3, officer-gated via `require_role`) -- the only
+ * lifecycle move: `new -> in_progress -> handled`, one step at a time, enforced server-side
+ * (`VALID_STATUS_TRANSITIONS` in `backend/app/api/v1/cases.py`). A transition to `'handled'`
+ * may also append an AI-authored `CaseReply` server-side if `OPENAI_API_KEY` is configured --
+ * this call's own response never carries that reply; callers should re-fetch replies
+ * (`getCaseReplies`) after a successful `'handled'` transition to pick it up. Rejects with a
+ * 409 `ApiError` on an invalid transition (e.g. `new` straight to `handled`); callers show
+ * that case, never silently retry or reorder it. */
+export function updateCaseStatus(caseId: string, status: TicketStatus, token: string): Promise<Case> {
+  return request<Case>(`/api/v1/cases/${caseId}/status`, {
+    method: 'PATCH',
+    body: { status },
+    headers: { Authorization: `Bearer ${token}` },
+  })
+}
+
+/** `POST /api/v1/cases/{id}/replies` (Task 4, officer-gated via `require_role`) -- an officer's
+ * own manual reply to a case. Always lands with `authoredBy: 'officer'` server-side (never
+ * client-supplied); bearer-token pattern matches `getCaseReplies` above. */
+export function postCaseReply(caseId: string, message: string, token: string): Promise<CaseReplyOut> {
+  return request<CaseReplyOut>(`/api/v1/cases/${caseId}/replies`, {
+    method: 'POST',
+    body: { message },
+    headers: { Authorization: `Bearer ${token}` },
+  })
 }
 
 // `getRoutes` is called independently from up to 4 screens per case (Route Choice, Evidence,

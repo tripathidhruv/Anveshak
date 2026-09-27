@@ -19,6 +19,11 @@ import Reports from './pages/Reports'
 import Exchanges from './pages/Exchanges'
 import VaspReplies from './pages/VaspReplies'
 import VaspPortal from './pages/VaspPortal'
+import FlaggedWallets from './pages/FlaggedWallets'
+import NoticeDrafting from './pages/NoticeDrafting'
+import FileComplaint from './pages/FileComplaint'
+import MyComplaints from './pages/MyComplaints'
+import MyTicket from './pages/MyTicket'
 
 /** Placeholder landing screens for the two role branches whose real pages Tasks 11/12 build
  * (unified-role-based-portal design doc's "Frontend shape" section). Deliberately NOT wrapped
@@ -36,20 +41,6 @@ function ExchangePortalPlaceholder() {
       <p className="max-w-sm text-sm text-muted-foreground">
         DEMO DATA · your flagged wallets and replies will appear here. This screen is coming
         soon.
-      </p>
-    </div>
-  )
-}
-
-function CitizenPortalPlaceholder() {
-  return (
-    <div className="flex min-h-screen flex-col items-center justify-center gap-2 bg-background p-6 text-center">
-      <h1 className="font-[family-name:var(--font-display)] text-xl font-semibold text-foreground">
-        File a complaint
-      </h1>
-      <p className="max-w-sm text-sm text-muted-foreground">
-        DEMO DATA · the complaint-filing form and your ticket status will appear here. This
-        screen is coming soon.
       </p>
     </div>
   )
@@ -80,6 +71,15 @@ function App() {
             portal is kept, not replaced" section). */}
         <Route path="/vasp-portal/:token" element={<VaspPortal />} />
 
+        {/* Unguarded (Task 12 / unified-role-based-portal design doc's "Guest citizens"
+            section): a guest's own opaque guest_ticket_token in the URL is their auth, same
+            convention as /vasp-portal/:token above -- deliberately public rather than inside the
+            citizen RequireRole branch below, since a guest checking their ticket later may not
+            even still have the isGuest flag in this browser (different device/session/cleared
+            storage). Task 10 originally placed this as a placeholder inside the citizen branch;
+            moved out here now that it has a real page. */}
+        <Route path={ROUTES.myTicket(':token')} element={<MyTicket />} />
+
         {/* Officer branch -- every route that existed before this task, unchanged. */}
         <Route element={<RequireRole roles={['officer']} />}>
           <Route element={<PageShell />}>
@@ -98,6 +98,8 @@ function App() {
             <Route path={ROUTES.reports} element={<Reports />} />
             <Route path={ROUTES.exchanges} element={<Exchanges />} />
             <Route path={ROUTES.vaspReplies} element={<VaspReplies />} />
+            <Route path={ROUTES.flaggedWallets} element={<FlaggedWallets />} />
+            <Route path={ROUTES.noticeNew(':caseId')} element={<NoticeDrafting />} />
 
             <Route path="*" element={<Navigate to={ROUTES.dashboard} replace />} />
           </Route>
@@ -109,13 +111,12 @@ function App() {
           <Route path={ROUTES.exchangeHome} element={<ExchangePortalPlaceholder />} />
         </Route>
 
-        {/* Citizen branch -- complaint filing + status views (Task 12 builds the real screens;
-            placeholders for now). A guest passes this guard too (RequireRole treats isGuest as
-            citizen-tier) without ever having a `role` at all. */}
+        {/* Citizen branch -- complaint filing + status views (Task 12). A guest passes this
+            guard too (RequireRole treats isGuest as citizen-tier) without ever having a `role`
+            at all -- MyTicket above is deliberately NOT in this branch (see its own comment). */}
         <Route element={<RequireRole roles={['citizen']} />}>
-          <Route path={ROUTES.citizenComplaintNew} element={<CitizenPortalPlaceholder />} />
-          <Route path={ROUTES.citizenMyComplaints} element={<CitizenPortalPlaceholder />} />
-          <Route path={ROUTES.myTicket(':token')} element={<CitizenPortalPlaceholder />} />
+          <Route path={ROUTES.citizenComplaintNew} element={<FileComplaint />} />
+          <Route path={ROUTES.citizenMyComplaints} element={<MyComplaints />} />
         </Route>
       </Routes>
     </BrowserRouter>
