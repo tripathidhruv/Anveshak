@@ -58,8 +58,8 @@ class VaspLabelSeed:
 # throughout this codebase.
 SEED_LABELS: list[VaspLabelSeed] = [
     VaspLabelSeed(
-        address="TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",  # example placeholder — replace with a
-        chain="tron",                                    # real Tronscan-labelled hot wallet
+        address="TPlaceholderUnvettedSeed0000000001",  # deliberately fake -- CLAUDE.md rule 1:
+        chain="tron",                                   # never a real address for an unvetted entry
         entity_name="UNVERIFIED — seed placeholder",
         source_url="https://tronscan.org/#/tools/blacklist",
         verified_at=datetime(2026, 9, 25, tzinfo=timezone.utc),

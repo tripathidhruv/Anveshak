@@ -4,10 +4,19 @@ from app.labels.seed_labels import SEED_LABELS, lookup_label
 def test_original_unvetted_placeholder_is_untouched():
     # This task's brief is explicit: fix the zero-vetted-entries gap by ADDING real vetted
     # entries, never by touching or removing the existing unvetted placeholder.
-    placeholder = next(l for l in SEED_LABELS if l.address == "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t")
+    #
+    # The placeholder's ADDRESS itself was later found to be a compliance bug (a later task,
+    # "replace real USDT contract address placeholder"): it had been set to the real, live
+    # Tether USDT-TRC20 token contract address, which CLAUDE.md rule 1 forbids for anything
+    # that isn't a deliberately vetted, sourced label -- this entry is explicitly
+    # vetting_status="unvetted", so it should never have carried a real address at all. That
+    # fix replaced the address with an obviously-synthetic one; this test was updated to match
+    # so it keeps checking the placeholder's shape (chain/vetting_status/entity_name) without
+    # re-encoding the real contract address back into the test suite.
+    placeholder = next(l for l in SEED_LABELS if l.entity_name == "UNVERIFIED — seed placeholder")
+    assert placeholder.address == "TPlaceholderUnvettedSeed0000000001"
     assert placeholder.chain == "tron"
     assert placeholder.vetting_status == "unvetted"
-    assert placeholder.entity_name == "UNVERIFIED — seed placeholder"
 
 
 def test_at_least_two_real_vetted_entries_exist():
