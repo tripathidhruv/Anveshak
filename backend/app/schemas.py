@@ -129,6 +129,13 @@ class TraceOut(BaseModel):
     # backward victim-enumeration read failed, so unreportedVictims == [] means "we
     # couldn't check", not "we checked and there are none".
     unreportedVictimsDataUnavailable: bool
+    # P1.6 minor fix: `unreportedVictims == []` was ALSO ambiguous between "the G4 deposit
+    # gate never passed, enumeration was never even attempted" and "gate passed, enumeration
+    # ran for real, and genuinely found zero new payers" -- both looked identical on the wire.
+    # True only on the branch where `enumerate_unreported_victims` actually ran (gate.gate_passed
+    # was True), regardless of whether it then succeeded, failed, or came back empty; False
+    # when the gate never passed and enumeration was skipped entirely.
+    unreportedVictimsAttempted: bool
     bridgeLinks: list[BridgeLinkOut]
     # Task H11: every hop in this trace screened against the OFAC SDN seed list (Task H4's
     # `app.sanctions.screen.screen_hops`), not just the terminal/attributed wallet. Defaults

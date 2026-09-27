@@ -709,6 +709,74 @@ def test_unreported_victims_empty_when_no_candidate_passes_the_deposit_gate():
     payer_addresses = {v["payerAddress"] for v in body["unreportedVictims"]}
     assert SPURIOUS_PAYER not in payer_addresses
     assert body["unreportedVictimsDataUnavailable"] is False
+    # P1.6 minor fix: `unreportedVictims == []` here means enumeration was never attempted
+    # (the deposit gate never passed), not "attempted, found nobody" -- must be disambiguated.
+    assert body["unreportedVictimsAttempted"] is False
+
+
+# ---------------------------------------------------------------------------
+# P1.6 minor fix: `TraceOut.unreportedVictims == []` was ambiguous between "gate never
+# passed, enumeration never attempted" and "enumerated, genuinely found nobody new". The
+# case above proves the "never attempted" side; this proves the "attempted, found nobody
+# new" side -- gate.gate_passed is True (a real deposit wallet, 3+ distinct payers, vetted
+# label), enumeration genuinely runs, but every one of that wallet's payers turns out to
+# already be a wallet this same trace visited (a sibling branch straight out of the
+# suspect wallet) -- so `enumerate_unreported_victims` correctly excludes all of them and
+# returns [], same empty shape as the never-attempted case, but for a different reason.
+# ---------------------------------------------------------------------------
+
+ATTEMPTED_DEPOSIT = "TAttemptedDepositWalletVVVVVVVVVVVV"
+ATTEMPTED_PAYER1 = "TAttemptedPayer1XXXXXXXXXXXXXXXXXXXX"
+ATTEMPTED_PAYER2 = "TAttemptedPayer2YYYYYYYYYYYYYYYYYYYY"
+
+
+def test_unreported_victims_attempted_true_but_empty_when_every_payer_already_known():
+    class AllPayersAlreadyKnownClient:
+        chain = "tron"
+
+        def get_transfers(self, address, since=None):
+            data = {
+                # 3 separate causal branches straight out of SUSPECT: the two "payer" wallets
+                # are funded directly by SUSPECT too, which makes them hops in THIS trace's own
+                # path (and so members of `known_victim_addresses`) even though they are ALSO
+                # ATTEMPTED_DEPOSIT's other depositors below.
+                SUSPECT: [
+                    mk(SUSPECT, ATTEMPTED_PAYER1, 5, T0, "tx-suspect-to-payer1"),
+                    mk(SUSPECT, ATTEMPTED_PAYER2, 5, T0, "tx-suspect-to-payer2"),
+                    mk(SUSPECT, ATTEMPTED_DEPOSIT, 140, T0, "tx-suspect-to-deposit"),
+                ],
+                ATTEMPTED_PAYER1: [],
+                ATTEMPTED_PAYER2: [],
+                ATTEMPTED_DEPOSIT: [
+                    mk(SUSPECT, ATTEMPTED_DEPOSIT, 140, T0, "tx-suspect-to-deposit"),
+                    mk(ATTEMPTED_PAYER1, ATTEMPTED_DEPOSIT, 30,
+                       T0.fromtimestamp(T0.timestamp() - 40, tz=timezone.utc), "tx-p1-to-deposit"),
+                    mk(ATTEMPTED_PAYER2, ATTEMPTED_DEPOSIT, 25,
+                       T0.fromtimestamp(T0.timestamp() - 20, tz=timezone.utc), "tx-p2-to-deposit"),
+                ],
+            }
+            return data.get(address, [])
+
+    case_id = _make_case()
+    with patch("app.api.v1.traces.get_chain_client", return_value=AllPayersAlreadyKnownClient()), \
+         patch("app.api.v1.traces.lookup_label", return_value=VETTED_LABEL_ANY):
+        response = client.post(f"/api/v1/cases/{case_id}/trace")
+
+    assert response.status_code == 200
+    body = response.json()
+
+    # Confirms the deposit gate itself genuinely passed on ATTEMPTED_DEPOSIT (3 distinct
+    # payers: SUSPECT, ATTEMPTED_PAYER1, ATTEMPTED_PAYER2) -- so enumeration really did run,
+    # not skip via the G4 guard the way the previous test's fixture does.
+    assert body["attribution"]["walletAddress"] == ATTEMPTED_DEPOSIT
+    assert body["attribution"]["breakdown"]["distinct_payers_ok"] is True
+
+    # Both payers into ATTEMPTED_DEPOSIT are already wallets this trace visited directly, so
+    # enumeration correctly finds zero NEW victims -- same empty list as the never-attempted
+    # case, but `unreportedVictimsAttempted` must now read True.
+    assert body["unreportedVictims"] == []
+    assert body["unreportedVictimsDataUnavailable"] is False
+    assert body["unreportedVictimsAttempted"] is True
 
 
 def test_hop_role_and_flag_are_plain_english_not_raw_codes():

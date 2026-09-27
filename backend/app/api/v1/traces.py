@@ -272,6 +272,11 @@ def run_trace(case_id: str, background_tasks: BackgroundTasks, db: Session = Dep
         )
     unreported_victims_out: list[UnreportedVictimOut] = []
     unreported_victims_data_unavailable = False
+    # P1.6 minor fix: True only once the block below actually enters (gate.gate_passed), so
+    # `unreportedVictims == []` downstream can be told apart from "never attempted" (this stays
+    # False) vs. "attempted and genuinely found nobody new" (set True just below, independent
+    # of whether the enumeration then succeeds, fails, or comes back empty).
+    unreported_victims_attempted = False
 
     # Attribution candidates: any hop past the suspect wallet that actually received some of
     # the victim's traced money (taint > 0) -- not just wherever the BFS physically stopped.
@@ -504,6 +509,7 @@ def run_trace(case_id: str, background_tasks: BackgroundTasks, db: Session = Dep
         # as an exchange. When the guard fails, `unreported_victims_out` simply stays the empty
         # list it's already initialized to above -- no new code path needed for the negative case.
         if gate is not None and gate.gate_passed:
+            unreported_victims_attempted = True
             try:
                 victims = enumerate_unreported_victims(
                     client, hop.wallet_address,
@@ -604,5 +610,6 @@ def run_trace(case_id: str, background_tasks: BackgroundTasks, db: Session = Dep
     ), attribution=attribution_out, innocence=innocence_out,
        unreportedVictims=unreported_victims_out,
        unreportedVictimsDataUnavailable=unreported_victims_data_unavailable,
+       unreportedVictimsAttempted=unreported_victims_attempted,
        bridgeLinks=bridge_links_out,
        sanctionsMatches=sanctions_matches_out)
