@@ -36,6 +36,13 @@ export const ROUTES = {
   // the backend issues on complaint submission -- same UX pattern as vaspPortal above, reused
   // rather than reinvented (design doc's "Guest citizens" section). Placeholder for now.
   myTicket: (token: string) => `/my-ticket/${token}`,
+  // Notice-drafting page (Task 14, backend/app/api/v1/legal.py) -- officer-only, keyed off a
+  // case id in the URL rather than needing Task 13's Cases/Tickets page to link to it first
+  // (this page works standalone given a case id; cross-linking from a case detail view is a
+  // small follow-up once that page exists).
+  noticeNew: (caseId: string) => `/notices/new/${caseId}`,
+  // Officer-only, system-wide flagged-wallet table (Task 11, `GET /flagged-wallets/all`).
+  flaggedWallets: '/flagged-wallets',
 } as const
 
 export interface RailStep {
