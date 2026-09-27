@@ -1,13 +1,16 @@
 import { useEffect, useState } from 'react'
 import { Navigate, useNavigate, useParams } from 'react-router-dom'
-import { ArrowRight, CheckCircle2, Globe, ShieldAlert, ShieldCheck, Users } from 'lucide-react'
+import { ArrowRight, CheckCircle2, Globe, ShieldAlert, ShieldCheck, Users, XCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
+import { Gauge } from '@/components/ui/gauge'
 import { IconTile } from '@/components/ui/icon-tile'
 import { PlainWords } from '@/components/ui/plain-words'
 import { Spinner } from '@/components/ui/spinner'
 import { Stat } from '@/components/ui/well'
+import { cn } from '@/lib/utils'
 import { api } from '../api'
+import { useCaseStore } from '../store/caseStore'
 import type { Exchange } from '../types'
 import { ROUTES } from '../utils/constants'
 import { truncateAddress } from '../utils/format'
@@ -23,6 +26,9 @@ export default function ExchangeAttribution() {
   const [exchange, setExchange] = useState<Exchange | null>(null)
   const [loading, setLoading] = useState(true)
   const [barsIn, setBarsIn] = useState(false)
+  const routeA = useCaseStore((s) => s.routeA)
+  const routeB = useCaseStore((s) => s.routeB)
+  const setTraceResult = useCaseStore((s) => s.setTraceResult)
 
   useEffect(() => {
     if (!id) return
@@ -38,6 +44,17 @@ export default function ExchangeAttribution() {
       cancelled = true
     }
   }, [id])
+
+  useEffect(() => {
+    // Same direct-load/refresh guard as RouteChoice/Evidence -- `routeA` (which carries the
+    // real `innocence` payload, per httpApi.ts's `toRoute()`) may not be in the store yet if
+    // this screen is opened without walking through Route Choice first. `getRoutes` is cached
+    // per case id, so this is a no-op when the trace already ran.
+    if (!id) return
+    if (!routeA || !routeB) {
+      api.getRoutes(id).then((result) => setTraceResult(result.routeA, result.routeB))
+    }
+  }, [id, routeA, routeB, setTraceResult])
 
   useEffect(() => {
     if (loading) return
@@ -147,6 +164,53 @@ export default function ExchangeAttribution() {
           </div>
         </Card>
       </div>
+
+      {routeA?.innocence && (
+        <Card className="flex flex-col gap-5 p-6">
+          <div>
+            <h3 className="font-[family-name:var(--font-display)] text-base font-semibold text-foreground">
+              Could this wallet be innocent?
+            </h3>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Every risk factor elsewhere in KAIZEN accuses. This is the only check that can say &ldquo;not this
+              one&rdquo; — shown with equal weight, not buried.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 items-start gap-6 md:grid-cols-[auto_1fr]">
+            <div className="flex flex-col items-center gap-2">
+              <Gauge
+                value={routeA.innocence.innocenceScore}
+                size={180}
+                colourStops={['var(--color-vermillion)', 'var(--color-gold)', 'var(--color-moss)']}
+              />
+              <span className="text-xs text-muted-foreground">Innocence score</span>
+            </div>
+
+            <div className="flex flex-col divide-y divide-border">
+              {routeA.innocence.factors.map((factor) => (
+                <div key={factor.check} className="flex items-start gap-3.5 py-3.5 first:pt-0 last:pb-0">
+                  {factor.supportsInnocence ? (
+                    <CheckCircle2 size={16} className="mt-0.5 shrink-0 text-moss" />
+                  ) : (
+                    <XCircle size={16} className="mt-0.5 shrink-0 text-vermillion" />
+                  )}
+                  <p className="min-w-0 flex-1 text-sm text-foreground/90">{factor.description}</p>
+                  <span
+                    className={cn(
+                      'shrink-0 font-[family-name:var(--font-mono)] text-xs font-bold',
+                      factor.supportsInnocence ? 'text-moss' : 'text-vermillion',
+                    )}
+                  >
+                    {factor.supportsInnocence ? '+' : '−'}
+                    {factor.weight.toFixed(2)}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </Card>
+      )}
 
       <PlainWords>Think of it as tracing stolen cash to the counter of a specific bank branch.</PlainWords>
 
