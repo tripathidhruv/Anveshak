@@ -1,5 +1,16 @@
 # Progress log
 
+## 2026-09-27 ("three ideas" competitive-strategy pass) · Dhruv + Claude · Exculpatory-evidence gate wired, recoverability triage shipped, deposit-index foundation built — 279 → 318 tests
+**Did:** User pasted a 3-idea competitive-strategy brief (Inverted Index, Exculpatory Evidence, Recoverability Triage) and asked why it hadn't been built yet — it hadn't been shared before this message, so nothing had been ignored. Checked each idea against the actual codebase before building anything: idea 2 turned out ~80% already built (`innocence.py` had 4/5 planned factors), idea 3 exposed a real gap (no case-list endpoint existed at all, frontend `listCases()` wired to nothing), idea 1 exposed a bigger one (zero vetted exchange labels ever existed, so gated attribution had never named a real exchange outside test mocks). Built all three in parallel where file scopes allowed. Also separately fact-checked a pasted "expert review" claiming no backend exists — false, describing an old snapshot; corrected it with specifics (campaign clustering and legal-notice generation, both cited as "differentiators that already fell to rivals," both already real and shipped here).
+
+Hit a real git-index race mid-session (parallel agents sharing one working tree, same pattern as an earlier H2/H4 collision this project has hit before) — a commit briefly commingled two unrelated agents' staged files. Diagnosed via `git reflog`, confirmed via full test suite that nothing was lost, and re-split the commits cleanly. No data lost, just a commit-message/boundary hiccup, self-corrected by the agents involved plus one manual re-commit.
+
+**Decided:** Idea 1's Task B (wiring the deposit index into live attribution) is intentionally deferred, not abandoned — it's a bigger, riskier change to the hottest file in the backend and deserves its own dedicated pass rather than being squeezed in alongside two other builds.
+**Next:** Idea 1 Task B, when picked up. A large "project field guide" document (workflow, terminology glossary, feature list, verification guide, competitive comparison against 12 named rival repos) is in progress as a separate deliverable.
+**Blocked on:** Nothing.
+**Note for whoever's next:** 318/318 backend tests green. Every task reviewed clean by an independent sonnet reviewer; 2 real bugs were caught in review before merge (innocence-gate test coverage gap, deposit-index dedupe-key scoping) and fixed same session.
+
+
 ## 2026-09-26 (three known limitations addressed) · Dhruv + Claude · Real mixer detection shipped, bridge-link disclaimer closed, ML synthetic-data blend investigated and correctly rejected
 **Did:** User asked to "fix" 3 documented known limitations, explicitly directing full autonomy ("decide all on your own... make no mistakes"). Treated that instruction as authorizing genuine, bounded engineering fixes — not license to overclaim a fix for something that isn't actually fixable, since that would be the real mistake given this project's whole honesty discipline.
 
