@@ -37,6 +37,11 @@ class CaseOut(BaseModel):
     chain: str
     suspectWallet: str
     status: str
+    # Unified role-based portal (Task 5): who filed this case, and (guest-only) the opaque
+    # token that lets an unauthenticated guest look their own case back up later without an
+    # account (`GET /ticket/{guestTicketToken}`). None for officer/citizen-filed cases.
+    filedByRole: str
+    guestTicketToken: str | None = None
 
 class CaseReplyIn(BaseModel):
     message: str

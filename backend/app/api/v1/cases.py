@@ -1,15 +1,19 @@
+import secrets
 import uuid
 from datetime import datetime, timezone
 from decimal import Decimal
 from typing import Literal
 
 import httpx
+import jwt as pyjwt
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.security import HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_db
 from app.audit.chain import append_entry
-from app.auth.identity import Identity, get_current_identity, require_role
+from app.auth.identity import Identity, get_current_identity, require_role, resolve_role
+from app.auth.jwt import bearer_scheme
 from app.chains.known_assets import resolve_asset_contract
 from app.chains.registry import get_chain_client
 from app.config import settings
@@ -55,8 +59,31 @@ def _to_out(case: Case) -> CaseOut:
         phone=case.phone, incidentAt=case.incident_at, reportedAt=case.reported_at,
         fraudType=case.fraud_type, amountINR=case.amount_inr, amountCrypto=case.amount_crypto,
         asset=case.asset, chain=case.chain, suspectWallet=case.suspect_wallet,
-        status=case.status,
+        status=case.status, filedByRole=case.filed_by_role, guestTicketToken=case.guest_ticket_token,
     )
+
+
+def _resolve_filer(credentials: HTTPAuthorizationCredentials | None, db: Session) -> tuple[str, str | None]:
+    """Determines who is filing a new case from an OPTIONAL bearer token (missing/invalid ->
+    guest, tracked only by their case's own `guest_ticket_token`; a valid token -> that user's
+    resolved KAIZEN role and their verified email). Deliberately local to this router rather
+    than a change to `app.auth.jwt.get_current_officer` (which hard-401s on a missing/invalid
+    token) -- Global Constraints keep that file's auth-verification contract untouched; this is
+    a citizen/guest-filing concern, not an auth-verification one.
+
+    Returns (filed_by_role, complainant_email). No/invalid/expired token, or a token with no
+    email claim, all resolve the same way: ("guest", None)."""
+    if credentials is None or not settings.auth_jwt_secret:
+        return "guest", None
+    try:
+        payload = pyjwt.decode(credentials.credentials, settings.auth_jwt_secret, algorithms=["HS256"])
+    except (pyjwt.ExpiredSignatureError, pyjwt.InvalidTokenError):
+        return "guest", None
+    email = payload.get("email")
+    if not email:
+        return "guest", None
+    role = resolve_role(db, email)
+    return role, email.strip().lower()
 
 
 def _compute_recoverability(case: Case) -> tuple[RecoverabilityState, float | None]:
@@ -152,7 +179,13 @@ def _sort_key(item: CaseListItemOut) -> tuple[int, float]:
 
 
 @router.post("", response_model=CaseOut, status_code=201)
-def create_case(payload: CaseIn, db: Session = Depends(get_db)) -> CaseOut:
+def create_case(
+    payload: CaseIn,
+    db: Session = Depends(get_db),
+    credentials: HTTPAuthorizationCredentials | None = Depends(bearer_scheme),
+) -> CaseOut:
+    filed_by_role, complainant_email = _resolve_filer(credentials, db)
+    guest_ticket_token = secrets.token_urlsafe(32) if filed_by_role == "guest" else None
     chain = payload.chain.lower()
     suspect_wallet = payload.suspectWallet
     # Ethereum addresses are hex and case-insensitive once EIP-55 checksumming is
@@ -176,6 +209,9 @@ def create_case(payload: CaseIn, db: Session = Depends(get_db)) -> CaseOut:
         # `.lower()` calls elsewhere for this.
         chain=chain,
         suspect_wallet=suspect_wallet,
+        filed_by_role=filed_by_role,
+        complainant_email=complainant_email,
+        guest_ticket_token=guest_ticket_token,
     )
     db.add(case)
     db.commit()
@@ -207,6 +243,35 @@ def list_cases(db: Session = Depends(get_db)) -> list[CaseListItemOut]:
         ))
     items.sort(key=_sort_key)
     return items
+
+
+@router.get("/mine", response_model=list[CaseOut])
+def list_my_cases(
+    db: Session = Depends(get_db),
+    identity: Identity = Depends(get_current_identity),
+) -> list[CaseOut]:
+    """A logged-in citizen's own cases, matched by their verified email -- not by who is
+    logged in generically, since two citizens must never see each other's cases here.
+    Registered ahead of `GET /{case_id}` (below) so FastAPI's in-order path matching doesn't
+    swallow the literal path "mine" as a `case_id` value."""
+    cases = (
+        db.query(Case)
+        .filter(Case.complainant_email == identity.email)
+        .order_by(Case.reported_at.desc())
+        .all()
+    )
+    return [_to_out(c) for c in cases]
+
+
+@router.get("/ticket/{guest_ticket_token}", response_model=CaseOut)
+def get_case_by_ticket(guest_ticket_token: str, db: Session = Depends(get_db)) -> CaseOut:
+    """No-auth lookup for a guest-filed case: the opaque, unguessable `guest_ticket_token`
+    itself is the credential -- a guest never has an account to log in with. Registered ahead
+    of `GET /{case_id}` for the same route-ordering reason as `GET /mine` above."""
+    case = db.query(Case).filter(Case.guest_ticket_token == guest_ticket_token).one_or_none()
+    if case is None:
+        raise HTTPException(status_code=404, detail="No ticket found for this link")
+    return _to_out(case)
 
 
 @router.get("/{case_id}", response_model=CaseOut)
@@ -295,8 +360,12 @@ def list_case_replies(
     case = db.get(Case, case_id)
     if case is None:
         raise HTTPException(status_code=404, detail="case not found")
-    # Task 5 tightens this to "officer, or the case's own citizen/guest" -- left open to any
-    # authenticated identity here since Task 5 hasn't built the citizen-ownership check yet;
-    # Task 5 MUST add that check before this endpoint is considered done for citizen use.
+    # Task 5's ownership check: any officer may view any case's replies; a non-officer
+    # (citizen) may only view replies for a case whose `complainant_email` matches their own
+    # verified email. A guest-filed case has no `complainant_email` at all, so a citizen never
+    # matches it by accident here (compared against "" rather than None to keep the comparison
+    # a plain string one, matching identity.email's type).
+    if identity.role != "officer" and identity.email != (case.complainant_email or ""):
+        raise HTTPException(status_code=403, detail="Not authorized to view these replies")
     replies = db.query(CaseReply).filter(CaseReply.case_id == case_id).order_by(CaseReply.created_at).all()
     return [_reply_to_out(r) for r in replies]
