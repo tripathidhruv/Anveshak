@@ -14,7 +14,8 @@ from app.detectors.innocence import compute_innocence
 from app.graph.backward import enumerate_unreported_victims
 from app.bridge.registry import is_bridge_contract, KNOWN_BRIDGES
 from app.mixers.registry import is_mixer_contract
-from app.labels.seed_labels import lookup_label
+from app.labels.seed_labels import lookup_label, VaspLabelSeed
+from app.index.deposit_index import lookup_indexed_deposit
 from app.sanctions.screen import screen_hops
 from app.vasp_feed import distribution as vasp_distribution
 from app.audit.chain import append_entry
@@ -354,8 +355,42 @@ def run_trace(case_id: str, background_tasks: BackgroundTasks, db: Session = Dep
             sweep_incoming = [hop.funding_transfer] if hop.funding_transfer is not None else []
             sweep_signal = detect_sweep(hop.wallet_address, sweep_incoming, outgoing_from_hop)
 
-            gate = evaluate_deposit_gate(hop, distinct_payer_count=distinct_payers, label=label,
+            # Task 7 / Task B (docs/superpowers/specs/2026-09-27-inverted-deposit-index-design.md):
+            # before falling back to lookup_label's live per-request label, check whether this
+            # hop's wallet was already backward-crawled (offline, by build_deposit_index.py) as
+            # a real depositor into one of this project's vetted hot wallets. A hit satisfies
+            # the SAME label-vetting half of the gate that a live vetted `lookup_label` result
+            # would -- built as a synthetic `VaspLabelSeed`-shaped stand-in so the rest of
+            # evaluate_deposit_gate's machinery (hop_0 / distinct_payers_ok /
+            # immediate_predecessor_match) runs completely unchanged, not duplicated here.
+            # Several vetted hot wallets can legitimately share one depositor address (see
+            # lookup_indexed_deposit's own docstring) -- only the first match is used as the
+            # gate's reported entity_name, but every matched entity name is still recorded in
+            # the breakdown below so an ambiguous multi-exchange match is never silently
+            # collapsed to one (CLAUDE.md rule 4, "nothing is a black box").
+            index_hits = lookup_indexed_deposit(db, hop.wallet_address, hop.chain)
+            effective_label = label
+            if index_hits:
+                primary_hit = index_hits[0]
+                effective_label = VaspLabelSeed(
+                    address=hop.wallet_address, chain=hop.chain, entity_name=primary_hit.entity_name,
+                    source_url=(
+                        f"Backward-crawled deposit index: this address was observed sending "
+                        f"funds directly into vetted hot wallet {primary_hit.hot_wallet_address}."
+                    ),
+                    verified_at=primary_hit.indexed_at, vetting_status="vetted",
+                )
+
+            gate = evaluate_deposit_gate(hop, distinct_payer_count=distinct_payers, label=effective_label,
                                           expected_predecessor=predecessor)
+            gate.breakdown["index_hit"] = bool(index_hits)
+            if index_hits:
+                gate.breakdown["index_hit_entities"] = sorted({h.entity_name for h in index_hits})
+
+            # This project's core behavioural fingerprint (CLAUDE.md "Why it works" #1) stays
+            # required even when the destination is confirmed-real via the index -- an index
+            # hit is evidence about WHO the wallet is, never about whether IT swept the money
+            # onward, so it must never bypass this AND with the independent sweep signal.
             final_gate_passed = gate.gate_passed and sweep_signal.is_sweep
             evaluated.append((hop, gate, sweep_signal, final_gate_passed, distinct_payers))
 

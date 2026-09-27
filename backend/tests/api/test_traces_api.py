@@ -7,7 +7,7 @@ from app.main import app
 from app.db import Base, get_db
 from app.chains.base import Transfer
 from app.labels.seed_labels import VaspLabelSeed
-from app.models import AttributionCandidate, Hop
+from app.models import AttributionCandidate, DepositIndexEntry, Hop
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
@@ -1097,3 +1097,75 @@ def test_trace_stops_honestly_when_money_enters_a_known_mixer():
     # The mixer contract must never be reported as the attribution/exchange wallet, no
     # matter how many distinct depositors it has by design.
     assert body["attribution"]["walletAddress"].lower() != mixer.contract_address.lower()
+
+
+# ---------------------------------------------------------------------------
+# Task 7 / Task B (docs/superpowers/specs/2026-09-27-inverted-deposit-index-design.md):
+# wire lookup_indexed_deposit into the live candidate-evaluation loop. An index hit must
+# satisfy the label-vetting half of evaluate_deposit_gate on its own (TERMINAL has no live
+# vetted label in these two tests -- lookup_label is patched to return None, standing in for
+# an unvetted/absent live label), but must NOT bypass the independent sweep-signal check --
+# final_gate_passed stays `gate.gate_passed and sweep_signal.is_sweep` exactly as before.
+# ---------------------------------------------------------------------------
+
+def test_indexed_deposit_hit_satisfies_gate_when_sweep_also_holds():
+    case_id = _make_case()
+    db = TestSession()
+    try:
+        db.add(DepositIndexEntry(
+            address=TERMINAL, chain="tron",
+            hot_wallet_address="TVettedHotWalletPositiveCase00000001",
+            entity_name="Indexed Real Exchange",
+        ))
+        db.commit()
+    finally:
+        db.close()
+
+    with patch("app.api.v1.traces.get_chain_client", return_value=FakeChainClient()), \
+         patch("app.api.v1.traces.lookup_label", return_value=None):
+        response = client.post(f"/api/v1/cases/{case_id}/trace")
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["attribution"]["gatePassed"] is True
+    assert body["attribution"]["entityName"] == "Indexed Real Exchange"
+    assert body["attribution"]["breakdown"]["index_hit"] is True
+    assert body["attribution"]["breakdown"]["sweep_confirmed"] is True
+
+
+def test_indexed_deposit_hit_alone_does_not_bypass_the_sweep_check():
+    # Same indexed hit as above, but the sweep transfer predates the earliest inbound transfer
+    # (same fixture shape as test_trace_endpoint_withholds_attribution_when_sweep_does_not_hold
+    # above), so detect_sweep correctly reports no sweep. The label-vetting half of the gate is
+    # fully satisfied via the index, but the gate must still fail overall.
+    class SlowSweepClient(FakeChainClient):
+        def get_transfers(self, address, since=None):
+            if address == TERMINAL:
+                base = super().get_transfers(address, since)
+                return [t for t in base if t.to_address != COLD and t.from_address != TERMINAL] + [
+                    mk(TERMINAL, COLD, 198, T0.fromtimestamp(T0.timestamp() - 86400, tz=timezone.utc), "tx-sweep-slow"),
+                ]
+            return super().get_transfers(address, since)
+
+    case_id = _make_case()
+    db = TestSession()
+    try:
+        db.add(DepositIndexEntry(
+            address=TERMINAL, chain="tron",
+            hot_wallet_address="TVettedHotWalletNegativeCase0000001",
+            entity_name="Indexed Real Exchange",
+        ))
+        db.commit()
+    finally:
+        db.close()
+
+    with patch("app.api.v1.traces.get_chain_client", return_value=SlowSweepClient()), \
+         patch("app.api.v1.traces.lookup_label", return_value=None):
+        response = client.post(f"/api/v1/cases/{case_id}/trace")
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["attribution"]["gatePassed"] is False
+    assert body["attribution"]["entityName"] == "UNKNOWN"
+    assert body["attribution"]["breakdown"]["index_hit"] is True
+    assert body["attribution"]["breakdown"]["sweep_confirmed"] is False
