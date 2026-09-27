@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 
 from app.api.deps import get_db
 from app.audit.chain import append_entry
+from app.auth.identity import Identity, require_role
 from app.chains.known_assets import resolve_asset_contract
 from app.chains.registry import get_chain_client
 from app.config import settings
@@ -16,7 +17,7 @@ from app.freeze import tether
 from app.api.v1.freeze import _pick_target_wallet
 from app.labels.seed_labels import lookup_label
 from app.models import Case
-from app.schemas import CaseIn, CaseOut
+from app.schemas import CaseIn, CaseOut, CaseStatusUpdateIn
 from app.tracing.tracer import trace
 
 router = APIRouter(prefix="/api/v1/cases", tags=["cases"])
@@ -53,6 +54,7 @@ def _to_out(case: Case) -> CaseOut:
         phone=case.phone, incidentAt=case.incident_at, reportedAt=case.reported_at,
         fraudType=case.fraud_type, amountINR=case.amount_inr, amountCrypto=case.amount_crypto,
         asset=case.asset, chain=case.chain, suspectWallet=case.suspect_wallet,
+        status=case.status,
     )
 
 
@@ -211,4 +213,37 @@ def get_case(case_id: str, db: Session = Depends(get_db)) -> CaseOut:
     case = db.get(Case, case_id)
     if case is None:
         raise HTTPException(status_code=404, detail="case not found")
+    return _to_out(case)
+
+
+# Unified role-based portal (Task 3): the only lifecycle moves a case is allowed to make --
+# always forward, one step at a time, never skipping "in_progress" and never moving backward.
+# Mirrors `app.schemas.CaseStatus`'s own three values; don't let the two drift.
+VALID_STATUS_TRANSITIONS: dict[str, set[str]] = {
+    "new": {"in_progress"},
+    "in_progress": {"handled"},
+    "handled": set(),
+}
+
+
+@router.patch("/{case_id}/status", response_model=CaseOut)
+def update_case_status(
+    case_id: str,
+    payload: CaseStatusUpdateIn,
+    db: Session = Depends(get_db),
+    identity: Identity = Depends(require_role("officer")),
+) -> CaseOut:
+    case = db.get(Case, case_id)
+    if case is None:
+        raise HTTPException(status_code=404, detail="case not found")
+    allowed_next = VALID_STATUS_TRANSITIONS.get(case.status, set())
+    if payload.status not in allowed_next:
+        raise HTTPException(
+            status_code=409,
+            detail=f"Can't move a case from '{case.status}' straight to '{payload.status}'.",
+        )
+    case.status = payload.status
+    db.commit()
+    db.refresh(case)
+    # Task 4 wires the AI auto-reply here, on the transition into "handled".
     return _to_out(case)

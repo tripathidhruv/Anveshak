@@ -33,6 +33,18 @@ class Case(Base):
     # blob that's only ever read back whole, never queried by its contents.
     innocence_score: Mapped[float | None] = mapped_column(Float, nullable=True)
     innocence_factors: Mapped[list | None] = mapped_column(JSON, nullable=True)
+    # Unified role-based portal (docs/superpowers/specs/2026-09-27-unified-role-based-portal-
+    # design.md, Task 3): before this, every case reported status "new" forever -- there was no
+    # persisted lifecycle at all. `status` is now the source of truth for case.py's
+    # PATCH /{case_id}/status transition endpoint. `filed_by_role`/`complainant_email`/
+    # `guest_ticket_token` support the citizen/guest filing paths later tasks in this same spec
+    # build (a guest files without an account and is tracked back to their case only via the
+    # opaque `guest_ticket_token`, never by requiring login) -- added now, alongside `status`,
+    # so this is one schema migration touching Case rather than several.
+    status: Mapped[str] = mapped_column(String, default="new")  # "new" | "in_progress" | "handled"
+    filed_by_role: Mapped[str] = mapped_column(String, default="officer")  # "officer" | "citizen" | "guest"
+    complainant_email: Mapped[str | None] = mapped_column(String, nullable=True, index=True)
+    guest_ticket_token: Mapped[str | None] = mapped_column(String, nullable=True, unique=True, index=True)
 
 class Wallet(Base):
     __tablename__ = "wallets"

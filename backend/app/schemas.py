@@ -1,5 +1,13 @@
 from datetime import datetime
+from typing import Literal
 from pydantic import BaseModel
+
+# Unified role-based portal (Task 3): the only three states a case can genuinely be in --
+# mirrors `app.api.v1.cases.VALID_STATUS_TRANSITIONS`' own keys/values, don't let the two drift.
+CaseStatus = Literal["new", "in_progress", "handled"]
+
+class CaseStatusUpdateIn(BaseModel):
+    status: CaseStatus
 
 class CaseIn(BaseModel):
     ncrp: str
@@ -28,6 +36,7 @@ class CaseOut(BaseModel):
     asset: str
     chain: str
     suspectWallet: str
+    status: str
 
 class HopOut(BaseModel):
     n: int
