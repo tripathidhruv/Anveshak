@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.db import Base, engine
 from app.api.v1 import (
     cases, traces, campaigns, vasp_feed, freeze, sanctions, evidence, audit, legal, risk,
-    operator_fingerprint,
+    operator_fingerprint, narrative,
 )
 
 Base.metadata.create_all(bind=engine)
@@ -32,6 +32,7 @@ app.include_router(audit.router)
 app.include_router(legal.router)
 app.include_router(risk.router)
 app.include_router(operator_fingerprint.router)
+app.include_router(narrative.router)
 
 @app.get("/health")
 def health() -> dict:
