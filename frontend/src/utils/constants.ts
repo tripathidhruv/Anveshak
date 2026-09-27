@@ -43,6 +43,15 @@ export const ROUTES = {
   noticeNew: (caseId: string) => `/notices/new/${caseId}`,
   // Officer-only, system-wide flagged-wallet table (Task 11, `GET /flagged-wallets/all`).
   flaggedWallets: '/flagged-wallets',
+  // Officer-only screens surfacing three previously backend-only endpoints (audit finding:
+  // real endpoints with no client function/UI at all -- see `api/httpApi.ts`'s own comment on
+  // `getSimilarOperators`/`getSanctionsMatches`/`getAuditLog`/`verifyAuditChain`). All three are
+  // standalone routes (not `/case/:id/...`) because none of Cases.tsx/the case workflow screens
+  // are in this task's edit scope to add a cross-link from -- each page takes its case id via an
+  // on-page input instead (system-wide for the audit log, which isn't case-scoped anyway).
+  operatorFingerprint: '/operator-fingerprint',
+  sanctionsScreening: '/sanctions',
+  auditLog: '/audit-log',
 } as const
 
 export interface RailStep {

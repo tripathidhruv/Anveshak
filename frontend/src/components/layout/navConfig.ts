@@ -1,5 +1,17 @@
 import type { LucideIcon } from 'lucide-react'
-import { FolderOpen, Landmark, LayoutDashboard, MessagesSquare, Network, FileText, Route as RouteIcon, ShieldAlert } from 'lucide-react'
+import {
+  Ban,
+  FolderOpen,
+  Fingerprint,
+  Landmark,
+  LayoutDashboard,
+  MessagesSquare,
+  Network,
+  FileText,
+  Route as RouteIcon,
+  ScrollText,
+  ShieldAlert,
+} from 'lucide-react'
 import { ROUTES } from '../../utils/constants'
 
 export interface NavItem {
@@ -22,4 +34,7 @@ export const NAV_ITEMS: NavItem[] = [
   { key: 'exchanges', label: 'Exchanges', to: ROUTES.exchanges, icon: Landmark },
   { key: 'vaspReplies', label: 'VASP replies', to: ROUTES.vaspReplies, icon: MessagesSquare },
   { key: 'flaggedWallets', label: 'Flagged Wallets', to: ROUTES.flaggedWallets, icon: ShieldAlert },
+  { key: 'operatorFingerprint', label: 'Operator Fingerprinting', to: ROUTES.operatorFingerprint, icon: Fingerprint },
+  { key: 'sanctionsScreening', label: 'Sanctions Screening', to: ROUTES.sanctionsScreening, icon: Ban },
+  { key: 'auditLog', label: 'Audit Log', to: ROUTES.auditLog, icon: ScrollText },
 ]
