@@ -1,4 +1,8 @@
+from datetime import datetime, timedelta, timezone
+from unittest.mock import patch
+
 import httpx
+import jwt
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
@@ -245,3 +249,170 @@ def test_demo_receiver_holds_deposit_after_receiving_the_real_webhook(monkeypatc
     assert body["simulated"] is True
     assert "FLAGGED_WALLET_FEED_MATCH" in body["reasonCodes"]
     assert "SIMULATED" in body["exchangeName"].upper()
+
+
+# --- VASP wallet-sharing portal (Feature 2) ---
+
+TEST_JWT_SECRET = "kaizen-test-shared-secret-vasp-portal"
+
+
+def _officer_token(secret: str = TEST_JWT_SECRET, expires_delta: timedelta = timedelta(minutes=30)) -> str:
+    payload = {
+        "user_id": "officer-1",
+        "tenant_id": "kaizen",
+        "email": "officer@example.com",
+        "exp": datetime.now(timezone.utc) + expires_delta,
+    }
+    return jwt.encode(payload, secret, algorithm="HS256")
+
+
+def _create_portal_subscriber(name="Portal VASP", email="portal@example.test"):
+    resp = client.post("/api/v1/vasp-feed/subscribers", json={"name": name, "email": email})
+    assert resp.status_code == 201
+    return resp.json()
+
+
+def _flag_a_wallet(monkeypatch, address, chain="tron", case_id="case-portal"):
+    _mock_webhook_delivery(monkeypatch, lambda r: httpx.Response(200, json={}))
+    resp = client.post("/api/v1/vasp-feed/flag", json=_flag_payload(case_id=case_id, address=address, chain=chain))
+    assert resp.json()["flagged"] is True
+
+
+def test_create_subscriber_without_webhook_gets_email_and_access_token():
+    sub = _create_portal_subscriber()
+    assert sub["webhookUrl"] is None
+    assert sub["email"] == "portal@example.test"
+    assert sub["accessToken"]
+    assert len(sub["accessToken"]) > 20
+
+
+def test_portal_returns_only_safe_fields_for_a_valid_token(monkeypatch):
+    sub = _create_portal_subscriber(name="Portal VASP Safe Fields")
+    address = "TPortalSafeAAAAAAAAAAAAAAAAAAAAAAA"
+    _flag_a_wallet(monkeypatch, address, case_id="case-portal-safe")
+
+    resp = client.get(f"/api/v1/vasp-feed/portal/{sub['accessToken']}")
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["subscriberName"] == "Portal VASP Safe Fields"
+    wallet = next(w for w in body["wallets"] if w["address"] == address)
+    assert set(wallet.keys()) == {"id", "address", "chain", "riskScore", "flaggedAt"}
+    assert wallet["chain"] == "tron"
+    assert wallet["riskScore"] == 1.0
+
+
+def test_portal_unknown_token_is_404():
+    resp = client.get("/api/v1/vasp-feed/portal/not-a-real-token-at-all")
+    assert resp.status_code == 404
+
+
+def test_portal_inactive_subscriber_token_is_404():
+    sub = _create_portal_subscriber(name="Deactivated VASP", email="deactivated@example.test")
+    # No API to deactivate a subscriber exists yet -- flip it directly via a fresh session
+    # bound to the SAME in-memory engine this module's override uses.
+    with TestSession() as session:
+        from app.models import VaspSubscriber
+        row = session.get(VaspSubscriber, sub["id"])
+        row.active = False
+        session.add(row)
+        session.commit()
+
+    resp = client.get(f"/api/v1/vasp-feed/portal/{sub['accessToken']}")
+    assert resp.status_code == 404
+
+
+def test_portal_reply_is_accepted_and_visible_only_via_internal_replies_endpoint(monkeypatch):
+    sub = _create_portal_subscriber(name="Replying VASP", email="replying@example.test")
+    address = "TPortalReplyAAAAAAAAAAAAAAAAAAAAAA"
+    _flag_a_wallet(monkeypatch, address, case_id="case-portal-reply")
+
+    portal = client.get(f"/api/v1/vasp-feed/portal/{sub['accessToken']}")
+    wallet_id = next(w["id"] for w in portal.json()["wallets"] if w["address"] == address)
+
+    reply = client.post(f"/api/v1/vasp-feed/portal/{sub['accessToken']}/reply",
+                         json={"flaggedWalletId": wallet_id, "message": "Funds frozen, LEA can file a request."})
+    assert reply.status_code == 201
+    assert reply.json()["subscriberName"] == "Replying VASP"
+
+    # Never visible via a 401/anonymous read of the internal endpoint...
+    anon = client.get("/api/v1/vasp-feed/replies")
+    assert anon.status_code == 401
+
+    # ...only visible to a logged-in officer.
+    with patch("app.auth.jwt.settings.auth_jwt_secret", TEST_JWT_SECRET):
+        token = _officer_token()
+        seen = client.get("/api/v1/vasp-feed/replies", headers={"Authorization": f"Bearer {token}"})
+    assert seen.status_code == 200
+    matching = [r for r in seen.json() if r["flaggedWalletId"] == wallet_id]
+    assert len(matching) == 1
+    assert matching[0]["message"] == "Funds frozen, LEA can file a request."
+    assert matching[0]["subscriberEmail"] == "replying@example.test"
+
+
+def test_portal_reply_rejected_for_a_wallet_outside_the_tokens_scope(monkeypatch):
+    """Every active subscriber currently sees every flagged wallet (Task H2 has no
+    per-subscriber segmentation -- see `_wallets_visible_to`'s own docstring), so scope in
+    THIS codebase means "some flagged wallet exists at all". A non-existent wallet id is
+    exactly the out-of-scope case this reply endpoint must reject with a 404, not a 403."""
+    sub = _create_portal_subscriber(name="Scoped VASP", email="scoped@example.test")
+    resp = client.post(f"/api/v1/vasp-feed/portal/{sub['accessToken']}/reply",
+                        json={"flaggedWalletId": 999999, "message": "should not be accepted"})
+    assert resp.status_code == 404
+
+
+def test_portal_reply_rejected_for_unknown_token():
+    resp = client.post("/api/v1/vasp-feed/portal/not-a-real-token/reply",
+                        json={"flaggedWalletId": 1, "message": "x"})
+    assert resp.status_code == 404
+
+
+def test_replies_endpoint_requires_a_valid_officer_jwt():
+    # No header at all.
+    assert client.get("/api/v1/vasp-feed/replies").status_code == 401
+    # Garbage bearer token.
+    assert client.get("/api/v1/vasp-feed/replies",
+                       headers={"Authorization": "Bearer not-a-real-jwt"}).status_code == 401
+
+
+def test_webhook_subscriber_still_works_unchanged_alongside_portal_fields(monkeypatch):
+    """Existing webhook-only subscribers (Task H2) must not break now that email/accessToken
+    exist -- webhookUrl is still required to actually receive pushes, and delivery still
+    reaches them exactly as before."""
+    received = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        received.append(request)
+        return httpx.Response(200, json={"ok": True})
+
+    _mock_webhook_delivery(monkeypatch, handler)
+    sub = client.post("/api/v1/vasp-feed/subscribers",
+                       json={"name": "Still Webhook VASP", "webhookUrl": "https://still-webhook.example.test/hook"})
+    assert sub.status_code == 201
+    assert sub.json()["accessToken"]
+
+    resp = client.post("/api/v1/vasp-feed/flag",
+                        json=_flag_payload(case_id="case-still-webhook",
+                                            address="TStillWebhookAAAAAAAAAAAAAAAAAAAAA"))
+    assert resp.json()["flagged"] is True
+    assert any(str(r.url) == "https://still-webhook.example.test/hook" for r in received)
+
+
+def test_portal_only_subscriber_does_not_break_webhook_delivery_to_others(monkeypatch):
+    """A portal-only subscriber (no webhookUrl) must be silently skipped by
+    `distribution.deliver_webhooks`, not crash delivery to every other active subscriber."""
+    received = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        received.append(request)
+        return httpx.Response(200, json={"ok": True})
+
+    _mock_webhook_delivery(monkeypatch, handler)
+    _create_portal_subscriber(name="No Webhook VASP", email="nowebhook@example.test")
+    client.post("/api/v1/vasp-feed/subscribers",
+                json={"name": "Real Webhook VASP", "webhookUrl": "https://real-webhook.example.test/hook"})
+
+    resp = client.post("/api/v1/vasp-feed/flag",
+                        json=_flag_payload(case_id="case-mixed-subs",
+                                            address="TMixedSubsAAAAAAAAAAAAAAAAAAAAAAAAA"))
+    assert resp.json()["flagged"] is True
+    assert any(str(r.url) == "https://real-webhook.example.test/hook" for r in received)

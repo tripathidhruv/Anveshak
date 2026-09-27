@@ -116,9 +116,35 @@ class VaspSubscriber(Base):
     __tablename__ = "vasp_subscribers"
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String)
-    webhook_url: Mapped[str] = mapped_column(String)
+    # Nullable (Task: VASP wallet-sharing portal, docs/superpowers/specs/2026-09-27-auth-and-
+    # vasp-portal-design.md Feature 2): a portal-only subscriber (shared the /vasp-portal link
+    # instead of a push webhook) has nothing to POST deliveries to. distribution.py's
+    # deliver_webhooks skips any subscriber with no webhook_url rather than posting to None.
+    webhook_url: Mapped[str | None] = mapped_column(String, nullable=True)
     api_key: Mapped[str] = mapped_column(String)
     active: Mapped[bool] = mapped_column(Boolean, default=True)
+    # Same task: portal-only subscribers may have no push delivery but still want the officer
+    # who registered them to know who to follow up with.
+    email: Mapped[str | None] = mapped_column(String, nullable=True)
+    # The opaque bearer of `GET/POST /api/v1/vasp-feed/portal/{access_token}` -- this token
+    # itself IS the auth for external exchanges (no login flow for them at all, per the spec).
+    # Generated server-side at creation time (secrets.token_urlsafe(32) in vasp_feed.py),
+    # never supplied by the caller, unique+indexed so a lookup by token is a plain equality
+    # query (never a prefix/fuzzy match that could leak how "close" a guessed token is).
+    access_token: Mapped[str] = mapped_column(String, unique=True, index=True)
+
+
+class VaspWalletReply(Base):
+    """A reply an external exchange (identified only by their own `VaspSubscriber.access_token`)
+    left on one `FlaggedWallet` via the public portal. Never visible to any other subscriber's
+    own portal token -- only surfaced in bulk to KAIZEN officers via
+    `GET /api/v1/vasp-feed/replies` (gated behind `get_current_officer`)."""
+    __tablename__ = "vasp_wallet_replies"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    subscriber_id: Mapped[int] = mapped_column(ForeignKey("vasp_subscribers.id"))
+    flagged_wallet_id: Mapped[int] = mapped_column(ForeignKey("flagged_wallets.id"))
+    message: Mapped[str] = mapped_column(Text)
+    replied_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
 class FreezeCheck(Base):
     __tablename__ = "freeze_checks"

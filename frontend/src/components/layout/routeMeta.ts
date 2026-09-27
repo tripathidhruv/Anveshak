@@ -38,6 +38,7 @@ const PAGE_TITLES: Array<{ pattern: string; title: string }> = [
   { pattern: ROUTES.evidence(':id'), title: 'Evidence & action' },
   { pattern: ROUTES.closed(':id'), title: 'Case closed' },
   { pattern: ROUTES.campaign(':id'), title: 'Campaign' },
+  { pattern: ROUTES.vaspReplies, title: 'VASP replies' },
 ]
 
 export function isRailVisible(pathname: string): boolean {

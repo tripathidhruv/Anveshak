@@ -17,6 +17,9 @@ export interface RequestOptions {
   method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'
   body?: unknown
   signal?: AbortSignal
+  // Added for the VASP-replies internal view (first caller to need an Authorization header --
+  // see pages/VaspReplies.tsx) -- additive, every existing call site omits it unchanged.
+  headers?: Record<string, string>
 }
 
 /**
@@ -24,12 +27,15 @@ export interface RequestOptions {
  * once Phase 2 fills in `httpApi`. Not used by the mock layer (`api/mock.ts`).
  */
 export async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
-  const { method = 'GET', body, signal } = options
+  const { method = 'GET', body, signal, headers } = options
 
   const response = await fetch(`${BASE_URL}${path}`, {
     method,
     signal,
-    headers: body === undefined ? undefined : { 'Content-Type': 'application/json' },
+    headers: {
+      ...(body === undefined ? {} : { 'Content-Type': 'application/json' }),
+      ...headers,
+    },
     body: body === undefined ? undefined : JSON.stringify(body),
   })
 

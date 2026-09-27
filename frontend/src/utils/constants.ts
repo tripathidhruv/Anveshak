@@ -14,6 +14,12 @@ export const ROUTES = {
   campaigns: '/campaigns',
   reports: '/reports',
   exchanges: '/exchanges',
+  // VASP wallet-sharing portal (Feature 2): the internal, officer-only view of every reply
+  // an external exchange has left via their own public portal link (vaspPortal below).
+  vaspReplies: '/vasp-replies',
+  // Public, unguarded route -- an external exchange visitor's own opaque access_token, never
+  // an officer. Mounted OUTSIDE RequireAuth in App.tsx.
+  vaspPortal: (token: string) => `/vasp-portal/${token}`,
 } as const
 
 export interface RailStep {

@@ -138,7 +138,10 @@ class FlaggedWalletOut(BaseModel):
 
 class VaspSubscriberIn(BaseModel):
     name: str
-    webhookUrl: str
+    # Optional (VASP wallet-sharing portal, Feature 2): a portal-only subscriber has no push
+    # endpoint to deliver to -- they just get a shareable /vasp-portal/{accessToken} link.
+    webhookUrl: str | None = None
+    email: str | None = None
 
 class FreezeCheckOut(BaseModel):
     walletAddress: str

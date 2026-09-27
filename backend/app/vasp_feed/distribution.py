@@ -131,6 +131,11 @@ def deliver_webhooks(db: Session, flagged_wallet_id: int,
 
     status = dict(flagged.broadcast_status)
     for subscriber in subscribers:
+        if not subscriber.webhook_url:
+            # Portal-only subscriber (VASP wallet-sharing portal, Feature 2) -- nothing to
+            # POST to. They see flagged wallets via their own /vasp-portal/{accessToken}
+            # link instead, not the push feed.
+            continue
         payload = {
             "address": flagged.address,
             "chain": flagged.chain,

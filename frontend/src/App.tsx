@@ -17,6 +17,8 @@ import Trace from './pages/Trace'
 import Campaigns from './pages/Campaigns'
 import Reports from './pages/Reports'
 import Exchanges from './pages/Exchanges'
+import VaspReplies from './pages/VaspReplies'
+import VaspPortal from './pages/VaspPortal'
 
 /**
  * Route tree per the Global Constraints route list (`docs/plans/react-migration-plan.md`),
@@ -30,6 +32,11 @@ function App() {
       <Routes>
         {/* Unguarded: an officer with no token yet must be able to reach the login page. */}
         <Route path="/login" element={<Login />} />
+
+        {/* Unguarded (VASP wallet-sharing portal, Feature 2): an external exchange visitor's
+            own opaque access_token in the URL is their auth -- they were never asked to sign
+            in, so this route deliberately sits outside RequireAuth/PageShell. */}
+        <Route path="/vasp-portal/:token" element={<VaspPortal />} />
 
         <Route element={<RequireAuth />}>
           <Route element={<PageShell />}>
@@ -47,6 +54,7 @@ function App() {
             <Route path={ROUTES.campaigns} element={<Campaigns />} />
             <Route path={ROUTES.reports} element={<Reports />} />
             <Route path={ROUTES.exchanges} element={<Exchanges />} />
+            <Route path={ROUTES.vaspReplies} element={<VaspReplies />} />
 
             <Route path="*" element={<Navigate to={ROUTES.dashboard} replace />} />
           </Route>

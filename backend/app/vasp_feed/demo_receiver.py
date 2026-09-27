@@ -15,6 +15,7 @@ record for flagged wallets is `FlaggedWallet`, queryable via the pull API
 """
 from __future__ import annotations
 
+import secrets
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends
@@ -79,8 +80,11 @@ def demo_subscribe(payload: DemoSubscribeIn, db: Session = Depends(get_db)) -> D
     if existing is not None:
         subscriber = existing
     else:
+        # access_token is required (VASP wallet-sharing portal, Feature 2) even though this
+        # demo receiver never uses its own portal link -- every VaspSubscriber row gets one.
         subscriber = VaspSubscriber(name=DEMO_VASP_NAME, webhook_url=webhook_url,
-                                     api_key=DEMO_VASP_API_KEY, active=True)
+                                     api_key=DEMO_VASP_API_KEY, active=True,
+                                     access_token=secrets.token_urlsafe(32))
         db.add(subscriber)
         db.commit()
         db.refresh(subscriber)
