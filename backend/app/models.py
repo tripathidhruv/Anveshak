@@ -147,6 +147,28 @@ class EvidenceManifest(Base):
     pack_hash: Mapped[str] = mapped_column(String)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
+# --- Task A, inverted deposit index (docs/superpowers/specs/2026-09-27-inverted-deposit-
+# index-design.md) ---
+
+class DepositIndexEntry(Base):
+    """One backward-crawled deposit address that has been observed sending funds directly
+    into a vetted hot wallet (`hot_wallet_address`/`entity_name`), built offline by
+    `backend/scripts/build_deposit_index.py`. Unlike BridgeLink/FreezeCheck/etc (per-trace,
+    per-case computed data), this is genuinely new, queryable, persistent reference data --
+    a real schema addition, not a per-hop computed value (see the design doc's own note on
+    why this differs from bridge-linking, which specifically avoided one). Looked up via
+    app.index.deposit_index.lookup_indexed_deposit(), a pure DB query mirroring
+    app.bridge.registry.is_bridge_contract / app.mixers.registry.is_mixer_contract in style."""
+    __tablename__ = "deposit_index_entries"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    address: Mapped[str] = mapped_column(String, index=True)          # the depositor address
+    chain: Mapped[str] = mapped_column(String)
+    hot_wallet_address: Mapped[str] = mapped_column(String)            # the vetted hot wallet
+                                                                        # this address paid into
+    entity_name: Mapped[str] = mapped_column(String)                   # copied from the hot
+                                                                        # wallet's own vetted label
+    indexed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
 class AuditLogEntry(Base):
     __tablename__ = "audit_log_entries"
     id: Mapped[int] = mapped_column(primary_key=True)
