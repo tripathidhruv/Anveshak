@@ -8,7 +8,6 @@ import { Card } from '@/components/ui/card'
 import { IconTile } from '@/components/ui/icon-tile'
 import { Spinner } from '@/components/ui/spinner'
 import { ApiError, request } from '../api/client'
-import { truncateAddress } from '../utils/format'
 
 interface PortalWallet {
   id: number
@@ -161,8 +160,8 @@ export default function VaspPortal() {
                 <Card key={wallet.id} className="flex flex-col gap-4 p-6">
                   <div className="flex items-start justify-between gap-4">
                     <div className="min-w-0">
-                      <p className="font-[family-name:var(--font-mono)] text-sm font-semibold text-foreground">
-                        {truncateAddress(wallet.address)}
+                      <p className="break-all font-[family-name:var(--font-mono)] text-sm font-semibold text-foreground">
+                        {wallet.address}
                       </p>
                       <p className="mt-1 text-xs uppercase tracking-wide text-muted-foreground">{wallet.chain}</p>
                     </div>
