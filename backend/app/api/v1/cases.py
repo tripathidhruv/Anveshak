@@ -274,6 +274,20 @@ def get_case_by_ticket(guest_ticket_token: str, db: Session = Depends(get_db)) -
     return _to_out(case)
 
 
+@router.get("/ticket/{guest_ticket_token}/replies", response_model=list[CaseReplyOut])
+def list_case_replies_by_ticket(guest_ticket_token: str, db: Session = Depends(get_db)) -> list[CaseReplyOut]:
+    """No-auth reply lookup for a guest-filed case, mirroring `get_case_by_ticket` above: the
+    opaque, unguessable `guest_ticket_token` itself is the credential -- a guest never has an
+    account to log in with, so `list_case_replies`'s identity-based ownership check (below)
+    doesn't apply and isn't needed here. Reuses `_reply_to_out` rather than duplicating its
+    serialization."""
+    case = db.query(Case).filter(Case.guest_ticket_token == guest_ticket_token).one_or_none()
+    if case is None:
+        raise HTTPException(status_code=404, detail="No ticket found for this link")
+    replies = db.query(CaseReply).filter(CaseReply.case_id == case.id).order_by(CaseReply.created_at).all()
+    return [_reply_to_out(r) for r in replies]
+
+
 @router.get("/{case_id}", response_model=CaseOut)
 def get_case(case_id: str, db: Session = Depends(get_db)) -> CaseOut:
     case = db.get(Case, case_id)

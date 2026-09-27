@@ -145,3 +145,36 @@ def test_404_for_unknown_case_on_replies():
     response = client.get("/api/v1/cases/does-not-exist/replies",
                            headers={"Authorization": f"Bearer {_officer_token()}"})
     assert response.status_code == 404
+
+
+_GUEST_CASE_PAYLOAD = {
+    "ncrp": "N1", "complainant": "Self-filed", "location": "Delhi", "phone": "9999999999",
+    "incidentAt": "2026-01-01T00:00:00Z", "fraudType": "investment_scam",
+    "amountINR": 50000, "amountCrypto": 50.0, "asset": "USDT-TRC20", "chain": "tron",
+    "suspectWallet": "TScamWalletCCCCCCCCCCCCCCCCCCCCCCC",
+}
+
+
+def test_guest_reads_their_own_replies_via_ticket_token_no_auth():
+    _seed_officer_role()
+    created = client.post("/api/v1/cases", json=_GUEST_CASE_PAYLOAD)  # no auth -> guest
+    assert created.status_code == 201
+    body = created.json()
+    guest_ticket_token = body["guestTicketToken"]
+    assert guest_ticket_token
+
+    client.post(f"/api/v1/cases/{body['id']}/replies", json={"message": "We are on it."},
+                headers={"Authorization": f"Bearer {_officer_token()}"})
+
+    # No Authorization header at all -- the ticket token itself is the credential.
+    response = client.get(f"/api/v1/cases/ticket/{guest_ticket_token}/replies")
+    assert response.status_code == 200
+    replies = response.json()
+    assert len(replies) == 1
+    assert replies[0]["message"] == "We are on it."
+    assert replies[0]["caseId"] == body["id"]
+
+
+def test_ticket_replies_404s_for_unknown_token():
+    response = client.get("/api/v1/cases/ticket/not-a-real-token/replies")
+    assert response.status_code == 404
