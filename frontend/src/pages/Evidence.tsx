@@ -310,13 +310,17 @@ export default function Evidence() {
                               <Badge variant="gold" className="px-3 py-1">
                                 <ShieldAlert size={14} /> Could not re-verify
                               </Badge>
-                            ) : verifyResult.valid ? (
-                              <Badge variant="moss" className="px-3 py-1">
-                                <CheckCircle2 size={14} /> Verified — hash matches
-                              </Badge>
-                            ) : (
+                            ) : !verifyResult.packHashMatches ? (
                               <Badge variant="vermillion" className="px-3 py-1">
                                 <XCircle size={14} /> Tampered — hash mismatch
+                              </Badge>
+                            ) : !verifyResult.valid ? (
+                              <Badge variant="gold" className="px-3 py-1">
+                                <ShieldAlert size={14} /> Not fully verified
+                              </Badge>
+                            ) : (
+                              <Badge variant="moss" className="px-3 py-1">
+                                <CheckCircle2 size={14} /> Verified — hash matches
                               </Badge>
                             )}
                             <span className="text-xs text-muted-foreground">
@@ -327,6 +331,16 @@ export default function Evidence() {
                             <p className="text-xs text-vermillion">
                               The recomputed hash no longer matches the pack recorded for this case — treat this
                               evidence pack as compromised until re-investigated.
+                            </p>
+                          )}
+                          {verifyResult.packHashMatches && !verifyResult.dataUnavailable && !verifyResult.valid && (
+                            <p className="text-xs text-gold">
+                              The pack hash still matches — {verifyResult.sourcesChecked - verifyResult.sourcesReproduced}{' '}
+                              of {verifyResult.sourcesChecked} source{verifyResult.sourcesChecked === 1 ? '' : 's'} could
+                              not be freshly reproduced from the live chain just now. This does not necessarily mean
+                              tampering — the underlying chain data may have legitimately changed since this evidence
+                              pack was generated. Re-run verification or investigate the affected sources before
+                              relying on this pack as-is.
                             </p>
                           )}
                         </Well>

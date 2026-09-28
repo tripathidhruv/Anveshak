@@ -304,10 +304,48 @@ export async function getEvidencePack(caseId: string): Promise<EvidencePackOut> 
 /** Mock counterpart to `httpApi.ts`'s real `verifyEvidencePack`. The real endpoint re-fetches
  * every source live and recomputes the hash; the mock instead recomputes over the same
  * deterministic manifest `getEvidencePack` above used, which always matches -- there is no live
- * chain to actually re-fetch in mock mode, and a demo should show the success path by default. */
+ * chain to actually re-fetch in mock mode, and a demo should show the success path by default.
+ *
+ * The real endpoint's `valid` collapses two very different failure modes into one boolean
+ * (`packHashMatches` false = actual tampering, vs. `packHashMatches` true but
+ * `sourcesReproduced < sourcesChecked` = a live re-fetch just didn't reproduce, e.g. chain data
+ * legitimately moved on -- see `Evidence.tsx`'s verify-result badges). Both are otherwise
+ * unreachable in mock mode since there's no live chain here to actually fail against, so an
+ * optional `?verifyScenario=` query param (read directly off the URL rather than threaded through
+ * this function's signature, to avoid touching the one real/mock switch in `Evidence.tsx`) lets
+ * either be exercised visually: `tampered` for a real hash mismatch, `partial` for a
+ * hash-still-matches-but-not-fully-reproduced result. Anything else (the default, and the normal
+ * demo path) returns the fully-reproduced success case. */
 export async function verifyEvidencePack(caseId: string): Promise<EvidenceVerifyOut> {
   await delay(700)
   const manifestEntries = buildMockManifestEntries()
+  const scenario = new URLSearchParams(window.location.search).get('verifyScenario')
+
+  if (scenario === 'tampered') {
+    return {
+      caseId,
+      valid: false,
+      packHashMatches: false,
+      sourcesChecked: manifestEntries.length,
+      sourcesReproduced: manifestEntries.length,
+      dataUnavailable: false,
+      details: manifestEntries.map((entry) => ({ ...entry, reproduced: true })),
+    }
+  }
+
+  if (scenario === 'partial') {
+    const sourcesReproduced = Math.max(0, manifestEntries.length - 1)
+    return {
+      caseId,
+      valid: false,
+      packHashMatches: true,
+      sourcesChecked: manifestEntries.length,
+      sourcesReproduced,
+      dataUnavailable: false,
+      details: manifestEntries.map((entry, i) => ({ ...entry, reproduced: i < sourcesReproduced })),
+    }
+  }
+
   return {
     caseId,
     valid: true,
