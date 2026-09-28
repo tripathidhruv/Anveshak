@@ -111,6 +111,20 @@ const DEMO = {
       { n: 5, addr: '0x9e4b8f07a2c6d13e5b', role: 'Wallet 4', amt: 1776, at: '20:09:55', chain: 'Ethereum', flag: 'SWEPT', gapSec: 396 },
       { n: 6, addr: '0x2c8da154fe37b09c42', role: 'Exchange deposit', amt: 1776, at: '20:31:08', chain: 'Ethereum', flag: 'EXCHANGE' },
     ],
+    // Backfills the same real bridge-link data the graph/hop UI (FundFlowGraph/NodeDrawer,
+    // commit 2d2cf91) expects to pair with the BRIDGE IN/BRIDGE OUT hops above -- was previously
+    // missing entirely in mock mode, so clicking the bridge node showed no confidence/disclaimer.
+    bridgeLinks: [
+      {
+        sideATxHash: 'a1b2c3d4e5f60000000000000000000000000000000000000000000000ab',
+        sideAChain: 'TRON',
+        sideBTxHash: '0xa1b2c3d4e5f60000000000000000000000000000000000000000000000cd',
+        sideBChain: 'Ethereum',
+        confidence: 0.82,
+        disclaimer:
+          "This is a suggested cross-chain link based on timing and amount correlation, not proof of a bridge transaction -- a bridge does not publish a 1:1 deposit-to-withdrawal mapping, so an officer must independently verify this connection before acting on it.",
+      },
+    ],
   } satisfies Route,
 
   exchange: {
