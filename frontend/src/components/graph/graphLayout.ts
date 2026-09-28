@@ -1,4 +1,4 @@
-import type { GraphData, GraphEdge, GraphNode } from '../../types'
+import type { GraphData, GraphEdge, GraphNode, Hop, Route } from '../../types'
 
 export interface GraphLayout {
   positions: Map<string, { x: number; y: number }>
@@ -122,4 +122,25 @@ export function computeRoutePaths(graph: GraphData): RoutePath[] {
       edgeIds: new Set(path.edgeIds),
     }
   })
+}
+
+/**
+ * Matches a fund-flow-graph node back to the raw `Hop` it was built from, by address
+ * (case-insensitive). `GraphData`/`GraphNode` don't carry a hop's `stopReason` or a route's
+ * `bridgeLinks` -- only the source `Route`s do -- so this is how `FundFlowGraph`/`NodeDrawer`
+ * find the "entered a mixer" / "bridge crossing unconfirmed" state behind a node without
+ * `GraphNode` itself needing a new field (out of scope -- see `types/trace.ts`). Both routes are
+ * searched (not just the one the caller expects) since a node id alone doesn't say which route
+ * built it. Returns `null` when there's no `addr` (nothing to match on) or no route data was
+ * passed in (e.g. a caller that hasn't wired routes through yet).
+ */
+export function findHopForNode(node: GraphNode, routes: (Route | undefined)[]): Hop | null {
+  if (!node.addr) return null
+  const addr = node.addr.toLowerCase()
+  for (const route of routes) {
+    if (!route) continue
+    const hop = route.trail.find((h) => h.addr.toLowerCase() === addr)
+    if (hop) return hop
+  }
+  return null
 }

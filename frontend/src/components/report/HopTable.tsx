@@ -1,3 +1,4 @@
+import { cn } from '@/lib/utils'
 import type { Route } from '../../types'
 import styles from './HopTable.module.css'
 
@@ -32,21 +33,33 @@ export function HopTable({ routeLabel, route, assetShort }: HopTableProps) {
           </tr>
         </thead>
         <tbody>
-          {route.trail.map((hop) => (
-            <tr key={hop.n}>
-              <td>{hop.n}</td>
-              <td className="font-[family-name:var(--font-mono)]">{hop.addr}</td>
-              <td>{hop.role}</td>
-              <td>
-                {cryptoFormatter.format(hop.amt)} {assetShort}
-              </td>
-              <td className="font-[family-name:var(--font-mono)]">
-                {hop.at}
-                {hop.gapSec != null ? ` (+${hop.gapSec}s)` : ''}
-              </td>
-              <td>{hop.flag ?? '—'}</td>
-            </tr>
-          ))}
+          {route.trail.map((hop) => {
+            const isMixer = hop.stopReason === 'entered_mixer'
+            const isUnconfirmedBridge = hop.stopReason === 'bridge_crossing_unconfirmed'
+            return (
+              <tr key={hop.n} className={cn(isMixer && styles.rowMixer, isUnconfirmedBridge && styles.rowBridgeUnconfirmed)}>
+                <td>{hop.n}</td>
+                <td className="font-[family-name:var(--font-mono)]">{hop.addr}</td>
+                <td>{hop.role}</td>
+                <td>
+                  {cryptoFormatter.format(hop.amt)} {assetShort}
+                </td>
+                <td className="font-[family-name:var(--font-mono)]">
+                  {hop.at}
+                  {hop.gapSec != null ? ` (+${hop.gapSec}s)` : ''}
+                </td>
+                <td>
+                  {isMixer ? (
+                    <span className={styles.flagMixer}>{hop.flag ?? 'Entered a mixing service — trail ends here'}</span>
+                  ) : isUnconfirmedBridge ? (
+                    <span className={styles.flagBridgeUnconfirmed}>{hop.flag ?? 'Bridge crossing — unconfirmed'}</span>
+                  ) : (
+                    (hop.flag ?? '—')
+                  )}
+                </td>
+              </tr>
+            )
+          })}
         </tbody>
       </table>
     </section>

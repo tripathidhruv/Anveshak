@@ -42,3 +42,24 @@
 .table tbody tr:last-child td {
   border-bottom: none;
 }
+
+/* Distinct row tint for the two stop-reason states RouteCard/FundFlowGraph also give their own
+   treatment to -- keeps the printable report consistent with the on-screen graph/route views. */
+.rowMixer td {
+  background: color-mix(in srgb, var(--color-indigo) 8%, transparent);
+}
+
+.rowBridgeUnconfirmed td {
+  background: color-mix(in srgb, var(--color-violet) 6%, transparent);
+}
+
+.flagMixer {
+  font-weight: 700;
+  color: var(--color-indigo);
+}
+
+.flagBridgeUnconfirmed {
+  font-weight: 700;
+  font-style: italic;
+  color: var(--color-violet);
+}

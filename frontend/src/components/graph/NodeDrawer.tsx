@@ -2,7 +2,8 @@ import { Copy, X } from 'lucide-react'
 import { Badge } from '../ui/badge'
 import { Button } from '../ui/button'
 import { Card } from '../ui/card'
-import type { GraphNode } from '../../types'
+import type { GraphNode, Route } from '../../types'
+import { findHopForNode } from './graphLayout'
 
 const KIND_LABEL: Record<GraphNode['kind'], string> = {
   victim: 'Victim',
@@ -22,11 +23,16 @@ export interface NodeDrawerProps {
   /** Short asset symbol (e.g. "USDT") for the amount-at-this-hop field — these amounts are
    * denominated in crypto, never rupees, so they must never be run through `formatINR`. */
   assetShort: string
+  /** Same routes `FundFlowGraph` receives — needed here for the same reason (see that
+   * component's prop doc comment): to look up the selected node's `stopReason`/bridge-link
+   * data, which `GraphNode` itself doesn't carry. */
+  routeA?: Route
+  routeB?: Route
 }
 
 /** Right-hand detail drawer that opens when a graph node is clicked — address, amount,
  * first-seen timestamp, and a copy-address action per the source spec. */
-export function NodeDrawer({ node, onClose, onCopyAddress, assetShort }: NodeDrawerProps) {
+export function NodeDrawer({ node, onClose, onCopyAddress, assetShort, routeA, routeB }: NodeDrawerProps) {
   if (!node) {
     return (
       <Card className="flex min-h-[160px] w-[280px] flex-none items-center justify-center self-start p-6 text-center">
@@ -34,6 +40,15 @@ export function NodeDrawer({ node, onClose, onCopyAddress, assetShort }: NodeDra
       </Card>
     )
   }
+
+  const hop = findHopForNode(node, [routeA, routeB])
+  const isMixerStop = hop?.stopReason === 'entered_mixer'
+  const isUnconfirmedBridge = hop?.stopReason === 'bridge_crossing_unconfirmed'
+  // Every bridge link the backend actually confirmed for either route — shown whenever a
+  // bridge node is selected. Not narrowed to "the one link this node belongs to": a bridge
+  // link doesn't carry the intermediate wallet address to match against, only the two sides'
+  // tx hashes, so the honest thing is to surface every confirmed crossing this case has.
+  const bridgeLinks = [...(routeA?.bridgeLinks ?? []), ...(routeB?.bridgeLinks ?? [])]
 
   return (
     <Card className="flex w-[280px] flex-none flex-col gap-3.5 self-start p-5">
@@ -79,6 +94,39 @@ export function NodeDrawer({ node, onClose, onCopyAddress, assetShort }: NodeDra
           <dt className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Transaction count</dt>
           <dd className="text-[13px] italic text-muted-foreground">Not available in this demo dataset</dd>
         </div>
+
+        {isMixerStop && (
+          <div className="flex flex-col gap-1 rounded-lg border border-dashed border-indigo bg-indigo/8 px-3 py-2.5">
+            <dt className="text-[11px] font-semibold uppercase tracking-wide text-indigo">Entered a mixing service</dt>
+            <dd className="text-[13px] text-foreground">
+              {hop?.flag ?? 'This wallet sent the money into a cryptocurrency mixing service — we cannot trace beyond this point.'}
+            </dd>
+          </div>
+        )}
+
+        {isUnconfirmedBridge && (
+          <div className="flex flex-col gap-1 rounded-lg border border-dashed border-violet bg-violet/8 px-3 py-2.5">
+            <dt className="text-[11px] font-semibold uppercase tracking-wide text-violet">Bridge crossing — unconfirmed</dt>
+            <dd className="text-[13px] text-foreground">
+              {hop?.flag ?? 'The money appears to have crossed to another blockchain here, but the receiving side could not be confirmed.'}
+            </dd>
+          </div>
+        )}
+
+        {node.kind === 'bridge' &&
+          bridgeLinks.map((link, i) => {
+            const pct = link.confidence <= 1 ? link.confidence * 100 : link.confidence
+            return (
+              <div key={`${link.sideATxHash}-${i}`} className="flex flex-col gap-1 rounded-lg bg-violet/10 px-3 py-2.5">
+                <dt className="text-[11px] font-semibold uppercase tracking-wide text-violet">
+                  Cross-chain link confidence — {pct.toFixed(0)}%
+                </dt>
+                {/* Mandatory pairing (this project's synthetic-data-disclosure convention): a
+                    bridge-link confidence number never appears without its disclaimer. */}
+                <dd className="text-[12px] italic text-muted-foreground">{link.disclaimer}</dd>
+              </div>
+            )
+          })}
       </dl>
 
       {node.addr && (

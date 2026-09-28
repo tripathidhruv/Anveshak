@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from 'react'
-import { Landmark, Maximize2, Play, Shuffle, User, Wallet, Waypoints } from 'lucide-react'
+import { HelpCircle, Landmark, Maximize2, Play, Shuffle, ShieldAlert, User, Wallet, Waypoints } from 'lucide-react'
 import clsx from 'clsx'
 import { cn } from '@/lib/utils'
-import type { GraphData, GraphNode, GraphNodeKind } from '../../types'
+import type { GraphData, GraphNode, GraphNodeKind, Route } from '../../types'
 import { GraphLegend } from './GraphLegend'
-import { computeLayout, computeRoutePaths } from './graphLayout'
+import { computeLayout, computeRoutePaths, findHopForNode } from './graphLayout'
 import styles from './FundFlowGraph.module.css'
 
 type RouteFilter = 'both' | 'A' | 'B'
@@ -41,6 +41,14 @@ function clamp(value: number, min: number, max: number) {
 export interface FundFlowGraphProps {
   graph: GraphData
   onSelectNode: (node: GraphNode | null) => void
+  /** The two routes this graph was built from. `GraphData`/`GraphNode` don't carry a hop's
+   * `stopReason` (mock-mode has no backing stop-reason code at all -- see `types/trace.ts`'s
+   * doc comment on `Hop.stopReason`), so a real trace's "entered a mixer" / "bridge crossing
+   * unconfirmed" hops are looked up per-node by address via `findHopForNode` instead. Both
+   * optional so this component still renders with only baseline kind/accent styling if a
+   * caller hasn't wired routes through. */
+  routeA?: Route
+  routeB?: Route
 }
 
 /** The Evidence screen's fund-flow graph — hand-rolled SVG (edges) + positioned DOM (node
@@ -48,7 +56,7 @@ export interface FundFlowGraphProps {
  * a gentle floating idle animation) that a canvas-rendered graph can't give them. Layout,
  * route-path membership, and zoom/pan all live in this file/graphLayout.ts now that there's no
  * Cytoscape instance to own that state. */
-export function FundFlowGraph({ graph, onSelectNode }: FundFlowGraphProps) {
+export function FundFlowGraph({ graph, onSelectNode, routeA, routeB }: FundFlowGraphProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const [routeFilter, setRouteFilter] = useState<RouteFilter>('both')
   const [selectedId, setSelectedId] = useState<string | null>(null)
@@ -256,18 +264,43 @@ export function FundFlowGraph({ graph, onSelectNode }: FundFlowGraphProps) {
             {graph.nodes.map((node, i) => {
               const pos = layout.positions.get(node.id)
               if (!pos) return null
-              const Icon = KIND_ICON[node.kind]
+              const hop = findHopForNode(node, [routeA, routeB])
+              // A confirmed bridge crossing already renders via `kind === 'bridge'` (the
+              // established violet diamond, unchanged below). These two are the real,
+              // currently-generic states a live trace can also report on an otherwise-ordinary
+              // node: the trail dead-ending in a known mixer, or a cross-chain crossing the
+              // tracer could see but not confirm the far side of.
+              const isMixerStop = hop?.stopReason === 'entered_mixer'
+              const isUnconfirmedBridge = hop?.stopReason === 'bridge_crossing_unconfirmed'
+              const Icon = isMixerStop ? ShieldAlert : isUnconfirmedBridge ? HelpCircle : KIND_ICON[node.kind]
               const size = NODE_SIZE[node.kind]
               const dimmed = activePath ? !activePath.nodeIds.has(node.id) : false
+              // Indigo is a defined KAIZEN accent (CLAUDE.md's slide-deck palette; already a
+              // `--color-indigo` token used for the selection ring) that isn't one of the six
+              // "fixed" colour semantics -- reusing vermillion here would make a mixer stop look
+              // like just another generic criminal-path hop, which is exactly the bug being fixed.
+              const accentVar = isMixerStop ? 'var(--color-indigo)' : `var(--color-${node.accent})`
+              const shape = isUnconfirmedBridge
+                ? 'diamond'
+                : node.kind === 'bridge'
+                  ? 'diamond'
+                  : node.kind === 'exchange'
+                    ? 'hexagon'
+                    : 'circle'
               const nodeStyle: CSSProperties = {
                 left: pos.x,
                 top: pos.y,
                 width: size,
                 height: size,
-                ['--node-accent' as string]: `var(--color-${node.accent})`,
+                ['--node-accent' as string]: accentVar,
                 ['--float-delay' as string]: `${(i * 0.37) % 2.4}s`,
                 ['--float-duration' as string]: `${4.2 + (i % 4) * 0.6}s`,
               }
+              const stateSuffix = isMixerStop
+                ? ' — entered a mixing service, trail ends here'
+                : isUnconfirmedBridge
+                  ? ' — bridge crossing unconfirmed'
+                  : ''
               return (
                 <div
                   key={node.id}
@@ -278,21 +311,29 @@ export function FundFlowGraph({ graph, onSelectNode }: FundFlowGraphProps) {
                     type="button"
                     className={clsx(
                       styles.node,
-                      styles[`shape-${node.kind === 'bridge' ? 'diamond' : node.kind === 'exchange' ? 'hexagon' : 'circle'}`],
+                      styles[`shape-${shape}`],
                       node.kind === 'hub' && styles.nodeHub,
+                      isMixerStop && styles.nodeMixer,
+                      isUnconfirmedBridge && styles.nodeBridgeUnconfirmed,
                       selectedId === node.id && styles.nodeSelected,
                     )}
                     onClick={(e) => {
                       e.stopPropagation()
                       selectNode(node)
                     }}
-                    aria-label={`${node.label} — ${node.sublabel}`}
+                    aria-label={`${node.label} — ${node.sublabel}${stateSuffix}`}
                   >
                     <Icon size={size * 0.4} color="#fff" strokeWidth={2.25} />
                   </button>
                   <div className={styles.nodeLabel}>
                     <div className={styles.nodeLabelPrimary}>{node.label}</div>
-                    <div className={styles.nodeLabelSecondary}>{node.sublabel}</div>
+                    <div className={styles.nodeLabelSecondary}>
+                      {isMixerStop
+                        ? 'Entered a mixing service — trail ends'
+                        : isUnconfirmedBridge
+                          ? 'Bridge crossing — unconfirmed'
+                          : node.sublabel}
+                    </div>
                   </div>
                 </div>
               )

@@ -31,7 +31,26 @@ function isBridgeNode(hop: Hop): boolean {
   return hop.flag === 'BRIDGE IN' || hop.role === 'Bridge contract'
 }
 
+/** The trail dead-ends in a known mixer — a real, currently-invisible state distinct from a
+ * confirmed bridge crossing and from every other "criminal path" hop (audit finding: before this,
+ * `hopFlagColour()` bucketed a mixer stop into the same generic vermillion treatment as any
+ * other non-exchange hop). */
+function isMixerHop(hop: Hop): boolean {
+  return hop.stopReason === 'entered_mixer'
+}
+
+/** A cross-chain crossing the tracer saw but couldn't confirm the far side of — an honest
+ * "we don't know" state, distinct from both #1 (confirmed bridge) and #2 (mixer) above. */
+function isUnconfirmedBridgeHop(hop: Hop): boolean {
+  return hop.stopReason === 'bridge_crossing_unconfirmed'
+}
+
 function hopDotColour(hop: Hop, route: Route): string {
+  // Indigo is a defined KAIZEN accent (CLAUDE.md's slide-deck palette) not already claimed by
+  // one of the six fixed colour semantics -- using it here (rather than reusing vermillion)
+  // is exactly what makes a mixer stop visually distinct from a generic criminal-path hop.
+  if (isMixerHop(hop)) return 'var(--color-indigo)'
+  if (isUnconfirmedBridgeHop(hop)) return 'var(--color-violet)'
   if (isBridgeNode(hop)) return 'var(--color-violet)'
   if (hop.flag === 'EXCHANGE') return 'var(--color-gold)'
   const chain = hop.chain ?? route.chain ?? route.chainFrom
@@ -67,6 +86,37 @@ function MiniChain({ route }: { route: Route }) {
       {trail.map((hop, i) => {
         const cx = pad + i * step
         const colour = hopDotColour(hop, route)
+        if (isMixerHop(hop)) {
+          return (
+            <g key={hop.n}>
+              <circle cx={cx} cy={cy} r={6.5} fill={colour} />
+              <circle cx={cx} cy={cy} r={10} fill="none" stroke={colour} strokeWidth={1.5} strokeDasharray="2 2" />
+              <text x={cx} y={cy + 20} textAnchor="middle" fontSize={8} fontWeight={700} fill="var(--color-indigo)">
+                MIXER
+              </text>
+            </g>
+          )
+        }
+        if (isUnconfirmedBridgeHop(hop)) {
+          return (
+            <g key={hop.n}>
+              <rect
+                x={cx - 6}
+                y={cy - 6}
+                width={12}
+                height={12}
+                fill="none"
+                stroke={colour}
+                strokeWidth={2}
+                strokeDasharray="3 2"
+                transform={`rotate(45 ${cx} ${cy})`}
+              />
+              <text x={cx} y={cy + 20} textAnchor="middle" fontSize={8} fontWeight={700} fill="var(--color-violet)">
+                BRIDGE?
+              </text>
+            </g>
+          )
+        }
         if (isBridgeNode(hop)) {
           return (
             <g key={hop.n}>
@@ -169,6 +219,8 @@ export function RouteCard({
           {route.trail.map((hop, i) => {
             const isSwept = hop.flag === 'SWEPT'
             const isExchange = hop.flag === 'EXCHANGE'
+            const isMixer = isMixerHop(hop)
+            const isUnconfirmedBridge = isUnconfirmedBridgeHop(hop)
             return (
               <div className="flex gap-3" key={hop.n}>
                 <div className="flex w-7 shrink-0 flex-col items-center">
@@ -182,6 +234,8 @@ export function RouteCard({
                     'mb-2 flex-1 min-w-0 rounded-lg border-b border-border px-2.5 py-1.5',
                     isSwept && 'bg-vermillion/8',
                     isExchange && 'bg-gold/10',
+                    isMixer && 'border border-dashed border-indigo bg-indigo/8',
+                    isUnconfirmedBridge && 'border border-dashed border-violet bg-violet/6',
                   )}
                 >
                   <div className="flex flex-wrap items-center gap-2">
@@ -198,7 +252,19 @@ export function RouteCard({
                       <Copy size={12} />
                     </button>
                     <span className="text-[13px] text-muted-foreground">{hop.role}</span>
-                    {hop.flag && !isSwept && <Badge variant={COLOUR_SEMANTICS[hopFlagColour(hop.flag)]}>{hop.flag}</Badge>}
+                    {isMixer && (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-indigo px-2.5 py-1 text-xs font-semibold text-white">
+                        Entered a mixing service
+                      </span>
+                    )}
+                    {isUnconfirmedBridge && (
+                      <span className="inline-flex items-center gap-1 rounded-full border border-dashed border-violet px-2.5 py-1 text-xs font-semibold text-violet">
+                        Bridge crossing — unconfirmed
+                      </span>
+                    )}
+                    {hop.flag && !isSwept && !isMixer && !isUnconfirmedBridge && (
+                      <Badge variant={COLOUR_SEMANTICS[hopFlagColour(hop.flag)]}>{hop.flag}</Badge>
+                    )}
                   </div>
                   <div className="mt-1 flex items-center gap-3 text-xs text-muted-foreground">
                     <span className="font-[family-name:var(--font-mono)]">
@@ -209,6 +275,11 @@ export function RouteCard({
                       <span className="font-semibold text-vermillion">▲ {hop.gapSec}s later · ⚠ SWEPT</span>
                     )}
                   </div>
+                  {/* hop.flag is the plain-English translation of stopReason -- give it a
+                      prominent, distinctly-coloured home instead of a plain generic-looking row. */}
+                  {(isMixer || isUnconfirmedBridge) && hop.flag && (
+                    <div className={cn('mt-1.5 text-xs', isMixer ? 'text-indigo' : 'text-violet')}>{hop.flag}</div>
+                  )}
                 </div>
               </div>
             )

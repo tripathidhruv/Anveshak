@@ -164,6 +164,23 @@
     0 0 34px 4px color-mix(in srgb, var(--node-accent) 45%, transparent);
 }
 
+/* Trail dead-ends in a known mixer: a dashed ring on top of the (indigo) node colour reads as
+   "stopped here, deliberately" rather than just another criminal-path hop. */
+.nodeMixer {
+  outline: 3px dashed var(--node-accent);
+  outline-offset: 4px;
+}
+
+/* Cross-chain crossing seen but not confirmed on the far side -- muted/desaturated and dashed,
+   deliberately less certain-looking than both a generic hop and the solid confirmed-bridge
+   diamond (`shape-diamond` with no outline, still at full opacity). */
+.nodeBridgeUnconfirmed {
+  opacity: 0.7;
+  filter: saturate(0.55);
+  outline: 3px dashed var(--color-violet);
+  outline-offset: 4px;
+}
+
 .nodeLabel {
   margin-top: 10px;
   text-align: center;
