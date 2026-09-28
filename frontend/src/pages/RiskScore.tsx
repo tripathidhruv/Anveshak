@@ -8,9 +8,16 @@ import { Gauge } from '@/components/ui/gauge'
 import { PlainWords } from '@/components/ui/plain-words'
 import { Spinner } from '@/components/ui/spinner'
 import { Well } from '@/components/ui/well'
-import { getRiskScore, type RiskScoreOut } from '../api/httpApi'
+import { getRiskScore as getRiskScoreHttp, type RiskScoreOut } from '../api/httpApi'
+import { getRiskScore as getRiskScoreMock } from '../api/mock'
 import type { RiskBand } from '../types'
 import { ROUTES } from '../utils/constants'
+
+/** `getRiskScore` isn't part of the shared `KaizenApi` mock/real switch (`api/index.ts`), so
+ * this screen resolves the same one-env-var switch locally -- same pattern `Evidence.tsx`
+ * already uses for `getEvidencePack`/`verifyEvidencePack`, which sit outside that surface too. */
+const USE_MOCK = import.meta.env.VITE_USE_MOCK !== 'false'
+const fetchRiskScore: (caseId: string) => Promise<RiskScoreOut> = USE_MOCK ? getRiskScoreMock : getRiskScoreHttp
 
 /** Risk-band → Badge colour variant. A distinct axis from the entity-type COLOUR_SEMANTICS
  * map (utils/constants.ts), so it's kept local rather than routed through that map (which
@@ -74,12 +81,12 @@ function FactorBar({ label, value, max, barsIn, colorClass, textClass }: FactorB
 }
 
 /**
- * Screen 5 — the strongest technical differentiator per the source spec. Reads the real
- * `GET /api/v1/cases/{id}/score` response (`getRiskScore`, `api/httpApi.ts`) directly, bypassing
- * the mock/real `api` switch entirely -- this endpoint has no mock counterpart and no
- * `require_role` dependency (see that function's own doc comment), matching the
- * real-backend-only pattern `FlaggedWallets.tsx`/`VaspReplies.tsx` established for other screens
- * that only exist against the live backend today.
+ * Screen 5 — the strongest technical differentiator per the source spec. Reads
+ * `GET /api/v1/risk/{id}/score` (`getRiskScore`, `api/httpApi.ts`) in live mode, or the mock
+ * counterpart in `api/mock.ts` in demo mode -- see the `USE_MOCK` switch above. Real bug fixed
+ * here (2026-09-28): this screen previously always called the real backend regardless of
+ * `VITE_USE_MOCK`, so it 404'd/500'd for any case created through the mock-mode demo flow
+ * (whose case IDs never exist on the real backend).
  */
 export default function RiskScore() {
   const { id } = useParams<{ id: string }>()
@@ -94,7 +101,7 @@ export default function RiskScore() {
     setRisk(null)
     setError(null)
     setBarsIn(false)
-    getRiskScore(id)
+    fetchRiskScore(id)
       .then((data) => {
         if (cancelled) return
         setRisk(data)

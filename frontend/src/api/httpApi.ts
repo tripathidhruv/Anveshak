@@ -409,12 +409,13 @@ export interface RiskScoreOut {
   syntheticDataDisclosure: string
 }
 
-/** `GET /api/v1/cases/{id}/score` (`backend/app/api/v1/risk.py`'s `get_risk_score`) -- runs a
- * full live trace again server-side (`_build_trace_features`) to build the rule-based +
- * (data-quality-gated) ML risk score for this case's suspect wallet. Not cached client-side the
- * way `getRoutes`/`startTrace` is -- a separate, deliberate call, not wired into that cache. */
+/** `GET /api/v1/risk/{id}/score` (`backend/app/api/v1/risk.py`'s `get_risk_score`, mounted under
+ * that router's own `/api/v1/risk` prefix, not `/api/v1/cases`) -- runs a full live trace again
+ * server-side (`_build_trace_features`) to build the rule-based + (data-quality-gated) ML risk
+ * score for this case's suspect wallet. Not cached client-side the way `getRoutes`/`startTrace`
+ * is -- a separate, deliberate call, not wired into that cache. */
 export function getRiskScore(caseId: string): Promise<RiskScoreOut> {
-  return request<RiskScoreOut>(`/api/v1/cases/${caseId}/score`)
+  return request<RiskScoreOut>(`/api/v1/risk/${caseId}/score`)
 }
 
 /** Mirrors `backend/app/api/v1/operator_fingerprint.py`'s `SimilarOperatorResultOut` exactly. */

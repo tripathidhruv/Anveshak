@@ -284,6 +284,40 @@ function buildMockManifestEntries(): Record<string, unknown>[] {
   ]
 }
 
+/** Mock counterpart to `httpApi.ts`'s real `getRiskScore` -- this call isn't part of `KaizenApi`
+ * (no mock/real switch in `api/index.ts` covers it), so `RiskScore.tsx` picks between this and
+ * the real `httpApi.ts` function directly on `VITE_USE_MOCK`, same pattern as `getEvidencePack`
+ * below. Reuses `DEMO.risk`'s existing plain-English factor narrative, rescaled onto the real
+ * backend's 0-100 point scale (this file's old pre-real-backend shape used 0-1). */
+export async function getRiskScore(caseId: string): Promise<import('./httpApi').RiskScoreOut> {
+  await delay(400)
+  const ruleScore = Math.round(DEMO.risk.score * 78 * 100) / 100
+  const mlScore = Math.round(DEMO.risk.score * 100 * 100) / 100
+  const combinedScore = Math.round(((ruleScore + mlScore) / 2) * 100) / 100
+  const breakdown: Record<string, number> = {}
+  const shapBreakdown: Record<string, number> = {}
+  for (const factor of DEMO.risk.factors) {
+    breakdown[factor.tech] = Math.round(factor.w * 78 * 100) / 100
+    shapBreakdown[factor.tech] = Math.round(factor.w * 100) / 100
+  }
+  return {
+    caseId,
+    walletAddress: DEMO.case.suspectWallet,
+    chain: DEMO.case.chain,
+    ruleBasedScore: {
+      score: ruleScore,
+      breakdown,
+      reasoning: DEMO.risk.factors.map((f) => f.plain).join('; '),
+    },
+    dataQualitySufficientForMl: true,
+    dataQualityReasons: [],
+    mlScore: { score: mlScore, shapBreakdown },
+    combinedScore,
+    syntheticDataDisclosure:
+      'This machine-learning score was produced by a model trained on synthetic demo data, not real fraud cases -- treat it as illustrative, not a certified risk assessment.',
+  }
+}
+
 /** Mock counterpart to `httpApi.ts`'s real `getEvidencePack` -- these two calls aren't part of
  * `KaizenApi` (no mock/real switch in `api/index.ts` covers them, same as `getRiskScore`/
  * `getCampaignsList`/etc.), so `Evidence.tsx` picks between this pair and the real `httpApi.ts`
