@@ -22,13 +22,15 @@ const BAND_VARIANT: Record<RiskBand, 'vermillion' | 'gold' | 'moss'> = {
 }
 
 /** The real `GET /api/v1/cases/{id}/score` response (`RiskScoreOut`, `api/httpApi.ts`) has no
- * band field at all any more -- only `ruleBasedScore`/`mlScore`/`combinedScore` numbers. This is
- * a purely local display bucketing of `combinedScore` for the badge, matching the gauge's own
- * moss/gold/vermillion colour stops (`components/ui/gauge.tsx`), never a value the backend
- * asserts. */
+ * band field at all any more -- only `ruleBasedScore`/`mlScore`/`combinedScore` numbers, all on
+ * the backend's native **0-100** scale (`backend/app/risk/rules.py`, `model.py`, `api/v1/risk.py`
+ * all clamp/combine on 0..100, never 0..1). This is a purely local display bucketing of
+ * `combinedScore` for the badge, matching the gauge's own moss/gold/vermillion colour stops
+ * (`components/ui/gauge.tsx`), never a value the backend asserts. Thresholds are on the same
+ * 0-100 scale as the input -- do not compare against 0-1 fractions here. */
 function bandForScore(score: number): RiskBand {
-  if (score >= 0.66) return 'HIGH'
-  if (score >= 0.33) return 'MEDIUM'
+  if (score >= 66) return 'HIGH'
+  if (score >= 33) return 'MEDIUM'
   return 'LOW'
 }
 
@@ -155,7 +157,11 @@ export default function RiskScore() {
 
       <div className="grid grid-cols-1 items-stretch gap-6 xl:grid-cols-[0.85fr_1.15fr]">
         <Card className="flex flex-col items-center justify-center gap-5 p-6 text-center">
-          <Gauge value={risk.combinedScore} size={300} />
+          {/* `Gauge` takes a 0-1 fraction (`components/ui/gauge.tsx`); `combinedScore` is on the
+              backend's native 0-100 scale, so it's normalized here at the call site rather than
+              changing the shared `Gauge` component, which other callers (e.g.
+              `ExchangeAttribution.tsx`'s innocence gauge) correctly feed with an already-0-1 value. */}
+          <Gauge value={risk.combinedScore / 100} size={300} />
           <Badge variant={BAND_VARIANT[band]} className="px-4 py-1.5 text-sm">
             {band} RISK
           </Badge>
@@ -177,8 +183,8 @@ export default function RiskScore() {
                 value={weight}
                 max={maxRuleWeight}
                 barsIn={barsIn}
-                colorClass="bg-vermillion"
-                textClass="text-vermillion"
+                colorClass={weight >= 0 ? 'bg-vermillion' : 'bg-teal'}
+                textClass={weight >= 0 ? 'text-vermillion' : 'text-teal'}
               />
             ))}
           </div>
@@ -235,7 +241,7 @@ export default function RiskScore() {
       </Well>
 
       <PlainWords>
-        {risk.combinedScore.toFixed(2)} out of 1, combining the rule-based score with the ML score when there's
+        {risk.combinedScore.toFixed(2)} out of 100, combining the rule-based score with the ML score when there's
         enough data to run it. Every reason behind both is shown above — there is nothing hidden.
       </PlainWords>
 
