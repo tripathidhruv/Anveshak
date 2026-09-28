@@ -153,8 +153,24 @@ Backend test count through this pass: 279 → 318, every task independently revi
 
 Every task 1-9 (+5b) reviewed clean by an independent sonnet reviewer; 4 of 10 needed one real fix pass (Task 4's exception guard, Task 5's/5b's guest-replies gap treated as its own follow-up rather than a fix). Backend test count: 342 → 374 across this pass.
 
+## P6 — UI-surfacing pass (2026-09-27/28): make already-built backend features visible in the frontend
+User's own framing: "i want all the features to be visibly shown like the innocence score, risk generation, fingerprint, inverted, etc." Every item below is a real feature that existed only in the backend (or only inside `httpApi.ts`, unwired) before this pass. All done via implementer+reviewer sonnet pairs; every real bug caught in review was fixed and re-reviewed clean.
+- [x] Foundational fix: `httpApi.ts`'s `toRoute()` was dropping `innocence`/`bridgeLinks`/`sanctionsMatches`/`stopReason` on the floor; added the 6 missing client functions (risk/campaigns/operator-fingerprint/sanctions/audit/evidence) — `7e1ad7f`
+- [x] Exchange Attribution: real innocence-score section (factors, moss/vermillion per-factor color, reversed gauge direction) — `6f1fc6d`, reviewed clean
+- [x] Risk Score: rewired from mock-only `getRisk()` to real `getRiskScore(caseId)` — `e38cc9d`. **Review caught a critical bug**: page treated the backend's 0-100 score scale as 0-1 (gauge pegged at max, badge always HIGH RISK, "45.00 out of 1" text) — fixed in `7bfad21` (band thresholds corrected to 0-100, Gauge call normalized `/100`, negative rule-based factors now color teal not vermillion), re-reviewed clean
+- [x] New pages: Operator Fingerprinting, Sanctions Screening, Audit Log (with real hash-chain re-verification, not hardcoded) — `6646cbc`, reviewed clean
+- [x] Campaigns/Campaign.tsx: swapped mock-only data for real `getCampaignsList`/`getCampaignDetail` — `f4bd409`, reviewed clean
+- [x] Graph/hop UI: distinct visual treatments for confirmed bridge crossing (unchanged), unconfirmed bridge crossing (new, dashed/desaturated violet), and mixer-entry (new, dashed indigo + ShieldAlert icon) across FundFlowGraph/NodeDrawer/RouteCard/HopTable/GraphLegend; bridge-link confidence always paired with its mandatory disclaimer — `2d2cf91`, reviewed clean
+- [x] Evidence.tsx: wired real `getEvidencePack`/`verifyEvidencePack` — `d914933`. **Review caught a real bug**: the verify UI conflated real tampering (`packHashMatches=false`) with a live source merely failing to re-reproduce (`packHashMatches=true` but `sourcesReproduced<sourcesChecked`) under one alarming "Tampered" badge with no explanation in the second case — fixed in `d5d0f0b` (4th "Not fully verified" gold state added, mutually-exclusive-gate verified by hand across all 8 truth-table combinations), re-reviewed clean
+- [x] **New standalone feature, added mid-pass per explicit user request** ("there was one more feature inverted trace or inverse trace that should be visible too"): the inverted deposit index existed only as silent internal trace-pipeline plumbing (`traces.py` line ~363-391) with zero user-facing surface. Built end-to-end: `GET /api/v1/deposit-index/{chain}/{address}` (officer-gated via the pre-existing `require_role("officer")`, 200s `[]` on no match not 404) + `frontend/src/pages/InvertedIndex.tsx` (explicit "this is not a live trace" framing) — `9b5a042` (backend) + `cfc82d7` (frontend), reviewed clean, 6 new backend tests, 380/380 total
+- [x] Final sanity pass (2026-09-28): `pytest -q` from `backend/` (with the actual project `.venv`, not system Python) — 380 passed. `npm run build` from `frontend/` — zero TypeScript errors. Working tree clean, all commits pushed to `origin/main`.
+
+**Known gap surfaced by this pass, not yet fixed:** `backend/kaizen.db` (gitignored dev SQLite) predates the `innocence_score`/`innocence_factors` columns added earlier this session — no Alembic migration exists, the app only does `Base.metadata.create_all` which never adds columns to an existing table, so `GET /api/v1/cases` 500s on the current dev DB. Needs a `rm backend/kaizen.db` (safe — gitignored, disposable, rebuilds clean on next backend start) — deliberately left for the user to run since deleting a DB file crosses this session's own permission boundary.
+
+**Known doc-staleness flagged by review, not yet fixed:** CLAUDE.md still describes the frontend design system as "CSS Modules + tokens.css, no Tailwind," but the codebase actually moved to Tailwind v4 utility classes some time before this pass (confirmed via `git log`: commit `10fba89` "remove dead neumorphic CSS system after v2 redesign"). Every page built in this pass followed the real, current Tailwind convention rather than the stale doc, per instruction to match existing conventions — CLAUDE.md itself should be updated to match.
+
 ## Blocked
-- [!] (nothing currently)
+- [!] `backend/kaizen.db` schema drift (see P6 above) — needs user to run `rm backend/kaizen.db`, blocked by this session's own destructive-action guard
 
 ## Done
 - [x] Repo scaffolding + six handoff docs @DT+Claude
