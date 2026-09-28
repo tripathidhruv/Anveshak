@@ -1,8 +1,10 @@
-import { Bell, RotateCcw, Search } from 'lucide-react'
+import { Bell, LogOut, RotateCcw, Search } from 'lucide-react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { cn } from '@/lib/utils'
+import { clearAuthToken, clearGuestMode } from '@/lib/authToken'
 import { Button } from '../ui/button'
 import { Badge } from '../ui/badge'
+import { useAuthStore } from '../../store/authStore'
 import { useCaseStore } from '../../store/caseStore'
 import { useUIStore } from '../../store/uiStore'
 import { ROUTES } from '../../utils/constants'
@@ -16,6 +18,7 @@ export function TopBar() {
   const toggleJudgeMode = useUIStore((state) => state.toggleJudgeMode)
   const showToast = useUIStore((state) => state.showToast)
   const resetCaseStore = useCaseStore((state) => state.reset)
+  const clearIdentity = useAuthStore((state) => state.clear)
 
   const title = getPageTitle(location.pathname)
 
@@ -23,6 +26,13 @@ export function TopBar() {
     resetCaseStore()
     showToast('Demo reset')
     navigate(ROUTES.dashboard)
+  }
+
+  function handleLogout() {
+    clearAuthToken()
+    clearGuestMode()
+    clearIdentity()
+    navigate('/login', { replace: true })
   }
 
   return (
@@ -88,6 +98,16 @@ export function TopBar() {
         >
           IO
         </div>
+
+        <button
+          type="button"
+          aria-label="Log out"
+          title="Log out"
+          onClick={handleLogout}
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-border text-muted-foreground transition-colors hover:bg-muted hover:text-vermillion"
+        >
+          <LogOut size={16} />
+        </button>
       </div>
     </header>
   )
