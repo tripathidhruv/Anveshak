@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowLeft, FileText, Plus, UserRound } from 'lucide-react'
+import { ArrowLeft, FileText, LogOut, Plus, UserRound } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { IconTile } from '@/components/ui/icon-tile'
 import { Spinner } from '@/components/ui/spinner'
-import { getAuthToken } from '@/lib/authToken'
+import { clearAuthToken, clearGuestMode, getAuthToken } from '@/lib/authToken'
 import { CaseTicketDetail } from '../components/case/CaseTicketDetail'
 import { getCaseReplies as getCaseRepliesHttp, getMyCases as getMyCasesHttp, type CaseReplyOut } from '../api/httpApi'
 import { getCaseReplies as getCaseRepliesMock, getMyCases as getMyCasesMock } from '../api/mock'
@@ -51,6 +51,14 @@ export default function MyComplaints() {
   const navigate = useNavigate()
   const isGuest = useAuthStore((s) => s.isGuest)
   const email = useAuthStore((s) => s.email)
+  const clearIdentity = useAuthStore((s) => s.clear)
+
+  function handleLogout() {
+    clearAuthToken()
+    clearGuestMode()
+    clearIdentity()
+    navigate('/login', { replace: true })
+  }
 
   const [cases, setCases] = useState<Case[] | null>(null)
   const [listError, setListError] = useState<string | null>(null)
@@ -98,7 +106,16 @@ export default function MyComplaints() {
 
   if (isGuest) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center gap-3 bg-background p-6 text-center">
+      <div className="relative flex min-h-screen flex-col items-center justify-center gap-3 bg-background p-6 text-center">
+        <button
+          type="button"
+          aria-label="Log out"
+          title="Log out"
+          onClick={handleLogout}
+          className="absolute right-6 top-6 flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-border text-muted-foreground transition-colors hover:bg-muted hover:text-vermillion"
+        >
+          <LogOut size={16} />
+        </button>
         <IconTile color="primary" size="lg">
           <UserRound size={24} />
         </IconTile>
@@ -142,9 +159,20 @@ export default function MyComplaints() {
             {email ? `Signed in as ${email}` : 'Every complaint filed under your account.'}
           </p>
         </div>
-        <Button onClick={() => navigate(ROUTES.citizenComplaintNew)}>
-          <Plus size={16} /> File a new complaint
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button onClick={() => navigate(ROUTES.citizenComplaintNew)}>
+            <Plus size={16} /> File a new complaint
+          </Button>
+          <button
+            type="button"
+            aria-label="Log out"
+            title="Log out"
+            onClick={handleLogout}
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-border text-muted-foreground transition-colors hover:bg-muted hover:text-vermillion"
+          >
+            <LogOut size={16} />
+          </button>
+        </div>
       </header>
 
       {!cases && !listError && (
