@@ -565,6 +565,36 @@ export function verifyEvidencePack(caseId: string): Promise<EvidenceVerifyOut> {
   return request<EvidenceVerifyOut>(`/api/v1/evidence/${caseId}/verify`, { method: 'POST' })
 }
 
+// --- Inverted deposit index lookup (standalone endpoint; the index itself already existed as
+// a silent accelerant inside traces.py's live-trace hop loop -- this is that same read side,
+// `app.index.deposit_index.lookup_indexed_deposit`, exposed as its own officer-facing feature.) --
+
+/** Mirrors `backend/app/schemas.py`'s `DepositIndexEntryOut` exactly. */
+export interface DepositIndexEntryOut {
+  address: string
+  chain: string
+  hotWalletAddress: string
+  entityName: string
+  indexedAt: string
+}
+
+/** `GET /api/v1/deposit-index/{chain}/{address}` (`backend/app/api/v1/deposit_index.py`'s
+ * `get_deposit_index_matches`, officer-gated via `require_role("officer")`) -- an INSTANT
+ * reverse lookup against the offline, backward-crawled inverted deposit index, not a live
+ * trace: no chain-API call happens on this request at all, it is a pure DB read against rows
+ * `backend/scripts/build_deposit_index.py` already pre-computed. Returns `[]` (200, not 404)
+ * when the address has no known deposit relationship in the index -- a genuine "we don't know
+ * of one" answer, not an error. Bearer-token pattern matches `getFlaggedWallets` above (same
+ * officer-only convention, same reason this needs a token: `require_role` gates it). */
+export function getDepositIndexMatches(
+  chain: string, address: string, token: string,
+): Promise<DepositIndexEntryOut[]> {
+  return request<DepositIndexEntryOut[]>(
+    `/api/v1/deposit-index/${encodeURIComponent(chain)}/${encodeURIComponent(address)}`,
+    { headers: { Authorization: `Bearer ${token}` } },
+  )
+}
+
 // `getRoutes` is called independently from up to 4 screens per case (Route Choice, Evidence,
 // Case Closed, Reports — see task-G6-report.md) — each re-running the ENTIRE live backend trace
 // from scratch for identical inputs otherwise. Cache the in-flight/most-recent promise per

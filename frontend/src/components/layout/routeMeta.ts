@@ -43,6 +43,7 @@ const PAGE_TITLES: Array<{ pattern: string; title: string }> = [
   { pattern: ROUTES.operatorFingerprint, title: 'Operator fingerprinting' },
   { pattern: ROUTES.sanctionsScreening, title: 'Sanctions screening' },
   { pattern: ROUTES.auditLog, title: 'Audit log' },
+  { pattern: ROUTES.invertedIndex, title: 'Inverted deposit index' },
 ]
 
 export function isRailVisible(pathname: string): boolean {

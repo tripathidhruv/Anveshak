@@ -21,6 +21,7 @@ import type {
 // standalone exports rather than additions to `mockApi`. No runtime dependency on httpApi.ts
 // is introduced -- `import type` is erased at build time.
 import type { AuditLogEntryOut, AuditVerifyOut, SanctionsMatchOut, SimilarOperatorsOut } from './httpApi'
+import type { DepositIndexEntryOut } from './httpApi'
 // Campaign-list/-detail real shapes (Campaigns.tsx / Campaign.tsx) -- mirrored here rather than
 // re-declared, so this mock never silently drifts from what `httpApi.ts`'s real
 // `getCampaignsList`/`getCampaignDetail` actually return. Type-only import; does not touch
@@ -499,6 +500,34 @@ export async function verifyAuditChain(): Promise<AuditVerifyOut> {
     prevHash = entry.hash
   }
   return { valid: true, brokenAtEntryId: null, checkedEntries: entries.length }
+}
+
+/** `GET /api/v1/deposit-index/{chain}/{address}` mock. The one seeded hit reuses `DEMO`'s own
+ * consolidation-hub -> exchange-deposit pair (`DEMO.routeA.trail`'s hop 5 -> hop 6): in the real
+ * pipeline this is exactly the kind of (depositor, vetted hot wallet) relationship
+ * `scripts/build_deposit_index.py` would have backward-crawled and stored, so looking it up
+ * here tells the same DEMO story the rest of this file already does, just from a different
+ * angle (a direct reverse lookup instead of a live trace). Any other (chain, address) gets the
+ * honest empty result the real endpoint would give for an address it has never indexed.
+ * Chain-appropriate case handling mirrors the real `lookup_indexed_deposit`'s own docstring
+ * (ethereum lowercase, everything else -- TRON included -- case-sensitive exact). */
+const DEMO_DEPOSIT_INDEX_ENTRIES: DepositIndexEntryOut[] = [
+  {
+    address: 'TNh8yW5vC2mQ7fL4xK9pR',
+    chain: 'tron',
+    hotWalletAddress: DEMO.exchange.depositAddr,
+    entityName: DEMO.exchange.name,
+    indexedAt: '2026-09-20T06:30:00.000Z',
+  },
+]
+
+export async function getDepositIndexMatches(chain: string, address: string): Promise<DepositIndexEntryOut[]> {
+  await delay(500)
+  const normalize = (c: string, a: string) => (c === 'ethereum' ? a.toLowerCase() : a)
+  const queryAddress = normalize(chain, address)
+  return DEMO_DEPOSIT_INDEX_ENTRIES.filter(
+    (entry) => entry.chain === chain && normalize(entry.chain, entry.address) === queryAddress,
+  )
 }
 
 /**

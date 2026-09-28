@@ -23,6 +23,7 @@ import FlaggedWallets from './pages/FlaggedWallets'
 import OperatorFingerprint from './pages/OperatorFingerprint'
 import SanctionsScreening from './pages/SanctionsScreening'
 import AuditLog from './pages/AuditLog'
+import InvertedIndex from './pages/InvertedIndex'
 import NoticeDrafting from './pages/NoticeDrafting'
 import FileComplaint from './pages/FileComplaint'
 import MyComplaints from './pages/MyComplaints'
@@ -105,6 +106,7 @@ function App() {
             <Route path={ROUTES.operatorFingerprint} element={<OperatorFingerprint />} />
             <Route path={ROUTES.sanctionsScreening} element={<SanctionsScreening />} />
             <Route path={ROUTES.auditLog} element={<AuditLog />} />
+            <Route path={ROUTES.invertedIndex} element={<InvertedIndex />} />
             <Route path={ROUTES.noticeNew(':caseId')} element={<NoticeDrafting />} />
 
             <Route path="*" element={<Navigate to={ROUTES.dashboard} replace />} />

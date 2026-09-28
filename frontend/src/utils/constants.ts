@@ -52,6 +52,10 @@ export const ROUTES = {
   operatorFingerprint: '/operator-fingerprint',
   sanctionsScreening: '/sanctions',
   auditLog: '/audit-log',
+  // Officer-only standalone reverse lookup against the inverted deposit index (`GET
+  // /api/v1/deposit-index/{chain}/{address}`) -- previously only used silently inside the
+  // live-trace pipeline; same standalone-route reasoning as the three routes above.
+  invertedIndex: '/inverted-index',
 } as const
 
 export interface RailStep {

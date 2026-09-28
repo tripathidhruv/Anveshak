@@ -1,6 +1,7 @@
 import type { LucideIcon } from 'lucide-react'
 import {
   Ban,
+  Database,
   FolderOpen,
   Fingerprint,
   Landmark,
@@ -37,4 +38,5 @@ export const NAV_ITEMS: NavItem[] = [
   { key: 'operatorFingerprint', label: 'Operator Fingerprinting', to: ROUTES.operatorFingerprint, icon: Fingerprint },
   { key: 'sanctionsScreening', label: 'Sanctions Screening', to: ROUTES.sanctionsScreening, icon: Ban },
   { key: 'auditLog', label: 'Audit Log', to: ROUTES.auditLog, icon: ScrollText },
+  { key: 'invertedIndex', label: 'Inverted Index', to: ROUTES.invertedIndex, icon: Database },
 ]
