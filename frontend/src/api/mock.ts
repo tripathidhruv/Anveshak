@@ -74,6 +74,24 @@ const DEMO = {
       { n: 5, addr: 'TNh8yW5vC2mQ7fL4xK9pR', role: 'Collection wallet', amt: 412900, at: '19:51:02', flag: 'HUB · 38 victims' },
       { n: 6, addr: 'TBx1eM9nT7hG3sV5cW2kL', role: 'Exchange deposit', amt: 412900, at: '20:14:27', flag: 'EXCHANGE' },
     ],
+    // Mirrors what the real backend's compute_innocence() (app/detectors/innocence.py) would
+    // actually find for this exact demo scenario -- a wallet with no activity before the
+    // incident has exactly one factor fire (no_pre_incident_history, against innocence), so the
+    // real formula (score = 0.1 when no *supporting* factor exists) lands here too. This was
+    // previously missing entirely (mock mode never populated `innocence` on any route), so
+    // ExchangeAttribution's innocence section silently rendered nothing in the default demo mode.
+    innocence: {
+      innocenceScore: 0.1,
+      factors: [
+        {
+          check: 'no_pre_incident_history',
+          description:
+            "We found no activity for this wallet from before the date of the incident. That fits a wallet that was set up just for this scam.",
+          supportsInnocence: false,
+          weight: 0.2,
+        },
+      ],
+    },
   } satisfies Route,
 
   routeB: {
