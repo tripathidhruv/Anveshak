@@ -8,7 +8,8 @@ import { IconTile } from '@/components/ui/icon-tile'
 import { Spinner } from '@/components/ui/spinner'
 import { getAuthToken } from '@/lib/authToken'
 import { CaseTicketDetail } from '../components/case/CaseTicketDetail'
-import { getCaseReplies, getMyCases, type CaseReplyOut } from '../api/httpApi'
+import { getCaseReplies as getCaseRepliesHttp, getMyCases as getMyCasesHttp, type CaseReplyOut } from '../api/httpApi'
+import { getCaseReplies as getCaseRepliesMock, getMyCases as getMyCasesMock } from '../api/mock'
 import { useAuthStore } from '../store/authStore'
 import { ROUTES } from '../utils/constants'
 import { COLOUR_SEMANTICS, type SemanticColour } from '../utils/constants'
@@ -26,6 +27,18 @@ const STATUS_COLOUR: Record<TicketStatus, SemanticColour> = {
   in_progress: 'exchange',
   handled: 'safe',
 }
+
+/** `getMyCases`/`getCaseReplies` aren't part of the shared `KaizenApi` mock/real switch
+ * (`api/index.ts`), so this screen resolves the same one-env-var switch locally -- same pattern
+ * `Evidence.tsx`/`RiskScore.tsx` already use for their own standalone endpoint pairs. Real bug
+ * fixed here (2026-09-28): this screen previously always called the real backend regardless of
+ * `VITE_USE_MOCK`, so it failed with a connection-refused error for every citizen demo click
+ * (this is the Citizen role's default landing page on the instant role picker). */
+const USE_MOCK = import.meta.env.VITE_USE_MOCK !== 'false'
+const fetchMyCases: (token: string) => Promise<Case[]> = USE_MOCK ? getMyCasesMock : getMyCasesHttp
+const fetchCaseReplies: (caseId: string, token: string) => Promise<CaseReplyOut[]> = USE_MOCK
+  ? getCaseRepliesMock
+  : getCaseRepliesHttp
 
 /**
  * `/my-complaints` — a logged-in citizen's own filed cases (unified-role-based-portal design
@@ -53,7 +66,7 @@ export default function MyComplaints() {
       setListError('You need to be signed in to see your complaints.')
       return
     }
-    getMyCases(token)
+    fetchMyCases(token)
       .then((result) => {
         if (!cancelled) setCases(result)
       })
@@ -75,7 +88,7 @@ export default function MyComplaints() {
       setReplies([])
       return
     }
-    getCaseReplies(c.id, token)
+    fetchCaseReplies(c.id, token)
       .then(setReplies)
       .catch(() => {
         setRepliesError('Could not load updates for this case.')

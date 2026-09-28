@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { IconTile } from '@/components/ui/icon-tile'
 import { AuroraBackground } from '@/components/ui/aurora-background'
-import { setAuthToken, setGuestMode } from '@/lib/authToken'
+import { clearAuthToken, clearGuestMode, setAuthToken, setGuestMode } from '@/lib/authToken'
 import { useAuthStore, type Role } from '@/store/authStore'
 import { ROUTES } from '../utils/constants'
 
@@ -78,14 +78,22 @@ function Login() {
   const navigate = useNavigate()
 
   function selectRole(role: Role) {
+    // Whichever of role/guest was picked most recently must win on the next rehydration
+    // (RequireRole.tsx reads both localStorage flags on mount) -- clear the other one so
+    // picking a role after a stale guest session doesn't silently get downgraded back to
+    // guest on the next hard refresh or new tab.
+    clearGuestMode()
     setAuthToken(role)
     useAuthStore.getState().setIdentity(demoEmailFor(role), role)
     navigate(roleHome(role), { replace: true })
   }
 
   /** Task 10 brief / design doc's "Guest citizens" section: no OTP, no JWT, no `UserRole` row
-   * -- just a local flag and a straight navigation to the complaint-filing form. */
+   * -- just a local flag and a straight navigation to the complaint-filing form. Clears any
+   * stale role flag first, mirroring `selectRole` above, so the same most-recent-choice-wins
+   * rule holds in both directions. */
   function continueAsGuest() {
+    clearAuthToken()
     setGuestMode()
     useAuthStore.getState().setGuest()
     navigate(ROUTES.citizenComplaintNew, { replace: true })

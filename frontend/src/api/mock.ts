@@ -350,6 +350,57 @@ export async function getRiskScore(caseId: string): Promise<import('./httpApi').
   }
 }
 
+/** Mock counterpart to `httpApi.ts`'s real `getMyCases`/`getCaseReplies` -- same gap class as
+ * `getRiskScore` above (a real endpoint wired into a page with no mock branch at all, so it
+ * always hit the real backend regardless of `VITE_USE_MOCK`). This one is worse in practice:
+ * `MyComplaints.tsx` is the Citizen role's default landing page on the instant role picker
+ * (`Login.tsx`), so every citizen demo click hit this unconditionally. `token` is accepted and
+ * ignored (mock mode has no real JWT to check) to keep the same call signature both branches use. */
+export async function getMyCases(_token: string): Promise<Case[]> {
+  await delay(400)
+  return [
+    { ...DEMO.case, status: 'in_progress', filedByRole: 'citizen', guestTicketToken: null },
+    {
+      ...DEMO.case,
+      id: 'KZN-2026-0299',
+      ncrp: '31402260029981',
+      fraudType: 'Fake investment app',
+      amountINR: 82000,
+      amountCrypto: 980,
+      reportedAt: '18 Aug 2026, 09:20 IST',
+      status: 'handled',
+      filedByRole: 'citizen',
+      guestTicketToken: null,
+    },
+  ]
+}
+
+/** Mock counterpart to `httpApi.ts`'s real `getCaseReplies` -- see `getMyCases` above for why
+ * this pair needed one. Returns a short, deterministic reply thread for the primary demo case
+ * and an empty thread (an honest "no updates yet" state, not an error) for anything else. */
+export async function getCaseReplies(caseId: string, _token: string): Promise<import('./httpApi').CaseReplyOut[]> {
+  await delay(300)
+  if (caseId !== DEMO.case.id) return []
+  return [
+    {
+      id: 1,
+      caseId,
+      message:
+        "Your complaint has been traced to a wallet at a cryptocurrency exchange. We've sent a legal notice requesting the exchange freeze the funds.",
+      authoredBy: 'officer',
+      createdAt: '05 Sep 2026, 10:15 IST',
+    },
+    {
+      id: 2,
+      caseId,
+      message:
+        'This case has been marked as handled. The exchange has acknowledged the freeze request.',
+      authoredBy: 'ai',
+      createdAt: '08 Sep 2026, 16:40 IST',
+    },
+  ]
+}
+
 /** Mock counterpart to `httpApi.ts`'s real `getEvidencePack` -- these two calls aren't part of
  * `KaizenApi` (no mock/real switch in `api/index.ts` covers them, same as `getRiskScore`/
  * `getCampaignsList`/etc.), so `Evidence.tsx` picks between this pair and the real `httpApi.ts`
