@@ -1,27 +1,14 @@
 import { request } from './client'
 import { createKeyedPromiseCache } from './traceCache'
-import type { Role } from '../store/authStore'
 import type { Case, CaseInput, KaizenApi, RecentCase, RecoverabilityState, Route, TicketStatus, TraceResult } from '../types'
 
-export interface MeResponse {
-  email: string
-  role: Role
-}
-
-/** `GET /api/v1/me` (Task 2, `backend/app/api/v1/me.py`) -- resolves the verified JWT's email
- * to its KAIZEN role. Called directly from `pages/Login.tsx` right after `verifyOtp` stores
- * the token, and again by `RequireRole` to rehydrate `useAuthStore` after a hard refresh
- * (the zustand store is in-memory only and doesn't survive a reload, unlike the token itself).
- * Not routed through the mock/real `api` switch in `api/index.ts` -- that switch is for the
- * case/trace data layer (`KaizenApi`), which stays mockable independent of identity, and this
- * only exists against the real backend either way (no mock identity concept). Matches the
- * bearer-attachment pattern `VaspReplies.tsx` already established for the one other endpoint
- * that needs `Authorization: Bearer <token>` today. */
-export function getMe(token: string): Promise<MeResponse> {
-  return request<MeResponse>('/api/v1/me', {
-    headers: { Authorization: `Bearer ${token}` },
-  })
-}
+// `GET /api/v1/me` and its `MeResponse` shape used to live here (Task 2,
+// `backend/app/api/v1/me.py`) -- resolving a verified JWT's email to its KAIZEN role for
+// `pages/Login.tsx`'s OTP flow and `RequireRole`'s hard-refresh rehydration. Both call sites were
+// retired when the real email+OTP login against E:/API's Lighthouse Auth API was replaced with an
+// instant, no-backend role picker (this deployment target never has that auth microservice
+// reachable at all) -- `getMe`/`MeResponse` had no other callers, so they were removed here too
+// rather than left dead. `Role` itself still comes from `../store/authStore` wherever needed.
 
 /** Mirrors `backend/app/schemas.py`'s `CaseReplyOut` exactly. `authoredBy` is `'officer'` for a
  * reply an officer typed through `POST /{case_id}/replies`, or `'ai'` for the auto-generated
@@ -36,7 +23,7 @@ export interface CaseReplyOut {
 }
 
 /** `GET /api/v1/cases/mine` (Task 5) — a logged-in citizen's own cases, matched server-side by
- * their verified JWT email. Bearer-token pattern mirrors `getMe` above / `VaspReplies.tsx`.
+ * their verified JWT email. Bearer-token pattern mirrors `VaspReplies.tsx`'s.
  * Returns the shared `Case` type (its `status`/`filedByRole`/`guestTicketToken` fields, added
  * for the officer Tickets page, are exactly the `CaseOut` shape this endpoint returns too). */
 export function getMyCases(token: string): Promise<Case[]> {
@@ -336,7 +323,7 @@ export interface BackendFlaggedWallet {
  * the system-wide flagged-wallet list behind Task 11's `FlaggedWallets.tsx` and behind
  * `VaspReplies.tsx`'s reply-detail dialog (correlating a reply's wallet with its risk score
  * and related case IDs, which `GET /replies` itself doesn't return). Takes the token as an
- * explicit param, matching `getMe`'s shape above, rather than reading `getAuthToken()` itself
+ * explicit param, matching `getMyCases`'s shape above, rather than reading `getAuthToken()` itself
  * -- every caller already holds the token from that same helper. */
 export function getFlaggedWallets(token: string): Promise<BackendFlaggedWallet[]> {
   return request<BackendFlaggedWallet[]>('/api/v1/vasp-feed/flagged-wallets/all', {

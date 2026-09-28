@@ -28,6 +28,9 @@ export function TopBar() {
     navigate(ROUTES.dashboard)
   }
 
+  /** `clearAuthToken()` now clears the demo role string the /login role-picker persisted
+   * (see `lib/authToken.ts`), not a real JWT -- same function, same localStorage key, just no
+   * longer backed by a real auth microservice. No other change needed here for that switch. */
   function handleLogout() {
     clearAuthToken()
     clearGuestMode()

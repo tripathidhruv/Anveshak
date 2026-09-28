@@ -1,11 +1,23 @@
 import { useEffect, useState } from 'react'
 import { Navigate, Outlet, useLocation } from 'react-router-dom'
-import { getMe } from '@/api/httpApi'
 import { clearAuthToken, getAuthToken, isGuestMode } from '@/lib/authToken'
 import { useAuthStore, type Role } from '@/store/authStore'
 
 interface RequireRoleProps {
   roles: Role[]
+}
+
+const VALID_ROLES: readonly Role[] = ['officer', 'exchange', 'citizen']
+
+function isRole(value: string): value is Role {
+  return (VALID_ROLES as readonly string[]).includes(value)
+}
+
+/** The matching placeholder demo email for a role picked on the /login role-picker (see
+ * pages/Login.tsx) -- reconstructed here rather than also persisted separately, since it's a
+ * deterministic function of the role alone in this demo-only, no-real-auth deployment. */
+function demoEmailFor(role: Role): string {
+  return `${role}@kaizen.demo`
 }
 
 /**
@@ -17,11 +29,13 @@ interface RequireRoleProps {
  * 1. Same-session: `pages/Login.tsx` already called `setIdentity`/`setGuest` right before
  *    navigating here, so `role`/`isGuest` are already set -- no extra work needed.
  * 2. Hard refresh: the zustand store is in-memory only and resets on reload, even though the
- *    officer/exchange/citizen JWT (or the guest flag) is still sitting in localStorage. So on
- *    mount, if the store is empty, this rehydrates it: a stored bearer token means calling the
- *    real `GET /api/v1/me` to resolve `{email, role}` (an expired/invalid token clears itself
- *    and falls through to /login); no token but a persisted guest flag means `setGuest()`;
- *    neither means genuinely logged out.
+ *    chosen role (or the guest flag) is still sitting in localStorage. So on mount, if the store
+ *    is empty, this rehydrates it directly from localStorage -- no network call, no real backend
+ *    involved at all any more (this deployment retired the real OTP/JWT login against E:/API's
+ *    Lighthouse Auth API entirely; see pages/Login.tsx). A stored role string means `setIdentity`
+ *    with that role and its matching placeholder demo email; a corrupted/unrecognised stored
+ *    value is discarded; no stored role but a persisted guest flag means `setGuest()`; neither
+ *    means genuinely logged out.
  *
  * `isGuest` passes any guard whose `roles` list includes `'citizen'` -- guests get citizen-
  * tier UI (Task 10 brief), without `Role` itself needing a `'guest'` member.
@@ -35,25 +49,27 @@ function RequireRole({ roles }: RequireRoleProps) {
 
   const alreadyIdentified = role !== null || isGuest
   const [rehydrating, setRehydrating] = useState(!alreadyIdentified)
-  const [rehydrationFailed, setRehydrationFailed] = useState(false)
 
   useEffect(() => {
     if (alreadyIdentified) return
 
-    const token = getAuthToken()
-    if (token) {
-      getMe(token)
-        .then((me) => setIdentity(me.email, me.role))
-        .catch(() => {
-          clearAuthToken()
-          setRehydrationFailed(true)
-        })
-        .finally(() => setRehydrating(false))
+    // Guest flag checked first, deliberately: `pages/Login.tsx`'s role-picker cards clear the
+    // guest flag when a role is picked (see `selectRole`), but "Continue as guest" is untouched
+    // by this task and doesn't clear a previously-picked role's stored value the other way --
+    // so if both are somehow present (e.g. someone bounced back to /login without logging out
+    // first), the most recently made choice is the guest flag, and it should win.
+    if (isGuestMode()) {
+      setGuest()
+      setRehydrating(false)
       return
     }
 
-    if (isGuestMode()) {
-      setGuest()
+    const storedRole = getAuthToken()
+    if (storedRole && isRole(storedRole)) {
+      setIdentity(demoEmailFor(storedRole), storedRole)
+    } else if (storedRole) {
+      // Corrupted/unrecognised value -- never trust it silently.
+      clearAuthToken()
     }
     setRehydrating(false)
     // Deliberately run once on mount only -- `alreadyIdentified` flips to true as a result of
@@ -62,12 +78,12 @@ function RequireRole({ roles }: RequireRoleProps) {
   }, [])
 
   if (rehydrating) {
-    // Brief flash while GET /api/v1/me resolves after a hard refresh -- not worth a spinner
-    // component for what's normally a single fast localhost round trip.
+    // Brief flash while the synchronous localStorage read above resolves -- not worth a spinner
+    // component for what's a same-tick read, no network round trip involved.
     return null
   }
 
-  if (rehydrationFailed || (role === null && !isGuest)) {
+  if (role === null && !isGuest) {
     return <Navigate to="/login" replace state={{ from: location }} />
   }
 
