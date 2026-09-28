@@ -28,27 +28,7 @@ import NoticeDrafting from './pages/NoticeDrafting'
 import FileComplaint from './pages/FileComplaint'
 import MyComplaints from './pages/MyComplaints'
 import MyTicket from './pages/MyTicket'
-
-/** Placeholder landing screens for the two role branches whose real pages Tasks 11/12 build
- * (unified-role-based-portal design doc's "Frontend shape" section). Deliberately NOT wrapped
- * in `PageShell` -- that shell's Sidebar/TopBar are officer chrome ("Cyber Cell Console" nav,
- * case-workflow rail, "Reset demo"), which would misrepresent what an exchange contact or a
- * citizen/guest actually has access to. Inline here rather than as their own files/routes
- * this task doesn't own, so Task 11/12 can replace each with a real page at the same path
- * without touching this file's routing structure again. */
-function ExchangePortalPlaceholder() {
-  return (
-    <div className="flex min-h-screen flex-col items-center justify-center gap-2 bg-background p-6 text-center">
-      <h1 className="font-[family-name:var(--font-display)] text-xl font-semibold text-foreground">
-        Exchange portal
-      </h1>
-      <p className="max-w-sm text-sm text-muted-foreground">
-        DEMO DATA · your flagged wallets and replies will appear here. This screen is coming
-        soon.
-      </p>
-    </div>
-  )
-}
+import ExchangePortal from './pages/ExchangePortal'
 
 /**
  * Route tree per the Global Constraints route list (`docs/plans/react-migration-plan.md`),
@@ -113,10 +93,12 @@ function App() {
           </Route>
         </Route>
 
-        {/* Exchange branch -- login-based equivalent of the VASP portal (Task 11 builds the
-            real screen; placeholder for now). */}
+        {/* Exchange branch -- login-based equivalent of the VASP portal. Deliberately NOT
+            wrapped in PageShell (that shell's Sidebar/TopBar are officer chrome -- case-workflow
+            rail, "Reset demo" -- which would misrepresent what an exchange contact actually has
+            access to); ExchangePortal renders its own minimal header + logout instead. */}
         <Route element={<RequireRole roles={['exchange']} />}>
-          <Route path={ROUTES.exchangeHome} element={<ExchangePortalPlaceholder />} />
+          <Route path={ROUTES.exchangeHome} element={<ExchangePortal />} />
         </Route>
 
         {/* Citizen branch -- complaint filing + status views (Task 12). A guest passes this

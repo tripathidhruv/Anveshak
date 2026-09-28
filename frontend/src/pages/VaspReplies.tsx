@@ -6,8 +6,18 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { IconTile } from '@/components/ui/icon-tile'
 import { Spinner } from '@/components/ui/spinner'
 import { getAuthToken } from '@/lib/authToken'
-import { getFlaggedWallets, type BackendFlaggedWallet } from '../api/httpApi'
+import { getFlaggedWallets as getFlaggedWalletsHttp, type BackendFlaggedWallet } from '../api/httpApi'
+import { getFlaggedWallets as getFlaggedWalletsMock, getVaspReplies as getVaspRepliesMock } from '../api/mock'
 import { request } from '../api/client'
+
+/** Same one-env-var mock/real switch `FlaggedWallets.tsx`/`RiskScore.tsx`/`Evidence.tsx` use for
+ * their own standalone endpoint pairs -- this screen makes two real calls with no mock branch at
+ * all previously (the raw `/replies` fetch below, and the `getFlaggedWallets` enrichment call),
+ * so it always failed against the real backend regardless of `VITE_USE_MOCK`. */
+const USE_MOCK = import.meta.env.VITE_USE_MOCK !== 'false'
+const fetchFlaggedWallets: (token: string) => Promise<BackendFlaggedWallet[]> = USE_MOCK
+  ? getFlaggedWalletsMock
+  : getFlaggedWalletsHttp
 
 interface VaspWalletReply {
   id: number
@@ -66,10 +76,12 @@ export default function VaspReplies() {
     let cancelled = false
     const token = getAuthToken()
     Promise.allSettled([
-      request<VaspWalletReply[]>('/api/v1/vasp-feed/replies', {
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-      }),
-      token ? getFlaggedWallets(token) : Promise.reject(new Error('no token')),
+      USE_MOCK
+        ? getVaspRepliesMock()
+        : request<VaspWalletReply[]>('/api/v1/vasp-feed/replies', {
+            headers: token ? { Authorization: `Bearer ${token}` } : {},
+          }),
+      token ? fetchFlaggedWallets(token) : Promise.reject(new Error('no token')),
     ]).then(([repliesResult, walletsResult]) => {
       if (cancelled) return
       if (repliesResult.status === 'fulfilled') {

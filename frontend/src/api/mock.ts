@@ -350,6 +350,86 @@ export async function getRiskScore(caseId: string): Promise<import('./httpApi').
   }
 }
 
+/** Mock counterpart to `httpApi.ts`'s real `getFlaggedWallets` -- same gap class as `getRiskScore`
+ * above (a real endpoint wired into a page with no mock branch at all). Powers both
+ * `FlaggedWallets.tsx` (officer) and the Exchange role's landing page, plus `VaspReplies.tsx`'s
+ * wallet-enrichment call -- reuses this file's existing demo wallet addresses (exchange deposit,
+ * collection hub) so the numbers agree with what the graph/report screens already show. */
+export async function getFlaggedWallets(_token: string): Promise<import('./httpApi').BackendFlaggedWallet[]> {
+  await delay(350)
+  return [
+    {
+      address: DEMO.routeA.trail[5].addr,
+      chain: 'TRON',
+      riskScore: 0.87,
+      caseIds: ['KZN-2026-0417', 'KZN-2026-0416', 'KZN-2026-0415'],
+      flaggedAt: '2026-09-04T20:20:00+05:30',
+      broadcastStatus: { delivered: 3, acknowledged: 1 },
+    },
+    {
+      address: DEMO.routeA.trail[4].addr,
+      chain: 'TRON',
+      riskScore: 0.71,
+      caseIds: ['KZN-2026-0417'],
+      flaggedAt: '2026-09-04T19:55:00+05:30',
+      broadcastStatus: { delivered: 3, acknowledged: 0 },
+    },
+    {
+      address: '0x2c8da154fe37b09c42',
+      chain: 'Ethereum',
+      riskScore: 0.64,
+      caseIds: ['KZN-2026-0414'],
+      flaggedAt: '2026-09-01T14:10:00+05:30',
+      broadcastStatus: { delivered: 2, acknowledged: 2 },
+    },
+  ]
+}
+
+interface MockVaspReply {
+  id: number
+  subscriberId: number
+  subscriberName: string
+  subscriberEmail: string | null
+  flaggedWalletId: number
+  flaggedWalletAddress: string
+  flaggedWalletChain: string
+  message: string
+  repliedAt: string
+}
+
+/** Mock counterpart to the raw `GET /api/v1/vasp-feed/replies` call `VaspReplies.tsx` makes
+ * directly (not through a named `httpApi.ts` export, since that page never had one) -- same gap
+ * class as `getFlaggedWallets` above. Wallet address+chain match entries `getFlaggedWallets`
+ * returns, so the enrichment lookup (risk score, related cases) actually resolves in mock mode
+ * instead of silently omitting those fields. */
+export async function getVaspReplies(): Promise<MockVaspReply[]> {
+  await delay(350)
+  return [
+    {
+      id: 1,
+      subscriberId: 1,
+      subscriberName: 'Demo Exchange',
+      subscriberEmail: 'cntcitachi@gmail.com',
+      flaggedWalletId: 1,
+      flaggedWalletAddress: DEMO.routeA.trail[5].addr,
+      flaggedWalletChain: 'TRON',
+      message: "We've located this wallet's deposit history and frozen the associated account pending investigation.",
+      repliedAt: '2026-09-05T09:12:00+05:30',
+    },
+    {
+      id: 2,
+      subscriberId: 1,
+      subscriberName: 'Demo Exchange',
+      subscriberEmail: 'cntcitachi@gmail.com',
+      flaggedWalletId: 2,
+      flaggedWalletAddress: DEMO.routeA.trail[4].addr,
+      flaggedWalletChain: 'TRON',
+      message: 'No account on our platform is currently linked to this address. Will continue monitoring.',
+      repliedAt: '2026-09-06T11:40:00+05:30',
+    },
+  ]
+}
+
 /** Mock counterpart to `httpApi.ts`'s real `getMyCases`/`getCaseReplies` -- same gap class as
  * `getRiskScore` above (a real endpoint wired into a page with no mock branch at all, so it
  * always hit the real backend regardless of `VITE_USE_MOCK`). This one is worse in practice:
@@ -359,7 +439,16 @@ export async function getRiskScore(caseId: string): Promise<import('./httpApi').
 export async function getMyCases(_token: string): Promise<Case[]> {
   await delay(400)
   return [
-    { ...DEMO.case, status: 'in_progress', filedByRole: 'citizen', guestTicketToken: null },
+    {
+      ...DEMO.case,
+      // `new Date(...)` parses this field wherever it's displayed (MyComplaints.tsx) -- the
+      // display-only, non-ISO `DEMO.case.reportedAt` string ("04 Sep 2026, 11:05 IST") isn't
+      // parseable, so it's overridden here with a real ISO timestamp.
+      reportedAt: '2026-09-04T11:05:00+05:30',
+      status: 'in_progress',
+      filedByRole: 'citizen',
+      guestTicketToken: null,
+    },
     {
       ...DEMO.case,
       id: 'KZN-2026-0299',
@@ -367,7 +456,7 @@ export async function getMyCases(_token: string): Promise<Case[]> {
       fraudType: 'Fake investment app',
       amountINR: 82000,
       amountCrypto: 980,
-      reportedAt: '18 Aug 2026, 09:20 IST',
+      reportedAt: '2026-08-18T09:20:00+05:30',
       status: 'handled',
       filedByRole: 'citizen',
       guestTicketToken: null,

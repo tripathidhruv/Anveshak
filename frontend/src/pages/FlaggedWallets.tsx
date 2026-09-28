@@ -7,8 +7,19 @@ import { IconTile } from '@/components/ui/icon-tile'
 import { Input } from '@/components/ui/input'
 import { Spinner } from '@/components/ui/spinner'
 import { getAuthToken } from '@/lib/authToken'
-import { getFlaggedWallets, type BackendFlaggedWallet } from '../api/httpApi'
+import { getFlaggedWallets as getFlaggedWalletsHttp, type BackendFlaggedWallet } from '../api/httpApi'
+import { getFlaggedWallets as getFlaggedWalletsMock } from '../api/mock'
 import { ROUTES } from '../utils/constants'
+
+/** `getFlaggedWallets` isn't part of the shared `KaizenApi` mock/real switch (`api/index.ts`),
+ * so this screen resolves the same one-env-var switch locally -- same pattern `Evidence.tsx`/
+ * `RiskScore.tsx`/`MyComplaints.tsx` already use for their own standalone endpoint pairs. Real
+ * bug fixed here (2026-09-28): this screen previously always called the real backend regardless
+ * of `VITE_USE_MOCK`, so it showed a "session may have expired" error for every demo click. */
+const USE_MOCK = import.meta.env.VITE_USE_MOCK !== 'false'
+const fetchFlaggedWallets: (token: string) => Promise<BackendFlaggedWallet[]> = USE_MOCK
+  ? getFlaggedWalletsMock
+  : getFlaggedWalletsHttp
 
 /** Officer-only screen (Task 11, unified-role-based-portal design) -- `GET
  * /flagged-wallets/all` (Task 6, `require_role("officer")`) is the system-wide, full-detail
@@ -31,7 +42,7 @@ export default function FlaggedWallets() {
       setError('Your session may have expired — try signing in again.')
       return
     }
-    getFlaggedWallets(token)
+    fetchFlaggedWallets(token)
       .then((result) => {
         if (cancelled) return
         setWallets(result)
