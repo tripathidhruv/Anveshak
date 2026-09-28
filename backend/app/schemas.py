@@ -201,3 +201,16 @@ class AuditVerifyOut(BaseModel):
     valid: bool
     brokenAtEntryId: int | None
     checkedEntries: int
+
+# --- Inverted deposit index, standalone lookup endpoint (docs/superpowers/specs/2026-09-27-
+# inverted-deposit-index-design.md, Task A). Mirrors DepositIndexEntry's own columns (see
+# app/models.py) -- one row per real (depositor address, vetted hot wallet) relationship
+# found by the offline backward-crawl in scripts/build_deposit_index.py. A lookup can
+# legitimately return several of these for one address (see lookup_indexed_deposit's own
+# docstring on why that's never collapsed to a single match).
+class DepositIndexEntryOut(BaseModel):
+    address: str
+    chain: str
+    hotWalletAddress: str
+    entityName: str
+    indexedAt: datetime
