@@ -252,3 +252,48 @@ class AuditLogEntry(Base):
     prev_hash: Mapped[str] = mapped_column(String)
     hash: Mapped[str] = mapped_column(String)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+# --- SAHYOG national memory (docs/sih26182/BACKEND.md §2, app/memory/) ---
+# Append-only: rows are only ever added, never edited or deleted, so the memory is a provenance
+# log of who reported what and when. No citizen PII lives here -- no complainant names, phones or
+# emails -- only case ids, the reporting police unit, city/state, amounts and timestamps.
+
+class MemorySyndicate(Base):
+    """A cluster of wallets/cases believed to be run by one group (e.g. "SYN-07"). The figures are
+    the cluster's running totals as last computed; `confidence` is how sure the clustering is."""
+    __tablename__ = "memory_syndicates"
+    id: Mapped[str] = mapped_column(String, primary_key=True)
+    name: Mapped[str] = mapped_column(String)
+    hub: Mapped[str] = mapped_column(String)
+    case_count: Mapped[int] = mapped_column()
+    state_count: Mapped[int] = mapped_column()
+    value_inr: Mapped[float] = mapped_column(Float)
+    confidence: Mapped[float] = mapped_column(Float)
+
+
+class MemoryWallet(Base):
+    """One wallet the nation has seen at least once. `first_seen` is the earliest event time."""
+    __tablename__ = "memory_wallets"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    address: Mapped[str] = mapped_column(String, unique=True, index=True)
+    chain: Mapped[str] = mapped_column(String)
+    first_seen: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    syndicate_id: Mapped[str | None] = mapped_column(ForeignKey("memory_syndicates.id"), nullable=True)
+
+
+class MemoryEvent(Base):
+    """One provenance entry for a wallet: a submission, a link found by tracing, a resolution or a
+    freeze. `relation` says how the case relates to this wallet ("same_wallet" | "one_hop" |
+    "shared_hub")."""
+    __tablename__ = "memory_events"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    address: Mapped[str] = mapped_column(String, index=True)
+    case_id: Mapped[str | None] = mapped_column(String, nullable=True, index=True)
+    relation: Mapped[str] = mapped_column(String, default="same_wallet")
+    unit: Mapped[str] = mapped_column(String)
+    city: Mapped[str | None] = mapped_column(String, nullable=True)
+    state: Mapped[str | None] = mapped_column(String, nullable=True)
+    amount_inr: Mapped[float | None] = mapped_column(Float, nullable=True)
+    event: Mapped[str] = mapped_column(String)  # "submitted" | "linked" | "resolved" | "frozen"
+    detail: Mapped[str] = mapped_column(Text, default="")
+    at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)

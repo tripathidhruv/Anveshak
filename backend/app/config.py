@@ -31,5 +31,8 @@ class Settings(BaseSettings):
     max_trace_hops: int = 6
     http_timeout_seconds: float = 10.0
     http_min_interval_seconds: float = 0.34  # ~3 req/s per host, safe for free tiers
+    # Seeds the SAHYOG national memory with the synthetic demo story at startup (idempotent).
+    # tests/conftest.py turns it off so a test run never writes demo rows into the real kaizen.db.
+    seed_demo_memory: bool = True
 
 settings = Settings()
