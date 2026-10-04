@@ -6,6 +6,10 @@ import { short } from '@/lib/format'
 import { CountingNumber } from '@/components/animate-ui/primitives/texts/counting-number'
 import { type Tone, toneA, toneHex } from './tone'
 
+/** 78351 → "78,351"; 1240000 → "12,40,000" (Indian grouping), fixed decimals. */
+const groupIN = (v: number, decimals: number) =>
+  v.toLocaleString('en-IN', { minimumFractionDigits: decimals, maximumFractionDigits: decimals })
+
 /* ───────── Card ───────── */
 type CardProps = React.HTMLAttributes<HTMLDivElement> & {
   variant?: 'solid' | 'glass' | 'speckle'
@@ -173,10 +177,11 @@ export function Stat({
   decimals?: number
   className?: string
 }) {
+  const format = React.useCallback((v: number) => groupIN(v, decimals), [decimals])
   return (
     <span className={cn('k-num inline-flex items-baseline', className)}>
       {prefix && <span>{prefix}</span>}
-      <CountingNumber number={value} decimalPlaces={decimals} inView inViewOnce transition={{ stiffness: 70, damping: 30 }} />
+      <CountingNumber number={value} format={format} inView inViewOnce transition={{ stiffness: 70, damping: 30 }} />
       {suffix && <span className="ml-0.5">{suffix}</span>}
     </span>
   )

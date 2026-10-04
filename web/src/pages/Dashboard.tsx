@@ -42,10 +42,11 @@ const ACT_ICON: Record<string, React.ReactNode> = {
   clock: <Clock3 />,
 }
 
-const CHAINS: { chain: string; sym: string; usdt: number; delta: number; spark: number[]; tone: Tone; good: boolean }[] = [
-  { chain: 'TRON', sym: 'USDT · TRC-20', usdt: 78351, delta: 17, spark: [12, 18, 14, 22, 19, 27, 24, 31, 28, 36, 33, 41], tone: 'moss', good: true },
-  { chain: 'Ethereum', sym: 'USDT · ERC-20', usdt: 32391, delta: -12, spark: [30, 28, 31, 26, 27, 22, 24, 21, 23, 19, 20, 17], tone: 'crimson', good: false },
-  { chain: 'Bitcoin', sym: 'BTC', usdt: 8739, delta: 25, spark: [5, 6, 5, 8, 7, 9, 8, 11, 10, 12, 14, 15], tone: 'moss', good: true },
+/** Stolen value traced per chain, last 30 days, in ₹ crore — the same figures as the Sankey's first column. Synthetic. */
+const CHAINS: { chain: string; sym: string; cr: number; transfers: number; delta: number; spark: number[]; tone: Tone; good: boolean }[] = [
+  { chain: 'TRON', sym: 'USDT · TRC-20', cr: 11.4, transfers: 1284, delta: 17, spark: [12, 18, 14, 22, 19, 27, 24, 31, 28, 36, 33, 41], tone: 'moss', good: true },
+  { chain: 'Ethereum', sym: 'USDT · ETH', cr: 5.1, transfers: 412, delta: -12, spark: [30, 28, 31, 26, 27, 22, 24, 21, 23, 19, 20, 17], tone: 'crimson', good: false },
+  { chain: 'Bitcoin', sym: 'BTC', cr: 1.9, transfers: 97, delta: 25, spark: [5, 6, 5, 8, 7, 9, 8, 11, 10, 12, 14, 15], tone: 'moss', good: true },
 ]
 
 /** sweep events: 7 days × 12 two-hour blocks (synthetic) */
@@ -72,7 +73,7 @@ export default function Dashboard() {
       <Reveal>
         <div className="flex flex-wrap items-end justify-between gap-4 pt-2">
           <div>
-            <div className="text-[14.5px] text-muted">Total value traced to an exchange</div>
+            <div className="text-[14.5px] text-muted">Total stolen value traced</div>
             <div className="mt-1 flex items-center gap-2.5">
               <Stat value={KPIS.valueTracedINR / 1e7} prefix="₹" suffix=" Cr" decimals={2} className="text-[40px] leading-none text-text md:text-[46px]" />
               <span className="k-pill text-moss">
@@ -101,7 +102,7 @@ export default function Dashboard() {
                   <Plus /> New trace
                 </Button>
               </Link>
-              <Link to="/intake">
+              <Link to="/cases/new">
                 <Button>
                   <ScanText /> Parse complaint
                 </Button>
@@ -132,33 +133,34 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
         {CHAINS.map((c, i) => (
           <Reveal key={c.chain} delay={0.05 + i * 0.05}>
-            <Card variant="speckle" grain className="h-[118px] p-4">
+            <Card variant="speckle" grain className="min-h-[118px] p-4">
               <div className="relative flex items-start justify-between">
-                <div className="flex items-center gap-2">
+                <div className="flex min-w-0 items-center gap-2">
                   <span className="grid size-7 place-items-center rounded-full border border-line-2 bg-white/[0.06] text-[11.5px] font-semibold">
                     {c.chain === 'TRON' ? 'T' : c.chain === 'Ethereum' ? 'Ξ' : '₿'}
                   </span>
-                  <div>
+                  <div className="min-w-0">
                     <div className="text-[14px] text-text">{c.chain}</div>
-                    <div className="text-[11.5px] text-dim">{c.sym}</div>
+                    <div className="truncate text-[11.5px] text-dim">{c.sym}</div>
                   </div>
                 </div>
+                <span className="shrink-0 text-[11.5px] text-dim">{c.transfers.toLocaleString('en-IN')} transfers</span>
               </div>
-              <div className="relative mt-4 flex items-end justify-between">
-                <div>
-                  <Stat value={c.usdt} className="text-[22px] text-text" />
-                  <div className="mt-0.5 flex items-center gap-1.5">
+              <div className="relative mt-3 flex items-end justify-between gap-3">
+                <div className="min-w-0">
+                  <Stat value={c.cr} prefix="₹" suffix=" Cr" decimals={1} className="text-[22px] text-text" />
+                  <div className="mt-0.5 flex items-center gap-1.5 whitespace-nowrap">
                     <Delta value={c.delta} />
-                    <span className="text-[11.5px] text-dim">traced this month</span>
+                    <span className="text-[11.5px] text-dim">traced · vs previous 30 days</span>
                   </div>
                 </div>
-                <Sparkline data={c.spark} tone={c.tone} width={92} height={38} />
+                <Sparkline data={c.spark} tone={c.tone} width={84} height={34} className="mb-1 shrink-0" />
               </div>
             </Card>
           </Reveal>
         ))}
         <Reveal delay={0.2}>
-          <div className="k-dashed flex h-[118px] flex-col justify-between p-4">
+          <div className="k-dashed flex h-full min-h-[118px] flex-col justify-between p-4">
             <span className="grid size-7 place-items-center rounded-full border border-line-2 text-muted">
               <Plus className="size-3.5" />
             </span>
@@ -232,7 +234,7 @@ export default function Dashboard() {
       </div>
 
       {/* ── Activity · Sankey · Heat ── */}
-      <div className="grid grid-cols-1 gap-3 lg:grid-cols-2 xl:grid-cols-[1fr_1.35fr_1fr]">
+      <div className="grid grid-cols-1 gap-3 lg:grid-cols-2 xl:grid-cols-[1fr_1.55fr_0.9fr]">
         <Reveal delay={0.1}>
           <Card className="h-full">
             <CardHeader title="Recent activity" tech="live event stream" right={<Link to="/audit" className="k-btn-ghost inline-flex h-7 items-center rounded-lg px-2.5 text-[12.5px]">See all</Link>} />
@@ -241,7 +243,7 @@ export default function Dashboard() {
                 <li key={a.title} className="flex items-center gap-3 rounded-lg px-2 py-2.5 hover:bg-white/[0.025]">
                   <IconTile>{ACT_ICON[a.icon]}</IconTile>
                   <div className="min-w-0 flex-1">
-                    <div className="truncate text-[14px] text-text">{a.title}</div>
+                    <div className="line-clamp-2 text-[14px] leading-snug text-text" title={a.title}>{a.title}</div>
                     <div className="truncate text-[12px] text-dim">{a.sub}</div>
                   </div>
                   <div className={cn('k-num shrink-0 text-[14px]', a.tone === 'moss' ? 'text-moss' : 'text-text')}>{a.value}</div>
@@ -254,11 +256,16 @@ export default function Dashboard() {
           <Card className="h-full pb-5">
             <CardHeader title="Where the stolen money went" tech="fund-flow Sankey · last 30 days" />
             <div className="px-5 pt-1">
-              <Stat value={18.42} prefix="₹" suffix=" Cr" decimals={2} className="text-[26px] text-text" />
+              <Stat value={KPIS.valueTracedINR / 1e7} prefix="₹" suffix=" Cr" decimals={2} className="text-[26px] text-text" />
+              <div className="mt-0.5 grid grid-cols-3 text-[11.5px] text-dim">
+                <span>chain it moved on</span>
+                <span className="text-center">where it landed</span>
+                <span className="text-right">what happened</span>
+              </div>
               <Sankey
-                className="mt-4"
-                height={200}
-                nodeWidth={78}
+                className="mt-2"
+                height={236}
+                format={(v) => `₹${v.toFixed(1)} Cr`}
                 columns={[
                   [
                     { id: 'tron', label: 'TRON', value: 11.4, sub: '₹11.4 Cr' },
@@ -272,7 +279,7 @@ export default function Dashboard() {
                   ],
                   [
                     { id: 'frozen', label: 'Frozen', value: 6.2, sub: '₹6.2 Cr', tone: 'moss' },
-                    { id: 'notice', label: 'Notice out', value: 8.4, sub: '₹8.4 Cr' },
+                    { id: 'notice', label: 'Notice sent', value: 8.4, sub: '₹8.4 Cr' },
                     { id: 'lost', label: 'Unrecovered', value: 3.8, sub: '₹3.8 Cr' },
                   ],
                 ]}

@@ -17,6 +17,8 @@ type CountingNumberProps = Omit<React.ComponentProps<'span'>, 'children'> & {
   transition?: SpringOptions;
   delay?: number;
   initiallyStable?: boolean;
+  /** KAIZEN addition: format each frame (e.g. Indian digit grouping). Overrides decimalSeparator/padStart. */
+  format?: (value: number) => string;
 } & UseIsInViewOptions;
 
 function CountingNumber({
@@ -32,6 +34,7 @@ function CountingNumber({
   decimalPlaces = 0,
   delay = 0,
   initiallyStable = false,
+  format,
   ...props
 }: CountingNumberProps) {
   const { ref: localRef, isInView } = useIsInView(
@@ -64,7 +67,9 @@ function CountingNumber({
 
   React.useEffect(() => {
     const unsubscribe = springVal.on('change', (latest) => {
-      if (localRef.current) {
+      if (localRef.current && format) {
+        localRef.current.textContent = format(latest);
+      } else if (localRef.current) {
         let formatted =
           decimals > 0
             ? latest.toFixed(decimals)
@@ -87,7 +92,7 @@ function CountingNumber({
       }
     });
     return () => unsubscribe();
-  }, [springVal, decimals, padStart, number, decimalSeparator, localRef]);
+  }, [springVal, decimals, padStart, number, decimalSeparator, localRef, format]);
 
   const finalIntLength = Math.floor(Math.abs(number)).toString().length;
 
@@ -107,7 +112,7 @@ function CountingNumber({
       (decimals > 0 ? decimalSeparator + '0'.repeat(decimals) : '')
     : '0' + (decimals > 0 ? decimalSeparator + '0'.repeat(decimals) : '');
 
-  const initialText = initiallyStable ? formatValue(number) : zeroText;
+  const initialText = format ? format(initiallyStable ? number : fromNumber) : initiallyStable ? formatValue(number) : zeroText;
 
   return (
     <span ref={localRef} data-slot="counting-number" {...props}>

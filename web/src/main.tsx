@@ -7,7 +7,8 @@ import './index.css'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <ReactLenis root options={{ lerp: 0.12 }} />
+    {/* allowNestedScroll: wheel/touch over any inner scroll area (tables, lists, code) scrolls that area, not the page */}
+    <ReactLenis root options={{ lerp: 0.12, allowNestedScroll: true }} />
     <App />
   </StrictMode>,
 )
