@@ -1,4 +1,4 @@
-# KAIZEN frontend — React 19 + TypeScript + Vite.
+# ANVESHAK frontend — React 19 + TypeScript + Vite.
 #
 # Runs Vite's own dev server rather than a build+static-serve stage. Rationale: this repo's
 # CLAUDE.md says frontend/ is "the real app, build here now" — it is still under active

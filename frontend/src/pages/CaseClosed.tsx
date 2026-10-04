@@ -93,7 +93,7 @@ export default function CaseClosed() {
         </div>
 
         <div className="flex w-full flex-col items-start gap-3 text-left">
-          <span className="text-sm font-medium text-muted-foreground">Manual investigation vs. KAIZEN</span>
+          <span className="text-sm font-medium text-muted-foreground">Manual investigation vs. ANVESHAK</span>
           <div className="grid w-full grid-cols-[60px_1fr_84px] items-center gap-3">
             <span className="text-sm font-semibold text-foreground">Manual</span>
             <div className="h-3.5 overflow-hidden rounded-full bg-muted">
@@ -102,7 +102,7 @@ export default function CaseClosed() {
             <span className="text-right text-sm font-bold text-foreground">4–6 weeks</span>
           </div>
           <div className="grid w-full grid-cols-[60px_1fr_84px] items-center gap-3">
-            <span className="text-sm font-semibold text-foreground">KAIZEN</span>
+            <span className="text-sm font-semibold text-foreground">ANVESHAK</span>
             <div className="h-3.5 overflow-hidden rounded-full bg-muted">
               <div className="h-full w-[2%] min-w-[14px] rounded-full bg-moss" />
             </div>

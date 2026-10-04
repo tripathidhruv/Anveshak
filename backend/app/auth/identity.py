@@ -1,5 +1,5 @@
 """Authorization layer on top of app.auth.jwt's pure identity verification. E:/API (Lighthouse
-Auth API) proves WHO is logged in; this module decides WHAT they're allowed to see in KAIZEN,
+Auth API) proves WHO is logged in; this module decides WHAT they're allowed to see in ANVESHAK,
 via the UserRole table this project owns. See docs/superpowers/specs/2026-09-27-unified-role-
 based-portal-design.md for why role lives here and not in the shared auth service."""
 from __future__ import annotations
@@ -24,7 +24,7 @@ class Identity:
 
 
 def resolve_role(db: Session, email: str) -> str:
-    """Look up (or auto-create, defaulting to citizen) the KAIZEN role for a verified email.
+    """Look up (or auto-create, defaulting to citizen) the ANVESHAK role for a verified email.
     Case-insensitive and idempotent -- the same email always resolves to the same row."""
     normalized = email.strip().lower()
     row = db.query(UserRole).filter(UserRole.email == normalized).one_or_none()
@@ -40,7 +40,7 @@ def get_current_identity(
     claims: OfficerClaims = Depends(get_current_officer),
     db: Session = Depends(get_db),
 ) -> Identity:
-    """Any authenticated KAIZEN-tenant user, regardless of role."""
+    """Any authenticated ANVESHAK-tenant user, regardless of role."""
     if not claims.email:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token has no email claim")
     return Identity(email=claims.email.strip().lower(), role=resolve_role(db, claims.email))

@@ -40,10 +40,10 @@ _MISSING = {
     "suspectWallet": "No wallet address found. Ask the complainant for the address they sent money to "
                      "(a screenshot of the transfer works).",
     "network": "Unknown until a wallet address is found — the address format tells the network.",
-    "amountCrypto": "No crypto amount found. Ask the complainant, or KAIZEN reads it from the transaction "
+    "amountCrypto": "No crypto amount found. Ask the complainant, or ANVESHAK reads it from the transaction "
                     "during the trace.",
     "amountInr": "No rupee amount found. Ask the complainant how much they lost in total.",
-    "txHash": "Not in the complaint. Ask the complainant, or KAIZEN reads it from the transaction during the trace.",
+    "txHash": "Not in the complaint. Ask the complainant, or ANVESHAK reads it from the transaction during the trace.",
     "incidentAt": "No date found. Ask the complainant when the last payment was made.",
     "platform": "No platform or handle found. Ask where the scammer first made contact.",
     "upi": "No UPI ID found. Ask whether any money was paid by UPI.",
@@ -51,7 +51,7 @@ _MISSING = {
     "complainant": "Name not found. Fill in the complainant's name.",
     "location": "No known city found. Fill in where the complainant lives.",
     "typology": "",
-    "victimWallet": "Not in the complaint. Ask the complainant, or KAIZEN reads it from the transaction "
+    "victimWallet": "Not in the complaint. Ask the complainant, or ANVESHAK reads it from the transaction "
                     "during the trace.",
 }
 

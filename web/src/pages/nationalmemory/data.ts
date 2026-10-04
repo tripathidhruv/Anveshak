@@ -62,7 +62,7 @@ const SAFFRON_PROV: ProvEvent[] = [
   { date: '16 Mar 2026', unit: 'Cyber PS Kochi', state: 'Kerala', what: 'Resolved to Meridian Digital Exchange (deposit TBx1eM…W2kL)', tone: 'gold' },
   { date: '22 Mar 2026', unit: 'Meridian Digital Exchange', state: 'Seychelles', what: 'Account frozen after notice — operators opened a new deposit account later', tone: 'moss' },
   { date: '09 Jun 2026', unit: 'Cyber Crime PS Lucknow', state: 'Uttar Pradesh', what: `Submitted Ethereum deposit ${s(DEP_E)} — memory linked it via a bridge`, tone: 'violet' },
-  { date: '11 Aug 2026', unit: 'KAIZEN entity resolution', state: 'National', what: '9 complaints clustered → syndicate SYN-07 “Saffron Desk”', tone: 'crimson' },
+  { date: '11 Aug 2026', unit: 'ANVESHAK entity resolution', state: 'National', what: '9 complaints clustered → syndicate SYN-07 “Saffron Desk”', tone: 'crimson' },
   { date: '31 Aug 2026', unit: 'Cyber PS Hyderabad', state: 'Telangana', what: 'Freeze confirmed at Kestrel Exchange on a linked mule account', tone: 'moss' },
 ]
 
@@ -151,8 +151,8 @@ export const LOOKUPS: Lookup[] = [
     prov: [
       { date: '09 Jun 2026', unit: 'Cyber Crime PS Lucknow', state: 'Uttar Pradesh', what: `Submitted ${s(DEP_E)} as cash-out point`, tone: 'sky' },
       { date: '10 Jun 2026', unit: 'Cyber Crime PS Lucknow', state: 'Uttar Pradesh', what: 'Resolved to Meridian Digital Exchange (deposit pattern, 340 txs)', tone: 'gold' },
-      { date: '12 Jun 2026', unit: 'KAIZEN memory', state: 'National', what: 'Linked to Kerala’s collection hub through a TRON → Ethereum bridge', tone: 'violet' },
-      { date: '03 Sep 2026', unit: 'Cyber PS Lucknow', state: 'Uttar Pradesh', what: 'Notice sent to Meridian for KZN-2026-0415', tone: 'gold' },
+      { date: '12 Jun 2026', unit: 'ANVESHAK memory', state: 'National', what: 'Linked to Kerala’s collection hub through a TRON → Ethereum bridge', tone: 'violet' },
+      { date: '03 Sep 2026', unit: 'Cyber PS Lucknow', state: 'Uttar Pradesh', what: 'Notice sent to Meridian for ANV-2026-0415', tone: 'gold' },
       { date: '04 Sep 2026', unit: 'Cyber PS Jaipur', state: 'Rajasthan', what: 'Route B of Rekha’s trace ended here — reused Lucknow’s resolution', tone: 'ember', you: true },
     ],
     nodes: [
@@ -183,7 +183,7 @@ export const LOOKUPS: Lookup[] = [
     prov: [
       { date: '02 Jul 2026', unit: 'Cyber PS Pune', state: 'Maharashtra', what: `Submitted ${s(LOTUS)} (romance scam)`, tone: 'sky' },
       { date: '05 Jul 2026', unit: 'CEN PS Bengaluru', state: 'Karnataka', what: 'Resolved to Orbita Exchange', tone: 'gold' },
-      { date: '20 Jul 2026', unit: 'KAIZEN entity resolution', state: 'National', what: '6 complaints clustered → SYN-03 “Lotus”', tone: 'crimson' },
+      { date: '20 Jul 2026', unit: 'ANVESHAK entity resolution', state: 'National', what: '6 complaints clustered → SYN-03 “Lotus”', tone: 'crimson' },
       { date: '01 Sep 2026', unit: 'Cyber PS Pune', state: 'Maharashtra', what: 'Notice sent to Orbita Exchange', tone: 'gold' },
     ],
     nodes: [
@@ -245,7 +245,7 @@ export const REUSED_BY: { state: string; wallets: number; reusedBy: number; tone
 
 /* ───────────── Governance ───────────── */
 export const AUDIT_LINES = [
-  { at: '11:06:42', who: 'SI K. R██████', unit: 'Cyber PS Jaipur', what: 'lookup', ref: 'KZN-2026-0417' },
-  { at: '10:58:13', who: 'Insp. S. N████', unit: 'Cyber PS Kochi', what: 'lookup', ref: 'KZN-2026-0416' },
-  { at: '10:41:55', who: 'SI R. T██████', unit: 'Cyber Crime PS Lucknow', what: 'submit', ref: 'KZN-2026-0415' },
+  { at: '11:06:42', who: 'SI K. R██████', unit: 'Cyber PS Jaipur', what: 'lookup', ref: 'ANV-2026-0417' },
+  { at: '10:58:13', who: 'Insp. S. N████', unit: 'Cyber PS Kochi', what: 'lookup', ref: 'ANV-2026-0416' },
+  { at: '10:41:55', who: 'SI R. T██████', unit: 'Cyber Crime PS Lucknow', what: 'submit', ref: 'ANV-2026-0415' },
 ]

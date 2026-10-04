@@ -133,7 +133,7 @@ export function similarity(a: Fir, b: Fir): number {
 }
 
 export const ROUTING_STEPS = [
-  { t: 'Merge 5 FIRs into one case file', d: 'KZN-SYN07-M01 · evidence de-duplicated' },
+  { t: 'Merge 5 FIRs into one case file', d: 'ANV-SYN07-M01 · evidence de-duplicated' },
   { t: 'Route to I4C nodal officer', d: 'Indian Cyber Crime Coordination Centre · inter-state desk' },
   { t: 'One consolidated notice to Meridian', d: 'covers 27 deposits · draft for officer review' },
   { t: 'Share results back to 10 states', d: 'each cell gets the reply + its victims’ share' },

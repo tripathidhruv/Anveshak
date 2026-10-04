@@ -97,7 +97,7 @@ export default function JurisdictionPage() {
             </>
           }
           title="FIR Dedup & Routing"
-          tech="The same syndicate is reported as separate FIRs in 11 states, and every cyber cell sends its own notice to the same exchange. KAIZEN spots the duplicates and recommends one lead jurisdiction. · duplicate detection · jurisdiction routing"
+          tech="The same syndicate is reported as separate FIRs in 11 states, and every cyber cell sends its own notice to the same exchange. ANVESHAK spots the duplicates and recommends one lead jurisdiction. · duplicate detection · jurisdiction routing"
           actions={
             <>
               <span className="k-btn-ghost inline-flex h-7 items-center gap-1.5 rounded-lg px-2.5 text-[12.5px]">
@@ -506,7 +506,7 @@ export default function JurisdictionPage() {
                         <Share2 />
                       </IconTile>
                       <div>
-                        <div className="text-[14.5px] text-text">Merged into KZN-SYN07-M01 and routed to I4C</div>
+                        <div className="text-[14.5px] text-text">Merged into ANV-SYN07-M01 and routed to I4C</div>
                         <div className="text-[12.5px] text-muted">Lead: Cyber PS Jaipur · 1 notice to Meridian queued · 10 states will receive the reply</div>
                       </div>
                     </div>

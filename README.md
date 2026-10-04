@@ -1,46 +1,63 @@
-# KAIZEN
+<p align="center"><img src="web/public/favicon.svg" width="88" alt="ANVESHAK logo" /></p>
 
-**The police get a wallet address. KAIZEN turns it into the name of an exchange and a signed legal notice, in under a minute.**
+<h1 align="center">ANVESHAK · अन्वेषक</h1>
 
-Built for **Smart India Hackathon 2026, Problem Statement 26183** — cryptocurrency fraud detection and exchange attribution.
+<p align="center"><em>The seeker.</em> The police get a wallet address. ANVESHAK names the exchange that holds the KYC,<br/>shows exactly why, routes the right legal request to the right country, and tracks it until the money is frozen.</p>
+
+Built for **Smart India Hackathon 2026, Problem Statement 26182** — automated attribution of unknown cryptocurrency
+wallets to the nearest Virtual Asset Service Provider (VASP), including stronger cross-border investigations.
+
+The name: *anveṣaka* (Sanskrit) — one who searches, an investigator. The logo is an "A" drawn as a money trail:
+victim's wallet → collection hub → the exchange the trace finds (gold).
 
 ## The problem
 
-A citizen is defrauded and sends cryptocurrency to a scammer. The money moves through a chain of wallets — often within seconds — until it reaches a **cryptocurrency exchange**, the only point in the chain where a real identity exists (exchanges collect KYC). Today, following that trail manually takes a cybercrime cell **4–6 weeks**.
+A citizen is defrauded and sends cryptocurrency to a scammer. The money moves through a chain of wallets — often within
+seconds — until it reaches a **cryptocurrency exchange**, the only point in the chain where a real identity exists
+(exchanges collect KYC). Following that trail by hand takes a cybercrime cell weeks.
 
-## What KAIZEN does
+## What ANVESHAK does
 
-Given one wallet address, KAIZEN:
-1. Traces the funds across hops, on-chain, in seconds.
-2. Detects the **sweep signature** — stolen funds emptied out within seconds, a behavioural fingerprint of scam automation that needs no labelled training data.
-3. Detects **consolidation** — many victims' funds converging on one wallet, so one trace can solve many cases at once.
-4. Attributes the destination to a named exchange.
-5. Produces an explainable risk score (every contributing factor shown, nothing hidden).
-6. Generates three outputs: a fund-flow graph, a court-ready evidence PDF, and a pre-filled lawful-action notice to the exchange.
+1. **Smart intake** — reads a raw complaint in Hindi, English or Hinglish, checks every wallet checksum, masks phones and UPI IDs, and opens the case.
+2. **National memory** — every wallet ever submitted is remembered, so the next complaint about it, from any state, is matched instantly.
+3. **Trace** — follows the funds hop by hop across TRON, Ethereum and Bitcoin, including cross-chain bridges.
+4. **Sweep signature + consolidation** — stolen funds leave within seconds with ~99% of value kept (scam automation, no labelled data needed); many victims' money pools in one wallet, so one trace solves many cases.
+5. **Attribution** — names the exchange, with every factor, weight and the arithmetic shown. Nothing is a black box.
+6. **Lawful action** — evidence pack with a SHA-256 hash chain, pre-filled notices (drafts for officer review, never auto-filed), cross-border routing.
 
-## Status
+## Repository
 
-Frontend prototype in progress. See [`docs/PROGRESS.md`](docs/PROGRESS.md) and [`docs/TASKS.md`](docs/TASKS.md) for current state, [`docs/HANDOFF.md`](docs/HANDOFF.md) if you're picking this up fresh.
+| Folder | What it is |
+|---|---|
+| `web/` | The investigator console (React 19, Vite, Tailwind v4, Motion, Animate UI, Lenis). **Start here.** |
+| `backend/` | FastAPI + SQLAlchemy. Trace, detectors, attribution, risk, evidence, legal, audit, plus `intake/` and `memory/` for 26182. |
+| `frontend/` | Earlier console (kept as a reference for backend wiring). |
+| `docs/sih26182/` | Plan, frontend and backend design, rival review, progress log. |
 
-## Running the prototype
+## Run it
 
-No build step. Open [`prototype/index.html`](prototype/index.html) directly in a browser (Chrome, 1920×1080 target).
+```bash
+npm --prefix web install
+npm --prefix web run dev          # synthetic demo data, no backend needed
+```
 
-## Tech stack
+With the real backend:
 
-- **Prototype:** vanilla JS, single HTML file, CDN libraries (Cytoscape.js, Chart.js, html2pdf.js, Lucide).
-- **Planned backend:** FastAPI, PostgreSQL, Redis, Celery, rustworkx.
-- **Planned ML:** LightGBM (risk scoring), PyTorch Geometric / GraphSAGE (clustering), SHAP (explainability).
-
-## Team
-
-KAIZEN — Owner: Dhruv Tripathi ([@tripathidhruv](https://github.com/tripathidhruv))
+```bash
+cd backend && python -m venv .venv && .venv/Scripts/pip install -r requirements.txt
+.venv/Scripts/python -m uvicorn app.main:app --port 8000
+npm --prefix web run dev -- --mode live   # VITE_USE_MOCK=false, /api proxied to :8000
+```
 
 ## Data integrity
 
-**All data in this prototype is synthetic.** "Meridian Digital Exchange" is a fictional name; every wallet address, transaction, and case shown is fabricated demo data. No real complainant information or live case data appears anywhere in this repository.
+**All data is synthetic.** Exchange names (Meridian Digital Exchange, Kestrel Exchange, …) are fictional; every wallet,
+transaction, person and case is fabricated. Demo wallets are derived from hashed seed strings and were never used
+on any blockchain. No real complainant information or live-case data appears anywhere in this repository.
 
-See [`docs/SCOPE.md`](docs/SCOPE.md) for what is and isn't in scope, and what limitations we state openly.
+## Team
+
+Owner: Dhruv Tripathi ([@tripathidhruv](https://github.com/tripathidhruv))
 
 ## License
 

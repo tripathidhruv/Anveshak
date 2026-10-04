@@ -142,7 +142,7 @@ export default function InterdictionPage() {
             </>
           }
           title="Pre-emptive Freeze"
-          tech="Every other tool traces after the fact — by then the money is cashed out. KAIZEN predicts the next hop from the syndicate's past routes and warns the likely exchange before the deposit arrives. · next-hop prediction · route-reuse model"
+          tech="Every other tool traces after the fact — by then the money is cashed out. ANVESHAK predicts the next hop from the syndicate's past routes and warns the likely exchange before the deposit arrives. · next-hop prediction · route-reuse model"
           actions={
             <>
               <span className="k-btn-ghost inline-flex h-7 items-center gap-1.5 rounded-lg px-2.5 text-[12.5px]">

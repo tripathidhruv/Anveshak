@@ -70,7 +70,7 @@ export function CommandPalette({ open, onOpenChange }: { open: boolean; onOpenCh
           <kbd className="rounded-md border border-line-2 px-1.5 py-0.5 text-[11.5px] text-muted">ESC</kbd>
         </div>
         <div className="k-scroll max-h-[380px] overflow-y-auto p-2">
-          {list.length === 0 && <div className="px-3 py-10 text-center text-[14px] text-muted">No match. Try a case ID like KZN-2026-0417.</div>}
+          {list.length === 0 && <div className="px-3 py-10 text-center text-[14px] text-muted">No match. Try a case ID like ANV-2026-0417.</div>}
           {Object.entries(groups).map(([g, items]) => (
             <div key={g} className="mb-1">
               <div className="px-2.5 pb-1 pt-2 text-[12px] text-dim">{g}</div>

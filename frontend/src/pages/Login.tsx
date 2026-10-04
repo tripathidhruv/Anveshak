@@ -29,7 +29,7 @@ function roleHome(role: Role): string {
 /** The clearly-fake demo email `setIdentity` is called with for each role -- there is no real
  * account behind any of these, per CLAUDE.md's "all prototype data is synthetic" rule. */
 function demoEmailFor(role: Role): string {
-  return `${role}@kaizen.demo`
+  return `${role}@anveshak.demo`
 }
 
 interface RoleCard {
@@ -52,7 +52,7 @@ const ROLE_CARDS: RoleCard[] = [
     role: 'exchange',
     label: 'Exchange',
     description: 'Review flagged wallets and respond to compliance requests.',
-    // gold = exchange everywhere else in KAIZEN's design system (CLAUDE.md's colour semantics)
+    // gold = exchange everywhere else in ANVESHAK's design system (CLAUDE.md's colour semantics)
     icon: Landmark,
     color: 'gold',
   },
@@ -108,10 +108,10 @@ function Login() {
           </IconTile>
           <div>
             <h1 className="font-[family-name:var(--font-display)] text-2xl font-semibold text-foreground">
-              Welcome to KAIZEN
+              Welcome to ANVESHAK
             </h1>
             <p className="mt-1 text-sm text-muted-foreground">
-              DEMO DATA · pick how you&rsquo;re using KAIZEN to jump straight in
+              DEMO DATA · pick how you&rsquo;re using ANVESHAK to jump straight in
             </p>
           </div>
         </div>

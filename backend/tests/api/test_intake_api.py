@@ -96,12 +96,12 @@ def test_create_case_shows_what_nation_already_knew():
     r = client.post("/api/v1/intake/cases", json=_case_body(correctedFields=["amountInr"]))
     assert r.status_code == 201, r.text
     body = r.json()
-    assert re.fullmatch(r"KZN-\d{4}-\d{4}", body["caseId"])
+    assert re.fullmatch(r"ANV-\d{4}-\d{4}", body["caseId"])
     assert int(body["caseId"][-4:]) >= 418
     assert re.fullmatch(r"\d{14}", body["ncrp"])
     mem = body["memory"]
     assert mem["known"] is True
-    assert [c["caseId"] for c in mem["linkedCases"]] == ["KZN-2026-0416", "KZN-2026-0412", "KZN-2026-0406"]
+    assert [c["caseId"] for c in mem["linkedCases"]] == ["ANV-2026-0416", "ANV-2026-0412", "ANV-2026-0406"]
     assert mem["syndicate"]["id"] == "SYN-07"
     assert re.fullmatch(r"[0-9a-f]{64}", body["auditHash"])
 

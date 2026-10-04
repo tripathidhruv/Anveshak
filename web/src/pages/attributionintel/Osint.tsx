@@ -63,7 +63,7 @@ export function OsintScan({ selected, onSelect }: { selected: string; onSelect: 
       />
       <p className="max-w-3xl px-5 pt-2 text-[13.5px] leading-relaxed text-muted">
         Victims in other countries often post scam wallets on public scam-report sites and forums — sometimes before anyone in India files a
-        complaint. KAIZEN checks every wallet on the trace against these public sources and scores each report, because crowd reports can be wrong or
+        complaint. ANVESHAK checks every wallet on the trace against these public sources and scores each report, because crowd reports can be wrong or
         malicious.
       </p>
       <div className="mt-4 grid grid-cols-1 gap-4 px-5 lg:grid-cols-[300px_1fr]">
@@ -322,7 +322,7 @@ export function EarlyWarning() {
         </div>
         <p className="mt-3 text-[13.5px] leading-relaxed text-muted">
           <span className="text-text">14 Indian victims, including Rekha, paid into this wallet after it was first reported abroad.</span> With daily OSINT
-          scans, KAIZEN could have flagged it to exchanges 9 days earlier.
+          scans, ANVESHAK could have flagged it to exchanges 9 days earlier.
         </p>
       </div>
     </Card>

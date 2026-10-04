@@ -39,7 +39,7 @@ def _reset_db_override():
     yield
 
 def _token(email: str) -> str:
-    payload = {"user_id": "u1", "tenant_id": "kaizen", "email": email,
+    payload = {"user_id": "u1", "tenant_id": "anveshak", "email": email,
                "exp": datetime.now(timezone.utc) + timedelta(minutes=5)}
     return pyjwt.encode(payload, settings.auth_jwt_secret, algorithm="HS256")
 

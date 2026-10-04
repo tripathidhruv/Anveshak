@@ -270,7 +270,7 @@ export const MULE_ACCOUNTS = [
 ]
 
 const SYN = CASES.filter((c) => c.syndicate === 'SYN-07').map((c) => c.id)
-export const MULE_CASES = [...SYN, 'KZN-2026-0398', 'KZN-2026-0391', 'KZN-2026-0386'].slice(0, 9)
+export const MULE_CASES = [...SYN, 'ANV-2026-0398', 'ANV-2026-0391', 'ANV-2026-0386'].slice(0, 9)
 
 /** value = share of that case's fiat exit that landed in that account (0..1) */
 export const MULE_MATRIX: number[][] = [

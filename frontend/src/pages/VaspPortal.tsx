@@ -29,7 +29,7 @@ interface PortalData {
  * in, and their own opaque `access_token` (embedded in the link they were sent) is the only
  * thing that identifies them to the backend.
  *
- * DEMO DATA: every wallet shown here comes from KAIZEN's synthetic flagged-wallet feed
+ * DEMO DATA: every wallet shown here comes from ANVESHAK's synthetic flagged-wallet feed
  * (CLAUDE.md rule 1) -- never a real case or a real exchange.
  */
 export default function VaspPortal() {
@@ -99,7 +99,7 @@ export default function VaspPortal() {
           </IconTile>
           <div>
             <h1 className="font-[family-name:var(--font-display)] text-2xl font-bold text-foreground">
-              KAIZEN wallet-sharing portal
+              ANVESHAK wallet-sharing portal
             </h1>
             <p className="mt-1 text-sm text-muted-foreground">
               DEMO DATA · a private link shared with your exchange, no sign-in required
@@ -123,7 +123,7 @@ export default function VaspPortal() {
               This link isn't valid
             </h2>
             <p className="max-w-sm text-sm text-muted-foreground">
-              The portal link you followed is unknown or no longer active. Contact the KAIZEN investigating officer
+              The portal link you followed is unknown or no longer active. Contact the ANVESHAK investigating officer
               who shared it with you for a fresh link.
             </p>
           </Card>
@@ -176,12 +176,12 @@ export default function VaspPortal() {
                   {alreadySent ? (
                     <div className="flex items-center gap-2 rounded-xl bg-moss/10 px-4 py-3 text-sm font-medium text-moss">
                       <CheckCircle2 size={16} />
-                      Reply sent — KAIZEN officers can now see it.
+                      Reply sent — ANVESHAK officers can now see it.
                     </div>
                   ) : (
                     <form onSubmit={(e) => submitReply(e, wallet.id)} className="flex flex-col gap-2">
                       <label htmlFor={`reply-${wallet.id}`} className="text-xs font-medium text-foreground">
-                        Reply to KAIZEN about this wallet
+                        Reply to ANVESHAK about this wallet
                       </label>
                       <textarea
                         id={`reply-${wallet.id}`}

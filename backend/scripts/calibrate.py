@@ -5,7 +5,7 @@
 This is NOT the LightGBM/SHAP ML model (`app/risk/model.py`, Task H8) -- that model already
 discloses its own synthetic-trained nature via `SYNTHETIC_DATA_DISCLOSURE` on every response.
 This script instead calibrates the DETERMINISTIC rule-based gate the whole project is built
-on: KAIZEN's actual attribution decision is
+on: ANVESHAK's actual attribution decision is
 
     final_gate_passed = gate.gate_passed and sweep_signal.is_sweep
 
@@ -21,7 +21,7 @@ calls the real gate/sweep functions on them -- no fake chain client or HTTP mock
 
 Why this exists (see docs/TASKS.md P3 / the H12 brief): rival SIH teams have been called out
 in this project's own competitive-review docs for reporting a hand-picked confidence constant
-instead of a real, reproducible number. This script lets KAIZEN say instead: "run this script,
+instead of a real, reproducible number. This script lets ANVESHAK say instead: "run this script,
 get a real precision figure computed against a held-out set with known ground truth."
 
 Invocation (from `backend/`, matching this project's existing test/module-invocation
@@ -347,7 +347,7 @@ def run_calibration(n_cases: int = DEFAULT_N_CASES, seed: int = CALIBRATION_SEED
 
 def print_report(report: CalibrationReport) -> None:
     print("=" * 78)
-    print("KAIZEN gated-attribution pipeline calibration (Task H12)")
+    print("ANVESHAK gated-attribution pipeline calibration (Task H12)")
     print(f"({SYNTHETIC_CALIBRATION_DISCLOSURE})")
     print("=" * 78)
     print(f"Total synthetic cases: {report.total_cases}")

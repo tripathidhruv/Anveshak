@@ -7,7 +7,7 @@
 ## Why this version exists
 
 Two competitive reviews happened between the v1 spec and this one:
-1. A structured review of 6 rival SIH-26183 repos (`KAIZEN_Competitive_Review_and_Build_Plan.md`), scoring each against the PS line-by-line.
+1. A structured review of 6 rival SIH-26183 repos (`ANVESHAK_Competitive_Review_and_Build_Plan.md`), scoring each against the PS line-by-line.
 2. A follow-up deep read of 6 more rival repos (Himanshu-Harsh, vishalmudhirajpokala, shubhamkrverma031-rgb, LostEmperor08, yoyostuu, xarjunpatil), each fully cloned and read file-by-file.
 
 Across all 12 rivals, a consistent pattern emerged: **every team that runs real tracing produces wrong or fabricated answers underneath a polished UI.** The most dangerous, most common bug is treating "a wallet swept its funds onward" as equivalent to "this is a verified exchange deposit address" — this appears, in some form, in at least 4 of the 12 rivals reviewed. v1 of our own spec did not explicitly gate against this. This version fixes that, and folds in every other concrete, reusable lesson from the 12 repos, plus the PS-completeness gaps nobody else covers (freeze check, real evidence reproducibility, honest provenance).

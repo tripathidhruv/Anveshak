@@ -27,7 +27,7 @@
   --color-destructive: #dc2626;
   --color-destructive-foreground: #ffffff;
 
-  /* KAIZEN semantic accents -- same meanings as always (criminal path / exchange / on-chain /
+  /* ANVESHAK semantic accents -- same meanings as always (criminal path / exchange / on-chain /
      bridge / safe / info), brightened from the earlier muted set to vivid, saturated tones
      while staying WCAG-safe with white text at badge/icon-tile sizes. */
   --color-vermillion: #dc2626;

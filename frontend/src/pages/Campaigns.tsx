@@ -15,9 +15,9 @@ import { ROUTES } from '../utils/constants'
 import { formatINR, truncateAddress } from '../utils/format'
 
 /** Resolves the same one-env-var switch locally, matching `api/index.ts`'s own `VITE_USE_MOCK`
- * handling -- `getCampaignsList` isn't part of the shared `KaizenApi` surface (same reasoning as
+ * handling -- `getCampaignsList` isn't part of the shared `AnveshakApi` surface (same reasoning as
  * `Evidence.tsx`'s `getEvidencePack`/`verifyEvidencePack`: a real endpoint with no client function
- * in the original mock-only `KaizenApi` interface), so this page picks between the mock and real
+ * in the original mock-only `AnveshakApi` interface), so this page picks between the mock and real
  * implementation itself rather than going through `api/index.ts`. */
 const USE_MOCK = import.meta.env.VITE_USE_MOCK !== 'false'
 const fetchCampaignsList: () => Promise<CampaignOut[]> = USE_MOCK ? getCampaignsListMock : getCampaignsListHttp
@@ -65,7 +65,7 @@ export default function Campaigns() {
           <Badge variant="outline">DEMO DATA</Badge>
         </div>
         <p className="text-[15px] text-muted-foreground">
-          When separate victims' complaints all trace to the same collection wallet, KAIZEN groups them into one
+          When separate victims' complaints all trace to the same collection wallet, ANVESHAK groups them into one
           campaign — worth a joint notice, not many separate ones.
         </p>
       </header>

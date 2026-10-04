@@ -42,7 +42,7 @@ const EXCHANGE_ALTS = ['Kestrel Exchange', 'Northwind Coin', 'Arcadia Markets', 
 export const QUEUE: ReviewItem[] = [
   {
     id: 'RV-1184',
-    caseId: 'KZN-2026-0417',
+    caseId: 'ANV-2026-0417',
     kind: 'Exchange attribution',
     claim: 'TBx1…2kL is a Meridian Digital Exchange deposit address',
     addr: 'TBx1eM9nT7hG3sV5cW2kL',
@@ -54,7 +54,7 @@ export const QUEUE: ReviewItem[] = [
   },
   {
     id: 'RV-1183',
-    caseId: 'KZN-2026-0416',
+    caseId: 'ANV-2026-0416',
     kind: 'Risk call',
     claim: 'TNh8…9pR is a collection wallet run by a scam ring — risk HIGH',
     addr: 'TNh8yW5vC2mQ7fL4xK9pR',
@@ -66,7 +66,7 @@ export const QUEUE: ReviewItem[] = [
   },
   {
     id: 'RV-1181',
-    caseId: 'KZN-2026-0415',
+    caseId: 'ANV-2026-0415',
     kind: 'Bridge link',
     claim: 'Money crossing the bridge to 0x7a3f…2071 is the same stolen money',
     addr: '0x7a3fd21c9b4e8a5f2071',
@@ -78,7 +78,7 @@ export const QUEUE: ReviewItem[] = [
   },
   {
     id: 'RV-1179',
-    caseId: 'KZN-2026-0412',
+    caseId: 'ANV-2026-0412',
     kind: 'Risk call',
     claim: 'TPd4…3gH is an automated sweeper, not a person — risk HIGH',
     addr: 'TPd4wS8cM1kR5tY9nB3gH',
@@ -90,7 +90,7 @@ export const QUEUE: ReviewItem[] = [
   },
   {
     id: 'RV-1176',
-    caseId: 'KZN-2026-0411',
+    caseId: 'ANV-2026-0411',
     kind: 'Exchange attribution',
     claim: '0x9e4b…3e5b is an Arcadia Markets deposit address',
     addr: '0x9e4b8f07a2c6d13e5b',
@@ -102,7 +102,7 @@ export const QUEUE: ReviewItem[] = [
   },
   {
     id: 'RV-1172',
-    caseId: 'KZN-2026-0410',
+    caseId: 'ANV-2026-0410',
     kind: 'Exchange attribution',
     claim: 'TRw2…1qL deposits into Orbita Exchange',
     addr: 'TRw2pD9kH5sM3nV8cF1qL',
@@ -114,7 +114,7 @@ export const QUEUE: ReviewItem[] = [
   },
   {
     id: 'RV-1169',
-    caseId: 'KZN-2026-0409',
+    caseId: 'ANV-2026-0409',
     kind: 'Syndicate link',
     claim: 'This case belongs to SYN-02, the digital-arrest impersonation group',
     confidence: 0.61,

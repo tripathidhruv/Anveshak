@@ -55,7 +55,7 @@ Newest first. Update at the end of every session.
 
 ## 2026-10-03 · Dhruv + Claude · New 26182 console built from scratch in `web/`
 **Did:**
-- Copied the KAIZEN repo from `E:\kaizen` into `E:\26182` (full git history, remote `tripathidhruv/kaizen`).
+- Copied the ANVESHAK repo from `E:\kaizen` into `E:\26182` (full git history, remote `tripathidhruv/kaizen`).
 - Reviewed all 12 rival SIH 26182 repos with 4 parallel agents. Findings in `COMPETITORS.md`.
 - Built a new frontend in `web/` (React 19, Vite, Tailwind v4, Motion, Animate UI, Lenis), replacing the
   neumorphic look with Dhruv's dark reference style. The old `frontend/` is kept for backend reference only.

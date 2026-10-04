@@ -38,7 +38,7 @@ class VaspSubscriberOut(BaseModel):
 
 # --- VASP wallet-sharing portal (Feature 2) ---
 # External exchanges never log in -- their own `VaspSubscriber.access_token` embedded in a
-# shareable `/vasp-portal/{access_token}` link IS the auth. KAIZEN officers instead go through
+# shareable `/vasp-portal/{access_token}` link IS the auth. ANVESHAK officers instead go through
 # Feature 1's email+OTP login and hit `GET /replies` below with a Bearer JWT.
 
 class VaspPortalWalletOut(BaseModel):
@@ -249,8 +249,8 @@ def create_portal_reply(access_token: str, payload: VaspWalletReplyIn,
 @feed_router.get("/replies", response_model=list[VaspWalletReplyOut])
 def list_replies(identity: Identity = Depends(require_role("officer")),
                   db: Session = Depends(get_db)) -> list[VaspWalletReplyOut]:
-    """KAIZEN-officers-only endpoint -- every reply across every subscriber, for officers to
-    review. Gated on the resolved KAIZEN role (`require_role`), not just a valid JWT, now that
+    """ANVESHAK-officers-only endpoint -- every reply across every subscriber, for officers to
+    review. Gated on the resolved ANVESHAK role (`require_role`), not just a valid JWT, now that
     non-officer roles (citizen/exchange) can also hold one -- see `app/auth/identity.py`."""
     rows = db.execute(
         select(VaspWalletReply).order_by(VaspWalletReply.replied_at.desc())

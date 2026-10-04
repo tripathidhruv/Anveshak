@@ -6,7 +6,7 @@
 
 **Architecture:** Single FastAPI service, SQLAlchemy + Postgres (SQLite fallback for local dev via `DATABASE_URL`), no Celery/Redis in this pass (Sprint 1 task list in the approved spec doesn't need it — traces run synchronously inside the request, fast enough at demo scale). Three chain clients (`TronChainClient`, `EvmChainClient`, `BitcoinChainClient`) share one `ChainClient` protocol and one `Transfer` shape so tracing/detection code never branches on chain. Chain adapters call free public explorer REST APIs (TronGrid, Etherscan, Blockstream Esplora) through a shared adaptive-throttle HTTP client. No live calls in tests — every chain-client test replays a recorded JSON fixture through `httpx.MockTransport`.
 
-**Tech Stack:** Python 3.12, FastAPI, SQLAlchemy 2.0, Pydantic v2, httpx, pytest. Frontend side: existing `KaizenApi` contract in `frontend/src/types/index.ts`, existing `request()` helper in `frontend/src/api/client.ts`.
+**Tech Stack:** Python 3.12, FastAPI, SQLAlchemy 2.0, Pydantic v2, httpx, pytest. Frontend side: existing `AnveshakApi` contract in `frontend/src/types/index.ts`, existing `request()` helper in `frontend/src/api/client.ts`.
 
 ## Global Constraints
 
@@ -168,9 +168,9 @@ pytest-httpx==0.30.0
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_prefix="KAIZEN_", extra="ignore")
+    model_config = SettingsConfigDict(env_prefix="ANVESHAK_", extra="ignore")
 
-    database_url: str = "sqlite:///./kaizen.db"
+    database_url: str = "sqlite:///./anveshak.db"
     trongrid_api_key: str | None = None
     etherscan_api_key: str | None = None
     max_trace_hops: int = 6
@@ -1265,7 +1265,7 @@ SWEEP_MAX_GAP_SECONDS = 300       # funds leave within 5 minutes
 SWEEP_MIN_VALUE_PRESERVED = 0.95  # ~99% value preserved per the sweep-signature thesis; 95% floor for fee slack
 
 def detect_sweep(wallet_address: str, incoming: list[Transfer], outgoing: list[Transfer]) -> SweepSignal:
-    """KAIZEN's core behavioural fingerprint: stolen funds leave a receiving wallet within
+    """ANVESHAK's core behavioural fingerprint: stolen funds leave a receiving wallet within
     seconds with ~99% of value preserved — a pattern automation produces, humans don't.
     Needs no labelled training data (see CLAUDE.md 'Why it works')."""
     if not incoming or not outgoing:
@@ -1521,7 +1521,7 @@ class InnocenceResult:
 
 def compute_innocence(wallet_address: str, all_transfers: list[Transfer], incident_at: datetime,
                        victim_amount: Decimal) -> InnocenceResult:
-    """The exculpatory counterpart to the risk score. Every KAIZEN risk factor accuses;
+    """The exculpatory counterpart to the risk score. Every ANVESHAK risk factor accuses;
     this is the only check that can say 'not this one' -- same gating logic the deposit
     detector needs anyway (distinct payers, counter-flow, known-contract checks), surfaced
     as a first-class output instead of buried as an internal guard. Every wallet gets both
@@ -2111,7 +2111,7 @@ from app.api.v1 import cases, traces
 
 Base.metadata.create_all(bind=engine)
 
-app = FastAPI(title="KAIZEN backend")
+app = FastAPI(title="ANVESHAK backend")
 app.include_router(cases.router)
 app.include_router(traces.router)
 
@@ -2324,8 +2324,8 @@ git commit -m "feat(backend): wire cases + trace API endpoints, full pipeline en
 - Modify: `frontend/src/api/index.ts`
 
 **Interfaces:**
-- Consumes: `request<T>()` (`frontend/src/api/client.ts`, unchanged), `KaizenApi` (`frontend/src/types/index.ts`, unchanged), backend `POST /api/v1/cases`, `GET /api/v1/cases/{id}`, `POST /api/v1/cases/{id}/trace` (Task 11).
-- Produces: `httpApi: Partial<KaizenApi>` covering `createCase`/`getCase`/`startTrace`/`getRoutes`, consumed by `frontend/src/api/index.ts`'s existing `USE_MOCK` switch.
+- Consumes: `request<T>()` (`frontend/src/api/client.ts`, unchanged), `AnveshakApi` (`frontend/src/types/index.ts`, unchanged), backend `POST /api/v1/cases`, `GET /api/v1/cases/{id}`, `POST /api/v1/cases/{id}/trace` (Task 11).
+- Produces: `httpApi: Partial<AnveshakApi>` covering `createCase`/`getCase`/`startTrace`/`getRoutes`, consumed by `frontend/src/api/index.ts`'s existing `USE_MOCK` switch.
 
 This task only wires the three endpoints this plan's backend actually serves (`createCase`, `getCase`, `startTrace`/`getRoutes`). `getExchange`, `getRisk`, `getGraph`, `generateReport`, `sendNotice`, `getDashboard`, `getCampaign` stay on `notImplemented(...)` — those map to VASP feed / freeze / evidence-hash / audit-log endpoints this plan explicitly defers (see Global Constraints). Note also: the backend's `TraceOut` shape (flat hop list + attribution + innocence) doesn't yet match the frontend's `TraceResult` (fixed `routeA`/`routeB`) shape — that reshaping is real follow-up work, called out here rather than papered over. For now `getRoutes` maps the single real trace onto `routeA` and leaves `routeB` empty, clearly logged as a known gap.
 
@@ -2333,7 +2333,7 @@ This task only wires the three endpoints this plan's backend actually serves (`c
 
 ```typescript
 import { request } from './client'
-import type { Case, CaseInput, KaizenApi, Route, TraceResult } from '../types'
+import type { Case, CaseInput, AnveshakApi, Route, TraceResult } from '../types'
 
 interface BackendHop {
   n: number
@@ -2373,7 +2373,7 @@ function toRoute(trace: BackendTraceOut): Route {
 /** Real HTTP implementation — covers what backend/ Sprint 1 (amended) actually serves.
  * Everything else stays `notImplemented` until the VASP feed / freeze / evidence-hash
  * sprints land (see docs/superpowers/plans/2026-09-25-backend-sprint1-multichain.md). */
-export const httpApiPartial: Partial<KaizenApi> = {
+export const httpApiPartial: Partial<AnveshakApi> = {
   createCase: (input: CaseInput) => request<Case>('/api/v1/cases', { method: 'POST', body: input }),
   getCase: (id: string) => request<Case>(`/api/v1/cases/${id}`),
   startTrace: async (caseId: string): Promise<TraceResult> => {
@@ -2387,7 +2387,7 @@ export const httpApiPartial: Partial<KaizenApi> = {
 - [ ] **Step 2: Modify `frontend/src/api/index.ts`**
 
 ```typescript
-import type { KaizenApi } from '../types'
+import type { AnveshakApi } from '../types'
 import { mockApi } from './mock'
 import { httpApiPartial } from './httpApi'
 
@@ -2400,7 +2400,7 @@ function notImplemented(method: string): never {
 
 /** Real HTTP implementation. Methods not yet backed by a real endpoint throw clearly
  * instead of silently falling back to mock data (per CLAUDE.md's honest-provenance rule). */
-const httpApi: KaizenApi = {
+const httpApi: AnveshakApi = {
   createCase: httpApiPartial.createCase!,
   getCase: httpApiPartial.getCase!,
   listCases: () => notImplemented('listCases'),
@@ -2415,7 +2415,7 @@ const httpApi: KaizenApi = {
   getCampaign: () => notImplemented('getCampaign'),
 }
 
-export const api: KaizenApi = USE_MOCK ? mockApi : httpApi
+export const api: AnveshakApi = USE_MOCK ? mockApi : httpApi
 ```
 
 - [ ] **Step 3: Type-check the frontend**

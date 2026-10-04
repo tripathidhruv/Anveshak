@@ -4,7 +4,7 @@
 
 @custom-variant dark (&:is(.dark *));
 
-/* ───────────────────────── KAIZEN design tokens ─────────────────────────
+/* ───────────────────────── ANVESHAK design tokens ─────────────────────────
    Every colour in the app derives from here. Semantics are fixed:
    ember   = brand / primary action
    crimson = criminal path · high risk
@@ -206,6 +206,20 @@
     font-weight: 600;
     letter-spacing: -0.02em;
     font-variant-numeric: tabular-nums;
+  }
+  /* ANVESHAK wordmark: wide geometric caps + the name in Devanagari beneath */
+  .k-brand {
+    font-family: 'Unbounded', var(--font-display);
+    font-weight: 700;
+    letter-spacing: 0.09em;
+    background: linear-gradient(180deg, #ffffff 0%, #ffd2bd 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .k-deva {
+    font-family: 'Tiro Devanagari Sanskrit', serif;
+    letter-spacing: 0.02em;
   }
   .k-mono {
     font-family: var(--font-mono);

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>KAIZEN — Cyber Cell Console</title>
+<title>ANVESHAK — Cyber Cell Console</title>
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -339,7 +339,7 @@
   <div class="box raised">
     <i data-lucide="monitor"></i>
     <h2>Best viewed on desktop</h2>
-    <p>KAIZEN's console is designed for a 1920×1080 (or at minimum 1440×900) desktop display. Please reopen this on a larger screen.</p>
+    <p>ANVESHAK's console is designed for a 1920×1080 (or at minimum 1440×900) desktop display. Please reopen this on a larger screen.</p>
   </div>
 </div>
 
@@ -348,7 +348,7 @@
     <div class="logo-block">
       <div class="logo-mark raised-sm">◆</div>
       <div class="logo-text-wrap">
-        <div class="logo-text">KAIZEN</div>
+        <div class="logo-text">ANVESHAK</div>
         <div class="logo-sub">Cyber Cell Console</div>
       </div>
     </div>
@@ -399,7 +399,7 @@
    ===================================================================== */
 const DEMO = {
   case: {
-    id: "KZN-2026-0417", ncrp: "31402260041789", complainant: "Rekha Sharma",
+    id: "ANV-2026-0417", ncrp: "31402260041789", complainant: "Rekha Sharma",
     location: "Jaipur, Rajasthan", phone: "+91 98XXX XXX41",
     incidentAt: "02 Sep 2026, 19:42 IST", reportedAt: "04 Sep 2026, 11:05 IST",
     fraudType: "Task-based job scam (Telegram)",
@@ -459,11 +459,11 @@ const DEMO = {
       { label:"Median trace time", value:"41 s", delta:"was 4-6 weeks", dir:"down" }
     ],
     recentCases:[
-      { id:"KZN-2026-0417", who:"Rekha Sharma", amt:1240000, chain:"TRON", status:"New", risk:null },
-      { id:"KZN-2026-0416", who:"Arun Menon", amt:860000, chain:"TRON", status:"Traced", risk:"HIGH" },
-      { id:"KZN-2026-0415", who:"Fatima Qureshi", amt:2150000, chain:"Ethereum", status:"Traced", risk:"HIGH" },
-      { id:"KZN-2026-0414", who:"S. Balaji", amt:430000, chain:"Bitcoin", status:"Notice sent", risk:"MEDIUM" },
-      { id:"KZN-2026-0413", who:"Priya Nair", amt:1780000, chain:"TRON", status:"Closed", risk:"HIGH" }
+      { id:"ANV-2026-0417", who:"Rekha Sharma", amt:1240000, chain:"TRON", status:"New", risk:null },
+      { id:"ANV-2026-0416", who:"Arun Menon", amt:860000, chain:"TRON", status:"Traced", risk:"HIGH" },
+      { id:"ANV-2026-0415", who:"Fatima Qureshi", amt:2150000, chain:"Ethereum", status:"Traced", risk:"HIGH" },
+      { id:"ANV-2026-0414", who:"S. Balaji", amt:430000, chain:"Bitcoin", status:"Notice sent", risk:"MEDIUM" },
+      { id:"ANV-2026-0413", who:"Priya Nair", amt:1780000, chain:"TRON", status:"Closed", risk:"HIGH" }
     ]
   }
 };
@@ -580,7 +580,7 @@ const NAV_SCREEN_MAP = {
 
 /* ---------------- Top bar ---------------- */
 function renderTopbar(){
-  document.getElementById('page-title-el').textContent = PAGE_TITLES[APP.screen] || 'KAIZEN';
+  document.getElementById('page-title-el').textContent = PAGE_TITLES[APP.screen] || 'ANVESHAK';
 
   const toggle = document.getElementById('judge-toggle');
   toggle.classList.toggle('on', APP.judgeMode);

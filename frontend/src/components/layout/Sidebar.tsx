@@ -18,7 +18,7 @@ export function Sidebar() {
         <LogoMark size={22} />
         <div>
           <div className="font-[family-name:var(--font-display)] text-sm font-bold leading-tight text-foreground">
-            KAIZEN
+            ANVESHAK
           </div>
           <div className="text-xs text-muted-foreground">Cyber Cell Console</div>
         </div>

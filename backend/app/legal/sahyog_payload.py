@@ -21,7 +21,7 @@ from typing import Any
 
 from app.legal.notice_fsm import LegalNotice
 
-SHAPE_VERSION = "kaizen-sahyog-draft-v1"
+SHAPE_VERSION = "anveshak-sahyog-draft-v1"
 
 DATA_SHAPE_DISCLAIMER = (
     "Shaped for a future real SAHYOG/I4C integration, based on this project's own case and "

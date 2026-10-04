@@ -6,7 +6,7 @@
 
 export const SAMPLE_TX = '7f3a9c2e41b8d06f5e1a72c94d3b8e06a5f21c7d9e4b30a8f61c2d75e9a4b318'
 
-/** Raw Hinglish complaint as typed on the 1930 helpline / NCRP portal (primary demo case KZN-2026-0417). */
+/** Raw Hinglish complaint as typed on the 1930 helpline / NCRP portal (primary demo case ANV-2026-0417). */
 export const SAMPLE_COMPLAINT =
   'Namaste sir, main Rekha Sharma, Jaipur se likh rahi hoon. 28 Aug ko Telegram pe ek "part-time task job" ka message aaya, ' +
   '@saffron_tasks_hr naam ke HR se. Bola YouTube videos like karo aur roz ₹3,000 kamao. Pehle registration fee ₹1,500 UPI pe maanga — ' +
@@ -61,6 +61,6 @@ export const NCRP_QUEUE: NcrpRow[] = [
     cat: 'Online financial fraud › Crypto',
     amt: 860000,
     text: '',
-    caseId: 'KZN-2026-0416',
+    caseId: 'ANV-2026-0416',
   },
 ]

@@ -20,7 +20,7 @@
 - De-anonymising individuals beyond the exchange attribution point
 - Accessing private exchange data (no real KYC data, ever)
 - Idea 1 ("sovereign NCRP/bank/UPI join") — no data access, stays roadmap-only
-- A live, synchronous, query-before-transaction VASP oracle — needs a statutory mandate neither of which exist; the broadcast/feed model (KAIZEN pushes flagged wallets out) is what's built instead
+- A live, synchronous, query-before-transaction VASP oracle — needs a statutory mandate neither of which exist; the broadcast/feed model (ANVESHAK pushes flagged wallets out) is what's built instead
 - Full ML/SHAP risk model as the ONLY score — it's gated behind, and blended with, the correct, calibrated rule-based pipeline, never presented alone
 - Following funds through mixers beyond flagging that the trail enters one
 - A new frontend screen for operator fingerprinting (backend + demo fixture only, for now)
@@ -32,4 +32,4 @@
 - **Cross-chain correlation is heuristic, not ground truth.** Real bridge-hop linking (shipped) relies on timing/amount correlation via `find_bridge_links()` — every confirmed crossing now carries a mandatory `disclaimer` field in the API response itself (not just a code comment), same as operator-fingerprinting's similarity scores.
 - **Attribution is probabilistic, not proof.** The risk score is an investigative lead, reviewed by an officer, never a courtroom verdict.
 - **`docker compose up --build` has only been statically verified** (config parses clean) — nobody has run the live stack yet on a machine with Docker's engine actually available.
-- **Competitive reality (as of 2026-09-25, 12 rivals reviewed):** every rival that runs real tracing produces wrong or fabricated answers underneath a polished UI — the most common bug (found in 4+ rivals) is treating a burner-wallet sweep as if it were a verified exchange deposit. KAIZEN's backend v2 spec explicitly gates against this and the other concrete bugs found. See `docs/superpowers/specs/2026-09-25-backend-v2-competitive-design.md`.
+- **Competitive reality (as of 2026-09-25, 12 rivals reviewed):** every rival that runs real tracing produces wrong or fabricated answers underneath a polished UI — the most common bug (found in 4+ rivals) is treating a burner-wallet sweep as if it were a verified exchange deposit. ANVESHAK's backend v2 spec explicitly gates against this and the other concrete bugs found. See `docs/superpowers/specs/2026-09-25-backend-v2-competitive-design.md`.

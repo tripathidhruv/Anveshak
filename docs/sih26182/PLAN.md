@@ -1,12 +1,12 @@
-# KAIZEN for SIH 26182 — Product plan
+# ANVESHAK for SIH 26182 — Product plan
 
 **Problem statement 26182:** automated attribution of unknown cryptocurrency wallets to the nearest
 Virtual Asset Service Provider (VASP), including stronger cross-border investigations.
 
-**One line:** the police get a wallet address; KAIZEN names the exchange that holds the KYC, shows
+**One line:** the police get a wallet address; ANVESHAK names the exchange that holds the KYC, shows
 exactly why, routes the right legal request to the right country, and tracks it until the money is frozen.
 
-This plan reuses the KAIZEN 26183 codebase (backend in `backend/`, old React app in `frontend/`) and adds
+This plan reuses the ANVESHAK 26183 codebase (backend in `backend/`, old React app in `frontend/`) and adds
 a new investigator console in `web/`. See `FRONTEND.md`, `BACKEND.md` and `PROGRESS.md` in this folder.
 
 ## Who it is for
@@ -52,7 +52,7 @@ Grouped by the 10 sidebar sections of the new console. Items marked **★** are 
   waterfall; rules vs gated ML (LightGBM + SHAP); **★ counterfactual "what would change the verdict"**;
   ruled-out candidates; operator-vs-beneficiary honesty card.
 - **(picked) ★ Travel Rule cross-reference:** for transfers between Travel-Rule-compliant VASPs above
-  threshold, a compliance record (IVMS101) should already exist. KAIZEN flags it and drafts the request.
+  threshold, a compliance record (IVMS101) should already exist. ANVESHAK flags it and drafts the request.
 - **(picked) ★ OSINT crowd-intelligence:** cross-reference wallets against public scam-report sources,
   with per-report credibility scoring.
 - Operator habits: behavioural similarity between cases (radar, ranking, active hours).

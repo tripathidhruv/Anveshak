@@ -14,7 +14,7 @@ import { ROUTES } from '../utils/constants'
 
 /** Only case in the DEMO dataset with a full evidence pack behind it (per Global Constraints —
  * don't fabricate report detail for the other `recentCases` rows). */
-const FULL_DATA_CASE_ID = 'KZN-2026-0417'
+const FULL_DATA_CASE_ID = 'ANV-2026-0417'
 
 /** Screen — a small archive of generated evidence reports. The DEMO dataset only ever produces
  * one real report (`FULL_DATA_CASE_ID`), so this reads as a single-row registry that a second
@@ -59,7 +59,7 @@ export default function Reports() {
           Evidence reports archive.
         </h1>
         <p className="mt-1.5 text-[15px] text-muted-foreground">
-          Every court-ready report KAIZEN has generated, with a one-click PDF export.
+          Every court-ready report ANVESHAK has generated, with a one-click PDF export.
         </p>
       </header>
 

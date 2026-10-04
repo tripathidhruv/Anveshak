@@ -149,7 +149,7 @@ class VaspSubscriber(Base):
 class VaspWalletReply(Base):
     """A reply an external exchange (identified only by their own `VaspSubscriber.access_token`)
     left on one `FlaggedWallet` via the public portal. Never visible to any other subscriber's
-    own portal token -- only surfaced in bulk to KAIZEN officers via
+    own portal token -- only surfaced in bulk to ANVESHAK officers via
     `GET /api/v1/vasp-feed/replies` (gated behind `get_current_officer`)."""
     __tablename__ = "vasp_wallet_replies"
     id: Mapped[int] = mapped_column(primary_key=True)

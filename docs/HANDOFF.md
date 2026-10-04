@@ -1,6 +1,6 @@
-# You just joined KAIZEN — start here
+# You just joined ANVESHAK — start here
 
-KAIZEN traces crypto fraud from a wallet address to a named exchange and a signed legal notice, in under a minute. Built for SIH 2026, PS 26183.
+ANVESHAK traces crypto fraud from a wallet address to a named exchange and a signed legal notice, in under a minute. Built for SIH 2026, PS 26183.
 
 ## Read in this order
 1. `CLAUDE.md` — project context, design tokens, non-negotiable rules
@@ -25,7 +25,7 @@ why, written before it was built.
 
 ## Running the whole thing locally — two separate services
 
-**KAIZEN's own backend + frontend** (this repo):
+**ANVESHAK's own backend + frontend** (this repo):
 ```bash
 # backend (from repo root, or use .claude/launch.json's "backend" config)
 cd backend && .venv/Scripts/python.exe -m uvicorn app.main:app --reload --port 8000
@@ -45,18 +45,18 @@ Start it manually (a plain background shell command) whenever officer login need
 **Real MySQL database in use for the auth service**: `E:/API/.env`'s `MYSQL_DATABASE` points at
 `lighthouse` (not the default `lighthouse_mysql`, which is a different, separate DB also on
 this MySQL instance, used by another project — do not confuse the two). `lighthouse` also
-predates this session (3 other tenants already existed in it before KAIZEN's own `kaizen`
+predates this session (3 other tenants already existed in it before ANVESHAK's own `anveshak`
 tenant was added) — this is a real, shared, populated database, not an empty sandbox.
 
 **Two accounts already seeded and ready to use right now:**
 - `dhruv@carvelle.in` — officer login (email+OTP via the auth service). Re-seed more officers
-  any time with `cd E:/API && .venv/Scripts/python.exe scripts/seed_kaizen_tenant.py <email>`
+  any time with `cd E:/API && .venv/Scripts/python.exe scripts/seed_anveshak_tenant.py <email>`
   (safely re-runnable, skips already-seeded emails).
 - `cntcitachi@gmail.com` — a demo VASP/exchange subscriber ("Demo Exchange"), with a demo
   flagged wallet and a real test reply already in the system. Its portal link (dev):
   `http://localhost:5173/vasp-portal/RQuiGLs09nbxNEluga-jnftGhZ3AdJnr9x00t7Gx3VE`
 
-**One shared secret both services must agree on**: `KAIZEN_AUTH_JWT_SECRET`
+**One shared secret both services must agree on**: `ANVESHAK_AUTH_JWT_SECRET`
 (`backend/.env`) must be the EXACT SAME VALUE as `E:/API/.env`'s `JWT_SECRET` — already set
 correctly in both files right now, but if either ever gets rotated independently, every login
 silently breaks with a generic 401 (by design — never leaks which failure mode occurred).
@@ -66,7 +66,7 @@ silently breaks with a generic 401 (by design — never leaks which failure mode
 `env_file` was configured) — every key in that file was silently inert regardless of how the
 backend was launched. Fixed now, pinned to an *absolute* path (not just `env_file=".env"`,
 which still depended on the process's own working directory and could silently fail again
-under a different launch method). If a feature that reads a `KAIZEN_*` setting ever behaves as
+under a different launch method). If a feature that reads a `ANVESHAK_*` setting ever behaves as
 if the key isn't set even though it's plainly in `backend/.env`, check this file first before
 assuming the key itself is wrong.
 
@@ -79,12 +79,12 @@ assuming the key itself is wrong.
   wallet-relevance-matching system to "fix" this without discussing it first.
 - `docker compose up --build` has only been statically verified (config parses clean) — nobody
   has run the live stack on a machine with Docker's engine actually running.
-- Officer login (Feature 1) is NOT retrofitted onto any pre-existing KAIZEN API endpoint — only
+- Officer login (Feature 1) is NOT retrofitted onto any pre-existing ANVESHAK API endpoint — only
   the new VASP-replies endpoint uses `get_current_officer` today. This is a disclosed, deliberate
   scope limit, not partial work left broken.
 - `E:/API/scripts/migrate.py` (a script in the OTHER repo) can't actually bootstrap a fresh
   SQLite database despite that being its whole documented purpose (a MySQL-only
-  `information_schema` query) — irrelevant to KAIZEN's own use (which runs real MySQL), but
+  `information_schema` query) — irrelevant to ANVESHAK's own use (which runs real MySQL), but
   worth knowing if anyone ever tries to stand up `E:/API` fresh against SQLite.
 - Real, independently-verified fraud-adjacent addresses in this entire codebase: exactly 3
   (the OFAC seed data). The ML risk model stays 100% synthetic-trained by deliberate choice,

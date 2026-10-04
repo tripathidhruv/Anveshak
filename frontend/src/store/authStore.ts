@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 
-/** The three real KAIZEN roles the backend's `UserRole` table can resolve an authenticated
+/** The three real ANVESHAK roles the backend's `UserRole` table can resolve an authenticated
  * email to (see `backend/app/auth/identity.py`'s `VALID_ROLES`). Guest is deliberately NOT a
  * member of this union -- a guest never has a role, they have `isGuest: true` instead (see
  * `isGuest` below), so `role` always answers "what did the backend say this verified email

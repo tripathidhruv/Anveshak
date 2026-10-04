@@ -78,7 +78,7 @@ const INFO: Record<string, NodeInfo> = {
   bridge: { title: 'Bridge contract', role: 'Leaves TRON', tone: 'violet', addr: ROUTE_B.trail[2].addr, chain: 'TRON', amt: 1795, at: '19:58:41', plain: '1,795 USDT was sent into a cross-chain bridge to hide the trail on another blockchain.', flags: [{ label: 'Bridge in', tone: 'violet' }] },
   emerge: { title: 'Emerges on Ethereum', role: 'Bridge exit', tone: 'violet', addr: ROUTE_B.trail[3].addr, chain: 'Ethereum', amt: 1782, at: '20:03:19', plain: 'Matched by amount (minus the bridge fee) and timing, 4 min 38 s later. Link confidence 82% — verify before acting.', flags: [{ label: 'Bridge out · 82%', tone: 'violet' }] },
   w4: { title: 'Pass-through wallet 4', role: 'Hop 5 · Ethereum', tone: 'teal', addr: ROUTE_B.trail[4].addr, chain: 'Ethereum', amt: 1776, at: '20:09:55', plain: 'Drained 6 min 36 s later — slower than on TRON but still automated.', flags: [{ label: 'Swept', tone: 'crimson' }] },
-  mixer: { title: 'Mixing service', role: 'Trail goes cold', tone: 'neutral', addr: '0x910c4e7d2b8fa3c51e', chain: 'Ethereum', amt: 400, at: '20:06:12', plain: '400 USDT entered a known mixing pool. No tool can see through a mixer — so KAIZEN watches for the operator\'s behaviour on the other side.', flags: [{ label: 'Mixer entry', tone: 'neutral' }] },
+  mixer: { title: 'Mixing service', role: 'Trail goes cold', tone: 'neutral', addr: '0x910c4e7d2b8fa3c51e', chain: 'Ethereum', amt: 400, at: '20:06:12', plain: '400 USDT entered a known mixing pool. No tool can see through a mixer — so ANVESHAK watches for the operator\'s behaviour on the other side.', flags: [{ label: 'Mixer entry', tone: 'neutral' }] },
   reacq: { title: 'Re-acquired wallet', role: 'Behavioural match', tone: 'ember', addr: '0x5d1e93ac40f7b2e6d8', chain: 'Ethereum', amt: 396, at: '21:48:30', plain: 'Withdrew a near-identical amount 1 h 42 m later with the same fee setting and timing rhythm as this operator. A lead, not proof.', flags: [{ label: 'Re-acquired · 81%', tone: 'ember' }] },
   exchange: { title: EXCHANGE.name, role: 'Cash-out point', tone: 'gold', plain: 'Both routes end at Meridian. Send one lawful request for the KYC behind both deposit addresses.', flags: [{ label: 'Not FIU-IND registered', tone: 'crimson' }] },
 }
@@ -383,7 +383,7 @@ export default function TracePage() {
               right={<Chip tone="ember">New</Chip>}
             />
             <p className="px-5 pt-2 text-[13px] leading-relaxed text-muted">
-              400 USDT entered a mixer, which hides who withdraws what. Instead of stopping, KAIZEN compares every withdrawal that followed against this operator's habits.
+              400 USDT entered a mixer, which hides who withdraws what. Instead of stopping, ANVESHAK compares every withdrawal that followed against this operator's habits.
             </p>
             <div className="mt-3 space-y-1.5 px-3">
               {CANDIDATES.map((c, i) => (

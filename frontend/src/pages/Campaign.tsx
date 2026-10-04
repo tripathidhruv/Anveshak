@@ -16,7 +16,7 @@ import { ROUTES } from '../utils/constants'
 import { formatINR, truncateAddress } from '../utils/format'
 
 /** Resolves the same one-env-var switch locally, matching `Campaigns.tsx` and `Evidence.tsx` --
- * `getCampaignDetail` isn't part of the shared `KaizenApi` surface, so this page picks between
+ * `getCampaignDetail` isn't part of the shared `AnveshakApi` surface, so this page picks between
  * the mock and real implementation itself rather than going through `api/index.ts`. */
 const USE_MOCK = import.meta.env.VITE_USE_MOCK !== 'false'
 const fetchCampaignDetail: (campaignId: string) => Promise<CampaignDetailOut> = USE_MOCK

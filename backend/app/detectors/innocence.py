@@ -35,7 +35,7 @@ class InnocenceResult:
 def compute_innocence(wallet_address: str, all_transfers: list[Transfer], incident_at: datetime,
                        victim_amount: Decimal, asset: str,
                        history_unavailable: bool = False, chain: str | None = None) -> InnocenceResult:
-    """The exculpatory counterpart to the risk score. Every KAIZEN risk factor accuses;
+    """The exculpatory counterpart to the risk score. Every ANVESHAK risk factor accuses;
     this is the only check that can say 'not this one' -- same gating logic the deposit
     detector needs anyway (distinct payers, counter-flow, known-contract checks), surfaced
     as a first-class output instead of buried as an internal guard. Every wallet gets both

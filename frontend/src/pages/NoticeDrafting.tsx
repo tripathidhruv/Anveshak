@@ -34,7 +34,7 @@ import { useAuthStore } from '../store/authStore'
  * matching that backend exactly rather than quietly bolting on a bearer header it doesn't
  * expect.
  *
- * DEMO DATA — every case this screen can be pointed at is KAIZEN's synthetic case data
+ * DEMO DATA — every case this screen can be pointed at is ANVESHAK's synthetic case data
  * (CLAUDE.md rule 1); the legal citations themselves are UNVERIFIED against real statute text
  * (CLAUDE.md "Known gaps" / `citations.py`'s own DISCLAIMER, rendered into every notice body).
  */

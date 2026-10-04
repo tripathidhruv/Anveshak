@@ -11,7 +11,7 @@ import { getFlaggedWallets as getFlaggedWalletsHttp, type BackendFlaggedWallet }
 import { getFlaggedWallets as getFlaggedWalletsMock } from '../api/mock'
 import { ROUTES } from '../utils/constants'
 
-/** `getFlaggedWallets` isn't part of the shared `KaizenApi` mock/real switch (`api/index.ts`),
+/** `getFlaggedWallets` isn't part of the shared `AnveshakApi` mock/real switch (`api/index.ts`),
  * so this screen resolves the same one-env-var switch locally -- same pattern `Evidence.tsx`/
  * `RiskScore.tsx`/`MyComplaints.tsx` already use for their own standalone endpoint pairs. Real
  * bug fixed here (2026-09-28): this screen previously always called the real backend regardless
@@ -75,7 +75,7 @@ export default function FlaggedWallets() {
           Flagged wallets
         </h1>
         <p className="mt-1.5 text-[15px] text-muted-foreground">
-          DEMO DATA · every wallet KAIZEN has flagged system-wide, across every case.
+          DEMO DATA · every wallet ANVESHAK has flagged system-wide, across every case.
         </p>
       </header>
 

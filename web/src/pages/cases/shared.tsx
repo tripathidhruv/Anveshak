@@ -36,7 +36,7 @@ const POOL: Record<Chain, string[]> = {
   Bitcoin: ['bc1q7m3xk9d2v8wq4sr6tn', 'bc1q4h8pn2x6rk9dz3mw7c'],
 }
 
-/** Synthetic suspect wallet per case (KZN-2026-0417 uses the canonical one). */
+/** Synthetic suspect wallet per case (ANV-2026-0417 uses the canonical one). */
 export function walletFor(c: CaseRow): string {
   if (c.wallet) return c.wallet
   if (c.id === CASE.id) return CASE.suspectWallet

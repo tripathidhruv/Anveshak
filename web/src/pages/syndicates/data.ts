@@ -45,14 +45,14 @@ export type SynGraph = {
 export const GRAPHS: Record<string, SynGraph> = {
   'SYN-07': {
     cases: [
-      { id: 'KZN-2026-0417', who: 'Rekha Sharma', city: 'Jaipur', state: 'RJ', amt: 1240000, filed: '04 Sep', type: 'Task-based job scam', wallet: 'w1', via: ['hub', 'deposit', 'timing', 'telegram'] },
-      { id: 'KZN-2026-0391', who: 'Neha Bhatt', city: 'Dehradun', state: 'UK', amt: 284000, filed: '22 Aug', type: 'Task-based job scam', wallet: 'w1', via: ['hub'] },
-      { id: 'KZN-2026-0416', who: 'Arun Menon', city: 'Kochi', state: 'KL', amt: 860000, filed: '04 Sep', type: 'Investment app scam', wallet: 'w2', via: ['hub', 'timing', 'deposit'] },
-      { id: 'KZN-2026-0412', who: 'Harpreet Gill', city: 'Ludhiana', state: 'PB', amt: 655000, filed: '02 Sep', type: 'Investment app scam', wallet: 'w2', via: ['hub', 'deposit'] },
-      { id: 'KZN-2026-0406', who: 'Sunita Yadav', city: 'Patna', state: 'BR', amt: 760000, filed: '30 Aug', type: 'Task-based job scam', wallet: 'w3', via: ['deposit', 'telegram'] },
-      { id: 'KZN-2026-0398', who: 'Vikram Patil', city: 'Nagpur', state: 'MH', amt: 342000, filed: '27 Aug', type: 'Task-based job scam', wallet: 'w3', via: ['telegram', 'timing'] },
-      { id: 'KZN-2026-0408', who: 'Deepa Rao', city: 'Hyderabad', state: 'TG', amt: 1120000, filed: '31 Aug', type: 'Task-based job scam', wallet: 'w4', via: ['hub', 'timing'] },
-      { id: 'KZN-2026-0415', who: 'Fatima Qureshi', city: 'Lucknow', state: 'UP', amt: 2150000, filed: '03 Sep', type: 'Pig-butchering (romance)', wallet: 'w5', via: ['bridge', 'timing', 'telegram'] },
+      { id: 'ANV-2026-0417', who: 'Rekha Sharma', city: 'Jaipur', state: 'RJ', amt: 1240000, filed: '04 Sep', type: 'Task-based job scam', wallet: 'w1', via: ['hub', 'deposit', 'timing', 'telegram'] },
+      { id: 'ANV-2026-0391', who: 'Neha Bhatt', city: 'Dehradun', state: 'UK', amt: 284000, filed: '22 Aug', type: 'Task-based job scam', wallet: 'w1', via: ['hub'] },
+      { id: 'ANV-2026-0416', who: 'Arun Menon', city: 'Kochi', state: 'KL', amt: 860000, filed: '04 Sep', type: 'Investment app scam', wallet: 'w2', via: ['hub', 'timing', 'deposit'] },
+      { id: 'ANV-2026-0412', who: 'Harpreet Gill', city: 'Ludhiana', state: 'PB', amt: 655000, filed: '02 Sep', type: 'Investment app scam', wallet: 'w2', via: ['hub', 'deposit'] },
+      { id: 'ANV-2026-0406', who: 'Sunita Yadav', city: 'Patna', state: 'BR', amt: 760000, filed: '30 Aug', type: 'Task-based job scam', wallet: 'w3', via: ['deposit', 'telegram'] },
+      { id: 'ANV-2026-0398', who: 'Vikram Patil', city: 'Nagpur', state: 'MH', amt: 342000, filed: '27 Aug', type: 'Task-based job scam', wallet: 'w3', via: ['telegram', 'timing'] },
+      { id: 'ANV-2026-0408', who: 'Deepa Rao', city: 'Hyderabad', state: 'TG', amt: 1120000, filed: '31 Aug', type: 'Task-based job scam', wallet: 'w4', via: ['hub', 'timing'] },
+      { id: 'ANV-2026-0415', who: 'Fatima Qureshi', city: 'Lucknow', state: 'UP', amt: 2150000, filed: '03 Sep', type: 'Pig-butchering (romance)', wallet: 'w5', via: ['bridge', 'timing', 'telegram'] },
     ],
     wallets: [
       { id: 'w1', addr: 'TXk99ZPWKtvn7dYqDom1KHPjujmpXKraUm', label: 'Scam wallet A', hub: 'h1' },
@@ -101,12 +101,12 @@ export const GRAPHS: Record<string, SynGraph> = {
   },
   'SYN-03': {
     cases: [
-      { id: 'KZN-2026-0413', who: 'Priya Nair', city: 'Bengaluru', state: 'KA', amt: 1780000, filed: '02 Sep', type: 'Task-based job scam', wallet: 'w1', via: ['hub', 'deposit'] },
-      { id: 'KZN-2026-0410', who: 'Meera Joshi', city: 'Pune', state: 'MH', amt: 2890000, filed: '01 Sep', type: 'Pig-butchering (romance)', wallet: 'w1', via: ['hub', 'timing', 'telegram'] },
-      { id: 'KZN-2026-0388', who: 'Sandeep Kulkarni', city: 'Mumbai', state: 'MH', amt: 4120000, filed: '20 Aug', type: 'Pig-butchering (romance)', wallet: 'w2', via: ['hub', 'deposit', 'timing'] },
-      { id: 'KZN-2026-0372', who: 'Ritu Malhotra', city: 'Delhi', state: 'DL', amt: 1560000, filed: '11 Aug', type: 'Pig-butchering (romance)', wallet: 'w2', via: ['telegram', 'timing'] },
-      { id: 'KZN-2026-0365', who: 'George Thomas', city: 'Thrissur', state: 'KL', amt: 980000, filed: '06 Aug', type: 'Investment app scam', wallet: 'w3', via: ['deposit', 'bridge'] },
-      { id: 'KZN-2026-0351', who: 'Anjali Desai', city: 'Vadodara', state: 'GJ', amt: 2210000, filed: '28 Jul', type: 'Pig-butchering (romance)', wallet: 'w3', via: ['hub'] },
+      { id: 'ANV-2026-0413', who: 'Priya Nair', city: 'Bengaluru', state: 'KA', amt: 1780000, filed: '02 Sep', type: 'Task-based job scam', wallet: 'w1', via: ['hub', 'deposit'] },
+      { id: 'ANV-2026-0410', who: 'Meera Joshi', city: 'Pune', state: 'MH', amt: 2890000, filed: '01 Sep', type: 'Pig-butchering (romance)', wallet: 'w1', via: ['hub', 'timing', 'telegram'] },
+      { id: 'ANV-2026-0388', who: 'Sandeep Kulkarni', city: 'Mumbai', state: 'MH', amt: 4120000, filed: '20 Aug', type: 'Pig-butchering (romance)', wallet: 'w2', via: ['hub', 'deposit', 'timing'] },
+      { id: 'ANV-2026-0372', who: 'Ritu Malhotra', city: 'Delhi', state: 'DL', amt: 1560000, filed: '11 Aug', type: 'Pig-butchering (romance)', wallet: 'w2', via: ['telegram', 'timing'] },
+      { id: 'ANV-2026-0365', who: 'George Thomas', city: 'Thrissur', state: 'KL', amt: 980000, filed: '06 Aug', type: 'Investment app scam', wallet: 'w3', via: ['deposit', 'bridge'] },
+      { id: 'ANV-2026-0351', who: 'Anjali Desai', city: 'Vadodara', state: 'GJ', amt: 2210000, filed: '28 Jul', type: 'Pig-butchering (romance)', wallet: 'w3', via: ['hub'] },
     ],
     wallets: [
       { id: 'w1', addr: 'TCs4nM8kP2wR6dX9vB3hL', label: 'Scam wallet A', hub: 'h1' },
@@ -141,10 +141,10 @@ export const GRAPHS: Record<string, SynGraph> = {
   },
   'SYN-11': {
     cases: [
-      { id: 'KZN-2026-0407', who: 'Rohit Das', city: 'Kolkata', state: 'WB', amt: 540000, filed: '31 Aug', type: 'Loan app extortion', wallet: 'w1', via: ['hub', 'deposit'] },
-      { id: 'KZN-2026-0394', who: 'Sabina Begum', city: 'Guwahati', state: 'AS', amt: 210000, filed: '24 Aug', type: 'Loan app extortion', wallet: 'w1', via: ['hub', 'telegram'] },
-      { id: 'KZN-2026-0386', who: 'Abhishek Ranjan', city: 'Ranchi', state: 'JH', amt: 165000, filed: '23 Aug', type: 'Loan app extortion', wallet: 'w2', via: ['deposit', 'timing'] },
-      { id: 'KZN-2026-0383', who: 'Tanmay Pradhan', city: 'Bhubaneswar', state: 'OD', amt: 320000, filed: '21 Aug', type: 'Loan app extortion', wallet: 'w2', via: ['hub'] },
+      { id: 'ANV-2026-0407', who: 'Rohit Das', city: 'Kolkata', state: 'WB', amt: 540000, filed: '31 Aug', type: 'Loan app extortion', wallet: 'w1', via: ['hub', 'deposit'] },
+      { id: 'ANV-2026-0394', who: 'Sabina Begum', city: 'Guwahati', state: 'AS', amt: 210000, filed: '24 Aug', type: 'Loan app extortion', wallet: 'w1', via: ['hub', 'telegram'] },
+      { id: 'ANV-2026-0386', who: 'Abhishek Ranjan', city: 'Ranchi', state: 'JH', amt: 165000, filed: '23 Aug', type: 'Loan app extortion', wallet: 'w2', via: ['deposit', 'timing'] },
+      { id: 'ANV-2026-0383', who: 'Tanmay Pradhan', city: 'Bhubaneswar', state: 'OD', amt: 320000, filed: '21 Aug', type: 'Loan app extortion', wallet: 'w2', via: ['hub'] },
     ],
     wallets: [
       { id: 'w1', addr: '0x2a9f3c71d8e04b5a6c', label: 'Scam wallet A · ETH', hub: 'h1' },
@@ -171,9 +171,9 @@ export const GRAPHS: Record<string, SynGraph> = {
   },
   'SYN-02': {
     cases: [
-      { id: 'KZN-2026-0379', who: 'Col. (retd) R. Bhatia', city: 'Chandigarh', state: 'CH', amt: 3400000, filed: '18 Aug', type: 'Digital arrest', wallet: 'w1', via: ['hub', 'timing'] },
-      { id: 'KZN-2026-0362', who: 'Usha Krishnan', city: 'Coimbatore', state: 'TN', amt: 2750000, filed: '04 Aug', type: 'Digital arrest', wallet: 'w1', via: ['hub', 'deposit'] },
-      { id: 'KZN-2026-0340', who: 'Dinesh Agarwal', city: 'Jodhpur', state: 'RJ', amt: 1900000, filed: '20 Jul', type: 'Digital arrest', wallet: 'w2', via: ['deposit', 'telegram'] },
+      { id: 'ANV-2026-0379', who: 'Col. (retd) R. Bhatia', city: 'Chandigarh', state: 'CH', amt: 3400000, filed: '18 Aug', type: 'Digital arrest', wallet: 'w1', via: ['hub', 'timing'] },
+      { id: 'ANV-2026-0362', who: 'Usha Krishnan', city: 'Coimbatore', state: 'TN', amt: 2750000, filed: '04 Aug', type: 'Digital arrest', wallet: 'w1', via: ['hub', 'deposit'] },
+      { id: 'ANV-2026-0340', who: 'Dinesh Agarwal', city: 'Jodhpur', state: 'RJ', amt: 1900000, filed: '20 Jul', type: 'Digital arrest', wallet: 'w2', via: ['deposit', 'telegram'] },
     ],
     wallets: [
       { id: 'w1', addr: 'TPr5vK2nH8dM4wS1cX7qB', label: 'Scam wallet A', hub: 'h1' },

@@ -13,7 +13,7 @@ import { getRiskScore as getRiskScoreMock } from '../api/mock'
 import type { RiskBand } from '../types'
 import { ROUTES } from '../utils/constants'
 
-/** `getRiskScore` isn't part of the shared `KaizenApi` mock/real switch (`api/index.ts`), so
+/** `getRiskScore` isn't part of the shared `AnveshakApi` mock/real switch (`api/index.ts`), so
  * this screen resolves the same one-env-var switch locally -- same pattern `Evidence.tsx`
  * already uses for `getEvidencePack`/`verifyEvidencePack`, which sit outside that surface too. */
 const USE_MOCK = import.meta.env.VITE_USE_MOCK !== 'false'

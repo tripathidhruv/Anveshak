@@ -380,7 +380,7 @@ function HashChain() {
 /* ───────── Notice drafting + approval FSM ───────── */
 const STEP_ICON = [<FileText key="d" />, <UserCheck key="r" />, <Stamp key="a" />, <Send key="s" />, <CheckCircle2 key="k" />]
 const STEP_LOG = [
-  { at: '11:48', who: 'KAIZEN', what: 'Draft generated from case data' },
+  { at: '11:48', who: 'ANVESHAK', what: 'Draft generated from case data' },
   { at: '11:52', who: CASE.officer, what: 'Marked reviewed' },
   { at: '12:01', who: 'SP (Cyber) Vikram Solanki', what: 'Approved for sending' },
   { at: '12:03', who: 'SAHYOG', what: 'Delivered to exchange nodal officer' },
@@ -444,7 +444,7 @@ function NoticeDesk() {
         <div className="mx-5 mt-3 flex items-start gap-2 rounded-xl border border-gold/25 bg-gold/[0.06] px-3 py-2 text-[13px] text-text/90">
           <TriangleAlert className="mt-0.5 size-3.5 shrink-0 text-gold" />
           <span>
-            <span className="font-medium text-gold">Draft for officer review — not legal advice.</span> KAIZEN fills in facts from the case; the officer is responsible for the final wording and legal basis.
+            <span className="font-medium text-gold">Draft for officer review — not legal advice.</span> ANVESHAK fills in facts from the case; the officer is responsible for the final wording and legal basis.
           </span>
         </div>
         <Tabs value={tab} onValueChange={(v) => setTab(v as NoticeKey)} className="mt-3 px-5">

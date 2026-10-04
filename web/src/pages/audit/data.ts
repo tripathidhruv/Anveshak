@@ -1,5 +1,5 @@
 /**
- * Audit Ledger — page-local synthetic custody log for case KZN-2026-0417.
+ * Audit Ledger — page-local synthetic custody log for case ANV-2026-0417.
  * Hashes are computed for real (lightweight 64-bit demo hash standing in for SHA-256),
  * so the tamper simulation genuinely breaks the chain.
  */
@@ -12,7 +12,7 @@ export type Actor = { id: string; name: string; role: string; tone: Tone; initia
 export const ACTORS: Actor[] = [
   { id: 'ncrp', name: 'NCRP portal', role: 'system intake', tone: 'neutral', initials: 'NP' },
   { id: 'kavita', name: 'SI Kavita Rathore', role: 'investigating officer', tone: 'white', initials: 'KR' },
-  { id: 'engine', name: 'KAIZEN engine', role: 'automated analysis', tone: 'ember', initials: 'KZ' },
+  { id: 'engine', name: 'ANVESHAK engine', role: 'automated analysis', tone: 'ember', initials: 'KZ' },
   { id: 'arjun', name: 'Insp. Arjun Bhatia', role: 'reviewing officer', tone: 'white', initials: 'AB' },
   { id: 'sp', name: 'SP Neha Kulkarni', role: 'SP approval', tone: 'moss', initials: 'NK' },
   { id: 'meridian', name: 'Meridian Digital Exchange', role: 'exchange (external)', tone: 'gold', initials: 'MD' },
@@ -39,7 +39,7 @@ export type Entry = {
 
 export const RAW: Entry[] = [
   { n: 1, date: '04 Sep', time: '11:05:12', actor: 'ncrp', type: 'intake', action: 'Complaint received', object: 'NCRP 31402260041789', detail: 'Rekha Sharma, Jaipur · loss reported ₹12.4 L' },
-  { n: 2, date: '04 Sep', time: '11:18:40', actor: 'kavita', type: 'intake', action: 'Case opened', object: 'KZN-2026-0417', detail: 'FIR 0312/2026 · Cyber PS Jaipur' },
+  { n: 2, date: '04 Sep', time: '11:18:40', actor: 'kavita', type: 'intake', action: 'Case opened', object: 'ANV-2026-0417', detail: 'FIR 0312/2026 · Cyber PS Jaipur' },
   { n: 3, date: '04 Sep', time: '11:21:03', actor: 'engine', type: 'analysis', action: 'Trace completed', object: 'TXk9mR…D6fH', detail: '6 hops in 41 s · ends at an exchange deposit address' },
   { n: 4, date: '04 Sep', time: '11:21:09', actor: 'engine', type: 'analysis', action: 'Risk scored', object: 'TXk9mR…D6fH', detail: 'HIGH 0.87 · 6 factors · weights v14' },
   { n: 5, date: '04 Sep', time: '11:21:15', actor: 'engine', type: 'analysis', action: 'Exchange attributed', object: 'TBx1eM…W2kL', detail: 'Meridian Digital Exchange · confidence 0.91' },

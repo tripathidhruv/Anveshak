@@ -6,7 +6,7 @@ export interface ReportHeaderProps {
   generatedAt: string
 }
 
-/** KAIZEN wordmark + case id + generated timestamp — the report's masthead. */
+/** ANVESHAK wordmark + case id + generated timestamp — the report's masthead. */
 export function ReportHeader({ caseData, generatedAt }: ReportHeaderProps) {
   const generatedLabel = new Date(generatedAt).toLocaleString('en-IN', {
     dateStyle: 'medium',
@@ -16,7 +16,7 @@ export function ReportHeader({ caseData, generatedAt }: ReportHeaderProps) {
   return (
     <header className={styles.masthead}>
       <div>
-        <p className={styles.wordmark}>KAIZEN</p>
+        <p className={styles.wordmark}>ANVESHAK</p>
         <p className={styles.docType}>Investigation Report</p>
       </div>
       <div className={styles.mastheadMeta}>

@@ -141,7 +141,7 @@ export default function FiatPage() {
             </>
           }
           title="Rupee Exit Trail"
-          tech="Where the stolen crypto became rupees. KAIZEN pairs each crypto sale on a P2P desk with the bank credit it caused — following the money past the exchange, into mule accounts and out at ATMs."
+          tech="Where the stolen crypto became rupees. ANVESHAK pairs each crypto sale on a P2P desk with the bank credit it caused — following the money past the exchange, into mule accounts and out at ATMs."
           actions={
             <>
               <Link to="/attribution">
@@ -219,7 +219,7 @@ function HowItLeaves() {
           <div className="text-[12.5px] text-dim">P2P off-ramp · crypto leg + bank leg</div>
         </div>
         <Chip tone="ember" dot>
-          Only KAIZEN follows the bank leg
+          Only ANVESHAK follows the bank leg
         </Chip>
       </div>
       <div className="mt-4 grid grid-cols-1 gap-2 lg:grid-cols-[1fr_auto_1fr_auto_1fr_auto_1fr]">
@@ -257,7 +257,7 @@ function HowItLeaves() {
           </React.Fragment>
         ))}
       </div>
-      <p className="mt-3 text-[12.5px] text-dim lg:hidden">Other tools stop after step 1. KAIZEN continues into the bank leg.</p>
+      <p className="mt-3 text-[12.5px] text-dim lg:hidden">Other tools stop after step 1. ANVESHAK continues into the bank leg.</p>
     </Card>
   )
 }
@@ -357,7 +357,7 @@ function MuleNetwork() {
             tone="crimson"
             cell={15}
             gap={4}
-            rowLabels={MULE_CASES.map((c) => c.replace('KZN-2026-', '#'))}
+            rowLabels={MULE_CASES.map((c) => c.replace('ANV-2026-', '#'))}
             colLabels={MULE_ACCOUNTS.map((a) => a.acct.slice(-2))}
             accent={accent}
             title={(r, c, v) =>
@@ -368,7 +368,7 @@ function MuleNetwork() {
           />
           <div className="mt-2 flex items-center gap-3 text-[11.5px] text-dim">
             <span className="flex items-center gap-1.5">
-              <span className="size-2 rounded-[2px] bg-ember" /> this case ({CASE.id.replace('KZN-2026-', '#')})
+              <span className="size-2 rounded-[2px] bg-ember" /> this case ({CASE.id.replace('ANV-2026-', '#')})
             </span>
             <span className="flex items-center gap-1.5">
               <span className="size-2 rounded-[2px] bg-crimson/70" /> other cases

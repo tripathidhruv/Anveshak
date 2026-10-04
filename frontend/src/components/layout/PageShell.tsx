@@ -42,7 +42,7 @@ export function PageShell() {
             Best viewed on desktop
           </h2>
           <p className="text-sm text-muted-foreground">
-            KAIZEN&rsquo;s console is designed for a 1920×1080 (or at minimum 1440×900) desktop display. Please
+            ANVESHAK&rsquo;s console is designed for a 1920×1080 (or at minimum 1440×900) desktop display. Please
             reopen this on a larger screen.
           </p>
         </Card>

@@ -27,9 +27,9 @@ export const AXES: Axis[] = [
   { key: 'cashout', short: 'Cash-out venue', plain: 'Cashes out at the same kind of exchange', tech: 'share at offshore, non-FIU-registered VASPs', w: 0.08, raw: (v) => `${Math.round(v * 100)}% offshore` },
 ]
 
-/** Current case behavioural profile (wallet cluster of KZN-2026-0417, last 30 days). */
+/** Current case behavioural profile (wallet cluster of ANV-2026-0417, last 30 days). */
 export const CURRENT = {
-  id: 'KZN-2026-0417',
+  id: 'ANV-2026-0417',
   label: 'This case',
   values: [0.94, 0.9, 0.84, 0.62, 0.88, 0.36, 0.86, 0.8],
 }

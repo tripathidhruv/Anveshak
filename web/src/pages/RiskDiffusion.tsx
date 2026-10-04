@@ -98,7 +98,7 @@ export default function RiskDiffusionPage() {
             </>
           }
           title="Sanctions-proximity risk"
-          tech="Normal screening only asks “is this exact wallet on a list?” — one in-between shell wallet defeats it. KAIZEN spreads risk outward from listed addresses through the money trail, fading with every hop and with how much value actually flowed, so “one wallet away” layering is caught. · risk diffusion over the transaction graph"
+          tech="Normal screening only asks “is this exact wallet on a list?” — one in-between shell wallet defeats it. ANVESHAK spreads risk outward from listed addresses through the money trail, fading with every hop and with how much value actually flowed, so “one wallet away” layering is caught. · risk diffusion over the transaction graph"
           actions={
             <>
               <span className="k-btn-ghost inline-flex h-9 items-center gap-1.5 rounded-[10px] px-3 text-[13px] text-muted">

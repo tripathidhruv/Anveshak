@@ -163,17 +163,17 @@ def parse_complaint(payload: IntakeParseIn) -> IntakeParseOut:
     )
 
 
-_CASE_ID_RE = re.compile(r"^KZN-\d{4}-(\d+)$")
+_CASE_ID_RE = re.compile(r"^ANV-\d{4}-(\d+)$")
 
 
 def _next_case_id(db: Session) -> str:
-    """KZN-<year>-<NNNN>: one past the highest number used anywhere -- in local cases or in the
+    """ANV-<year>-<NNNN>: one past the highest number used anywhere -- in local cases or in the
     national memory -- so a new case never collides with one another unit already reported."""
     ids = [cid for (cid,) in db.query(Case.id).all()]
     ids += [cid for (cid,) in db.query(MemoryEvent.case_id).filter(MemoryEvent.case_id.isnot(None)).distinct().all()]
     nums = [int(m.group(1)) for cid in ids if (m := _CASE_ID_RE.match(cid))]
     n = max([417, *nums]) + 1
-    return f"KZN-{datetime.now(IST).year}-{n:04d}"
+    return f"ANV-{datetime.now(IST).year}-{n:04d}"
 
 
 def _city_state(location: str, state: str | None) -> tuple[str | None, str | None]:

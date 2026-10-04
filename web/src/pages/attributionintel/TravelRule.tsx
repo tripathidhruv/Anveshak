@@ -29,7 +29,7 @@ const FLOW_EDGES: FlowEdge[] = [
 
 const WHERE: Record<(typeof IVMS_FIELDS)[number]['where'], { tone: Tone; label: string; icon: React.ReactNode }> = {
   public: { tone: 'teal', label: 'Public on the blockchain', icon: <Eye className="size-3" /> },
-  inferred: { tone: 'gold', label: 'Worked out by KAIZEN', icon: <Building2 className="size-3" /> },
+  inferred: { tone: 'gold', label: 'Worked out by ANVESHAK', icon: <Building2 className="size-3" /> },
   sealed: { tone: 'neutral', label: 'Sealed until lawful request', icon: <Lock className="size-3" /> },
 }
 
@@ -45,7 +45,7 @@ export function HowItWorks() {
         <p className="mt-2 max-w-2xl text-[14px] leading-relaxed text-muted">
           When one regulated exchange sends crypto above the threshold to another, it must also send the{' '}
           <span className="text-text">sender’s and receiver’s identity</span> through a Travel Rule messaging network. So for a transfer between
-          two compliant exchanges, the identity <span className="text-text">already exists</span> in a compliance message. KAIZEN matches the three
+          two compliant exchanges, the identity <span className="text-text">already exists</span> in a compliance message. ANVESHAK matches the three
           fields that are also public on the blockchain — <span className="text-teal">amount, time and receiving address</span> — to point the officer at
           the exact record, instead of tracing hop by hop.
         </p>
@@ -76,7 +76,7 @@ export function HowItWorks() {
         </div>
         <div className="mt-3 flex flex-wrap items-center gap-3 text-[12px] text-dim">
           <span className="inline-flex items-center gap-1.5"><span className="size-1.5 rounded-full bg-teal" /> 3 public fields = the join key</span>
-          <span className="inline-flex items-center gap-1.5"><Lock className="size-3" /> 4 identity fields stay sealed — KAIZEN never sees them</span>
+          <span className="inline-flex items-center gap-1.5"><Lock className="size-3" /> 4 identity fields stay sealed — ANVESHAK never sees them</span>
         </div>
       </div>
     </Card>
@@ -276,7 +276,7 @@ export function Candidates() {
               })}
             </tbody>
           </table>
-          <p className="mt-2 px-2 text-[12px] text-dim">“Record likely” = probability a matching compliance record exists, from the five checks. It is not a match on identity — KAIZEN cannot see identities.</p>
+          <p className="mt-2 px-2 text-[12px] text-dim">“Record likely” = probability a matching compliance record exists, from the five checks. It is not a match on identity — ANVESHAK cannot see identities.</p>
         </div>
       </Card>
       <AnimatePresence mode="wait" initial={false}>
@@ -390,7 +390,7 @@ export function HonestyNote() {
         <ShieldCheck className="size-4" />
       </span>
       <div className="min-w-[220px] flex-1 text-[13.5px] leading-relaxed text-muted">
-        <span className="text-text">KAIZEN does not access Travel Rule messages.</span> It works only from public blockchain data, tells the officer that a
+        <span className="text-text">ANVESHAK does not access Travel Rule messages.</span> It works only from public blockchain data, tells the officer that a
         record <em>should</em> exist and which exchange holds it, and drafts the request. Identity fields reach the officer only through the exchange’s
         reply to a lawful request. Record likelihoods are estimates — an exchange may be non-compliant in practice.
       </div>

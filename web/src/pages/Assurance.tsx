@@ -116,7 +116,7 @@ export default function AssurancePage() {
               <div className="mt-0.5 text-[12.5px] text-dim">backtest · engine v14 · cases closed Jan–Aug 2026 with confirmed exchange and court outcome</div>
               <div className="mt-4 grid grid-cols-2 gap-2.5 md:grid-cols-3 2xl:grid-cols-5">
                 {[
-                  { k: 'Precision', v: BACKTEST.precision, d: 2, plain: 'When KAIZEN says “scam wallet”, it is right 94 times in 100' },
+                  { k: 'Precision', v: BACKTEST.precision, d: 2, plain: 'When ANVESHAK says “scam wallet”, it is right 94 times in 100' },
                   { k: 'Recall', v: BACKTEST.recall, d: 2, plain: 'Of all real scam wallets, it catches 89 in 100' },
                   { k: 'F1 score', v: BACKTEST.f1, d: 2, plain: 'Balance of the two above' },
                   { k: 'Right exchange, first pick', v: BACKTEST.top1, d: 2, plain: '168 of 183 cases named the correct exchange first' },
@@ -171,7 +171,7 @@ export default function AssurancePage() {
       <div className="grid grid-cols-1 gap-3 xl:grid-cols-[1.25fr_1fr]">
         <Reveal delay={0.1}>
           <Card className="h-full pb-4">
-            <CardHeader title="What KAIZEN cannot see" tech="honest blind spots · shown to judges and to court" right={<Chip tone="crimson" dot>3 known limits</Chip>} />
+            <CardHeader title="What ANVESHAK cannot see" tech="honest blind spots · shown to judges and to court" right={<Chip tone="crimson" dot>3 known limits</Chip>} />
             <ul className="mt-3 space-y-2 px-3">
               {[
                 { icon: <EyeOff />, t: 'Can’t see through a mixer — by design, we stop and flag', s: 'The trail ends at the mixer. We record where it went in and watch the exits, but never guess which coins came out.' },
@@ -260,7 +260,7 @@ function Reliability() {
         </g>
       ))}
       <text x={x(0.5)} y={H - 2} textAnchor="middle" fontSize="9.5" fill="#8b8b90">
-        What KAIZEN predicted
+        What ANVESHAK predicted
       </text>
       <text x={10} y={y(0.5)} textAnchor="middle" fontSize="9.5" fill="#8b8b90" transform={`rotate(-90 10 ${y(0.5)})`}>
         What actually happened
@@ -348,8 +348,8 @@ function ConfusionCard() {
           <motion.div key="scam" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.25 }} className="px-5 pt-4">
             <div className="grid grid-cols-[64px_1fr_1fr] gap-2 text-[12px] text-dim">
               <span />
-              <span className="text-center">KAIZEN said scam</span>
-              <span className="text-center">KAIZEN said not scam</span>
+              <span className="text-center">ANVESHAK said scam</span>
+              <span className="text-center">ANVESHAK said not scam</span>
               <span className="self-center text-right">Really scam</span>
               <Cell n={tp} label="Caught" tone="moss" strong />
               <Cell n={fn} label="Missed" tone="crimson" />
@@ -379,7 +379,7 @@ function ConfusionCard() {
           <motion.div key="ex" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.25 }} className="px-5 pt-4">
             <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-start">
               <div>
-                <div className="mb-1.5 pl-8 text-[11.5px] text-dim">KAIZEN's first pick →</div>
+                <div className="mb-1.5 pl-8 text-[11.5px] text-dim">ANVESHAK's first pick →</div>
                 <HeatGrid
                   data={norm}
                   cell={26}

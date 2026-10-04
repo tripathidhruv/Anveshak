@@ -41,14 +41,14 @@ def test_lookup_known_wallet():
     assert body["known"] is True and body["chain"] == "tron"
     assert body["firstSeen"] == "2026-08-21T16:05:00+05:30"
     assert body["submissionCount"] == 3
-    assert body["linkedCases"][0] == {"caseId": "KZN-2026-0416", "relation": "same_wallet", "city": "Kochi",
+    assert body["linkedCases"][0] == {"caseId": "ANV-2026-0416", "relation": "same_wallet", "city": "Kochi",
                                       "state": "Kerala", "amountInr": 860000.0,
                                       "reportedAt": "2026-09-03T09:18:00+05:30"}
     assert body["syndicate"] == {"id": "SYN-07", "name": "Telegram task-scam ring “Saffron Desk”", "caseCount": 38,
                                  "stateCount": 11, "valueInr": 47000000.0, "confidence": 0.93,
                                  "hub": "TNh8yW5vC2mQ7fL4xK9pR"}
     assert body["provenance"][0] == {"at": "2026-09-03T09:18:00+05:30", "unit": "Cyber PS Kochi", "state": "Kerala",
-                                     "event": "submitted", "detail": "Named as the receiving wallet in KZN-2026-0416"}
+                                     "event": "submitted", "detail": "Named as the receiving wallet in ANV-2026-0416"}
     assert body["disclaimer"].endswith("A lead to verify, not proof.")
 
 

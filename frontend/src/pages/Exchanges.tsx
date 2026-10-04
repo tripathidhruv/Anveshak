@@ -13,7 +13,7 @@ import { ROUTES } from '../utils/constants'
 import { truncateAddress } from '../utils/format'
 
 /**
- * Screen — registry of exchanges KAIZEN has attributed stolen funds to. The mock dataset has
+ * Screen — registry of exchanges ANVESHAK has attributed stolen funds to. The mock dataset has
  * exactly one (`Meridian Digital Exchange`, fictional per CLAUDE.md), so this reads as a single
  * watchlist row rather than a fabricated list. Structured so a second row would slot in
  * naturally once the backend v2 VASP-flagged-wallet feed exists — that feed itself is out of
@@ -27,7 +27,7 @@ export default function Exchanges() {
 
   useEffect(() => {
     let cancelled = false
-    Promise.all([api.getExchange('KZN-2026-0417'), api.getCampaign()]).then(([exchangeResult, campaignResult]) => {
+    Promise.all([api.getExchange('ANV-2026-0417'), api.getCampaign()]).then(([exchangeResult, campaignResult]) => {
       if (cancelled) return
       setExchange(exchangeResult)
       setCampaign(campaignResult)
@@ -54,7 +54,7 @@ export default function Exchanges() {
           Flagged exchanges
         </h1>
         <p className="mt-1.5 text-[15px] text-muted-foreground">
-          The VASP watchlist — exchanges KAIZEN has traced stolen funds to. One entry in this demo; a live deployment
+          The VASP watchlist — exchanges ANVESHAK has traced stolen funds to. One entry in this demo; a live deployment
           would grow this feed automatically as new traces land.
         </p>
       </header>
@@ -127,7 +127,7 @@ export default function Exchanges() {
             {campaign.cases} complaints across {campaign.states} states have been traced to this exchange's deposit
             address.
           </div>
-          <Button variant="default" onClick={() => navigate(ROUTES.exchange('KZN-2026-0417'))}>
+          <Button variant="default" onClick={() => navigate(ROUTES.exchange('ANV-2026-0417'))}>
             View attribution
             <ArrowRight size={16} />
           </Button>
@@ -140,7 +140,7 @@ export default function Exchanges() {
         </IconTile>
         <p className="text-sm">
           This registry previews the backend v2 VASP-flagged-wallet feed — a live deployment would list every
-          exchange KAIZEN has attributed funds to, updated as new traces complete. Only one exchange exists in this
+          exchange ANVESHAK has attributed funds to, updated as new traces complete. Only one exchange exists in this
           demo dataset.
         </p>
       </Card>

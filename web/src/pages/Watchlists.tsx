@@ -125,7 +125,7 @@ export default function WatchlistsPage() {
                     <Zap className="size-3.5" /> Median push latency: <span className="text-text">1.8 s</span>
                   </span>
                 </TooltipTrigger>
-                <TooltipContent className="border border-line-2 bg-[#1d1d20] text-text">Time from KAIZEN flagging a wallet to the exchange's server confirming receipt</TooltipContent>
+                <TooltipContent className="border border-line-2 bg-[#1d1d20] text-text">Time from ANVESHAK flagging a wallet to the exchange's server confirming receipt</TooltipContent>
               </Tooltip>
               <span className="text-dim">|</span>
               <span className="inline-flex items-center gap-1.5">
@@ -313,7 +313,7 @@ function RulesCard() {
 
   return (
     <Card className="h-full pb-5">
-      <CardHeader title="Auto-flag rules" tech="what KAIZEN pushes without an officer clicking" right={<Chip tone="neutral">Policy v3</Chip>} />
+      <CardHeader title="Auto-flag rules" tech="what ANVESHAK pushes without an officer clicking" right={<Chip tone="neutral">Policy v3</Chip>} />
       <ul className="mt-3 space-y-1 px-3">
         {rules.map((r) => (
           <li key={r.tech} className={cn('flex items-center gap-3 rounded-xl px-2 py-2', r.disabled && 'opacity-45')}>
@@ -487,7 +487,7 @@ function ExchangePreview({ item }: { item: FeedItem }) {
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div className="flex items-center gap-1.5 text-[12.5px] text-muted">
                 <span className="rounded bg-crimson/15 px-1.5 py-0.5 text-[11px] font-semibold tracking-[0.06em] text-crimson">HIGH RISK</span>
-                Source: KAIZEN watchlist · I4C
+                Source: ANVESHAK watchlist · I4C
               </div>
               <span className="k-mono text-[11.5px] text-dim">ALRT-{String(48210 + item.uid).padStart(6, '0')}</span>
             </div>
@@ -515,7 +515,7 @@ function ExchangePreview({ item }: { item: FeedItem }) {
               {done ? (
                 <motion.span initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} className="inline-flex items-center gap-1.5 text-[13px] text-moss">
                   <CheckCircle2 className="size-4" />
-                  {done === 'hold' ? 'Deposits on hold · KAIZEN notified in 1.6 s' : 'Acknowledged · KAIZEN notified in 1.2 s'}
+                  {done === 'hold' ? 'Deposits on hold · ANVESHAK notified in 1.6 s' : 'Acknowledged · ANVESHAK notified in 1.2 s'}
                 </motion.span>
               ) : (
                 <>
@@ -648,7 +648,7 @@ function FreezeCheck() {
   const pctLeft = (left / 3600) * 100
   const balanceINR = HUB.amt * USDT_INR
   const steps = [
-    { plain: 'Officer drafts request in KAIZEN', tech: 'pre-filled from this trace' },
+    { plain: 'Officer drafts request in ANVESHAK', tech: 'pre-filled from this trace' },
     { plain: 'Routed via I4C to the issuer', tech: "issuer's law-enforcement request channel" },
     { plain: 'Issuer freezes the tokens on-chain', tech: 'token-contract blacklist function' },
   ]
@@ -709,7 +709,7 @@ function FreezeCheck() {
             Draft issuer freeze request <ArrowRight />
           </Button>
         </Link>
-        <p className="text-[11.5px] leading-relaxed text-dim">Freezing is at the issuer's discretion; KAIZEN only prepares the request for an officer to send.</p>
+        <p className="text-[11.5px] leading-relaxed text-dim">Freezing is at the issuer's discretion; ANVESHAK only prepares the request for an officer to send.</p>
       </div>
     </Card>
   )

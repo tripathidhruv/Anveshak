@@ -44,7 +44,7 @@ def _reset_db_override():
 
 
 def _officer_token() -> str:
-    payload = {"user_id": "u1", "tenant_id": "kaizen", "email": "dhruv@carvelle.in",
+    payload = {"user_id": "u1", "tenant_id": "anveshak", "email": "dhruv@carvelle.in",
                "exp": datetime.now(timezone.utc) + timedelta(minutes=5)}
     return pyjwt.encode(payload, settings.auth_jwt_secret, algorithm="HS256")
 

@@ -6,7 +6,7 @@ import type { CaseSummary, IntakeCaseIn, IntakeCaseOut, IntakeParseIn, IntakePar
 import { mockApi } from './mock'
 import { httpApi } from './http'
 
-export type KaizenApi = {
+export type AnveshakApi = {
   parseComplaint: (body: IntakeParseIn, signal?: AbortSignal) => Promise<IntakeParseOut>
   createCaseFromIntake: (body: IntakeCaseIn) => Promise<IntakeCaseOut>
   lookupWallet: (address: string, signal?: AbortSignal) => Promise<MemoryLookup>
@@ -15,6 +15,6 @@ export type KaizenApi = {
 }
 
 export const USE_MOCK = import.meta.env.VITE_USE_MOCK !== 'false'
-export const api: KaizenApi = USE_MOCK ? mockApi : httpApi
+export const api: AnveshakApi = USE_MOCK ? mockApi : httpApi
 export * from './types'
 export { ApiError, errorText } from './client'

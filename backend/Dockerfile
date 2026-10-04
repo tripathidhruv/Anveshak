@@ -1,4 +1,4 @@
-# KAIZEN backend — FastAPI + SQLAlchemy (SQLite by default; see docker-compose.yml comments).
+# ANVESHAK backend — FastAPI + SQLAlchemy (SQLite by default; see docker-compose.yml comments).
 #
 # Base image: python:3.11-slim-bookworm, NOT an -alpine variant. Task H8 added lightgbm and
 # shap to requirements.txt. Their PyPI wheels are prebuilt for manylinux/x86_64 so no compiler
@@ -24,8 +24,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-# SQLite database file lives at /app/kaizen.db by default (see app/config.py's
-# KAIZEN_DATABASE_URL); docker-compose.yml mounts a named volume at /app so it persists across
+# SQLite database file lives at /app/anveshak.db by default (see app/config.py's
+# ANVESHAK_DATABASE_URL); docker-compose.yml mounts a named volume at /app so it persists across
 # container recreation.
 EXPOSE 8000
 

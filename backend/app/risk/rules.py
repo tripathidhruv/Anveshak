@@ -45,7 +45,7 @@ def _sweep_component(features: TraceFeatures) -> tuple[float, str]:
     if within_value_range and features.sweep_gap_seconds <= SWEEP_MAX_GAP_SECONDS:
         return SWEEP_WEIGHT_FULL, (
             "The money that arrived moved onward within minutes, keeping almost all of its "
-            "value -- the automated sweep pattern KAIZEN is built to catch."
+            "value -- the automated sweep pattern ANVESHAK is built to catch."
         )
     if within_value_range:
         return SWEEP_WEIGHT_PARTIAL, (

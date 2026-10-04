@@ -3,7 +3,7 @@ import { CASE, ROUTE_A, ROUTE_B, type Exchange } from '@/data/demo'
 import { cn } from '@/lib/utils'
 import { CHANNELS, type ChannelKey, type Juris } from './data'
 
-/** Auto-filled field — soft gold highlight so the officer can check every value KAIZEN filled in. */
+/** Auto-filled field — soft gold highlight so the officer can check every value ANVESHAK filled in. */
 function F({ children, className }: { children: React.ReactNode; className?: string }) {
   return <span className={cn('rounded-[3px] bg-gold/25 px-[3px] py-px text-zinc-900 shadow-[inset_0_-1px_0_var(--k-gold)]', className)}>{children}</span>
 }

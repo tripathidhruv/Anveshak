@@ -14,7 +14,7 @@ export function TopBar({ onSearch, onMenu }: { onSearch: () => void; onMenu: () 
         <Menu className="size-4.5" />
       </button>
       <div className="flex min-w-0 items-center gap-2 whitespace-nowrap text-[14.5px]">
-        <span className="hidden text-dim xl:inline">Kaizen /</span>
+        <span className="hidden text-dim xl:inline">Anveshak /</span>
         <span className={tab ? 'hidden text-dim lg:inline' : 'truncate text-text'}>{item?.label ?? 'Command Center'}{tab ? ' /' : ''}</span>
         {tab && <span className="truncate text-text">{tab.label}</span>}
       </div>

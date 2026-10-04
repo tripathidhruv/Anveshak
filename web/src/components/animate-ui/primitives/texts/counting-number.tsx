@@ -17,7 +17,7 @@ type CountingNumberProps = Omit<React.ComponentProps<'span'>, 'children'> & {
   transition?: SpringOptions;
   delay?: number;
   initiallyStable?: boolean;
-  /** KAIZEN addition: format each frame (e.g. Indian digit grouping). Overrides decimalSeparator/padStart. */
+  /** ANVESHAK addition: format each frame (e.g. Indian digit grouping). Overrides decimalSeparator/padStart. */
   format?: (value: number) => string;
 } & UseIsInViewOptions;
 

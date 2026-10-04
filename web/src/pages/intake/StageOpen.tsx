@@ -51,7 +51,7 @@ export function StageOpen({ draft, patch, onReset }: { draft: Draft; patch: (p: 
               <div className="flex flex-wrap items-baseline justify-between gap-2">
                 <div>
                   <div className="text-[12.5px] text-muted">New case number</div>
-                  <div className="k-num text-[24px] text-dim">KZN-2026-····</div>
+                  <div className="k-num text-[24px] text-dim">ANV-2026-····</div>
                 </div>
                 <div className="text-right text-[12px] text-dim">
                   {UNIT} · {OFFICER}

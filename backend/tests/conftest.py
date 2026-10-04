@@ -1,8 +1,8 @@
 import os
 
 # Must run before anything imports app.config: a test run never seeds demo rows into the real
-# kaizen.db at app startup (tests seed their own in-memory databases explicitly).
-os.environ.setdefault("KAIZEN_SEED_DEMO_MEMORY", "false")
+# anveshak.db at app startup (tests seed their own in-memory databases explicitly).
+os.environ.setdefault("ANVESHAK_SEED_DEMO_MEMORY", "false")
 
 import pytest
 from sqlalchemy import create_engine

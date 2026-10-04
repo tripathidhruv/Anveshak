@@ -25,7 +25,7 @@ import type { Exchange, GraphData, NoticeResult, NoticeType, ReportData, RiskSco
  * this against the verbatim `DEMO` dataset; `frontend/src/api/index.ts` swaps in a real HTTP
  * implementation later (Phase 2) behind the same shape, so no screen code changes.
  */
-export interface KaizenApi {
+export interface AnveshakApi {
   createCase(input: CaseInput): Promise<Case>
   getCase(id: string): Promise<Case>
   listCases(): Promise<RecentCase[]>

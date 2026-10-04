@@ -28,8 +28,8 @@ or, from the repository root:
 
     backend/.venv/Scripts/python.exe backend/scripts/build_deposit_index.py
 
-Needs real network access (TronGrid/Etherscan, via KAIZEN_TRONGRID_API_KEY /
-KAIZEN_ETHERSCAN_API_KEY) to fetch real transfer history when run for real.
+Needs real network access (TronGrid/Etherscan, via ANVESHAK_TRONGRID_API_KEY /
+ANVESHAK_ETHERSCAN_API_KEY) to fetch real transfer history when run for real.
 """
 from __future__ import annotations
 
@@ -138,7 +138,7 @@ def main() -> None:
         db.close()
 
     print("=" * 78)
-    print("KAIZEN inverted deposit index build (Task A)")
+    print("ANVESHAK inverted deposit index build (Task A)")
     print("=" * 78)
     print(f"Vetted hot wallets processed: {hot_wallets_processed}")
     print(f"New deposit addresses written this run: {total_written}")

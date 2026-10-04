@@ -42,7 +42,7 @@ def _reset_db_override():
 
 
 def _citizen_token(email="tripathidhruv2704@gmail.com") -> str:
-    payload = {"user_id": "u2", "tenant_id": "kaizen", "email": email,
+    payload = {"user_id": "u2", "tenant_id": "anveshak", "email": email,
                "exp": datetime.now(timezone.utc) + timedelta(minutes=5)}
     return pyjwt.encode(payload, settings.auth_jwt_secret, algorithm="HS256")
 
@@ -90,7 +90,7 @@ def test_officer_filed_case_via_authenticated_officer_has_no_guest_token():
         db.add(UserRole(email="dhruv@carvelle.in", role="officer"))
         db.commit()
     db.close()
-    officer_payload = {"user_id": "u1", "tenant_id": "kaizen", "email": "dhruv@carvelle.in",
+    officer_payload = {"user_id": "u1", "tenant_id": "anveshak", "email": "dhruv@carvelle.in",
                         "exp": datetime.now(timezone.utc) + timedelta(minutes=5)}
     token = pyjwt.encode(officer_payload, settings.auth_jwt_secret, algorithm="HS256")
     created = client.post("/api/v1/cases", json=BASE_PAYLOAD, headers={"Authorization": f"Bearer {token}"})

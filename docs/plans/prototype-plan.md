@@ -1,4 +1,4 @@
-# KAIZEN prototype build plan
+# ANVESHAK prototype build plan
 
 Single file: `prototype/index.html`. No build step, no npm, no framework — vanilla JS, inline CSS/JS, CDN libraries only. Target Chrome 1920×1080, degrade to 1440×900. This plan executes sequentially — every task after Task 1 edits the same file and depends on the previous task's state, so tasks run one at a time, never in parallel.
 
@@ -82,9 +82,9 @@ Load via Google Fonts CDN. Wallet addresses, transaction IDs, amounts, timestamp
 ## Task 1: App shell, design system, DEMO dataset, router
 
 Create `prototype/index.html` from scratch with:
-1. `<!DOCTYPE html>` shell, `<head>` with title "KAIZEN — Cyber Cell Console", the font preconnects + stylesheet, the four CDN script tags, and a `<style>` block implementing every token and surface recipe from Global Constraints (`:root` vars, `.raised/.raised-sm/.pressed/.flat`, `.clickable` states, typography scale, a `<1000px` "best viewed on desktop" notice, and the `prefers-reduced-motion` media query).
+1. `<!DOCTYPE html>` shell, `<head>` with title "ANVESHAK — Cyber Cell Console", the font preconnects + stylesheet, the four CDN script tags, and a `<style>` block implementing every token and surface recipe from Global Constraints (`:root` vars, `.raised/.raised-sm/.pressed/.flat`, `.clickable` states, typography scale, a `<1000px` "best viewed on desktop" notice, and the `prefers-reduced-motion` media query).
 2. The app shell layout:
-   - Fixed left sidebar, 248px, `.raised`, margin 20px, radius 22: logo block (◆ diamond mark in indigo inside a `.raised-sm` tile + "KAIZEN" 20px/700 + "Cyber Cell Console" 11px `--ink-soft`); nav items (Dashboard, Cases (3), Trace, Campaigns (1), Reports, Exchanges) each 44px tall icon+label radius 12, active item `.pressed` with `--indigo` 600 label + 3px indigo left bar, inactive flat→`.raised-sm` on hover; a `+ New Case` solid-indigo full-width button; `Help & Support` link at the bottom.
+   - Fixed left sidebar, 248px, `.raised`, margin 20px, radius 22: logo block (◆ diamond mark in indigo inside a `.raised-sm` tile + "ANVESHAK" 20px/700 + "Cyber Cell Console" 11px `--ink-soft`); nav items (Dashboard, Cases (3), Trace, Campaigns (1), Reports, Exchanges) each 44px tall icon+label radius 12, active item `.pressed` with `--indigo` 600 label + 3px indigo left bar, inactive flat→`.raised-sm` on hover; a `+ New Case` solid-indigo full-width button; `Help & Support` link at the bottom.
    - Top bar, `.raised`, height 72: page title left; search `.pressed` well with Lucide `search` icon (decorative, accepts typing) center; on the right, in order: `DEMO DATA` chip (small, permanent, always visible), Judge Mode toggle (default ON), `Reset demo` button, notification bell icon, avatar circle.
    - A 7-step progress rail component (per Global Constraints #4) that every workflow screen (1–6) renders under the top bar; the Dashboard (screen 0) does not show it.
 3. The `DEMO` object, defined verbatim below — every later screen task reads from this, never hardcodes a duplicate number:
@@ -92,7 +92,7 @@ Create `prototype/index.html` from scratch with:
 ```js
 const DEMO = {
   case: {
-    id: "KZN-2026-0417", ncrp: "31402260041789", complainant: "Rekha Sharma",
+    id: "ANV-2026-0417", ncrp: "31402260041789", complainant: "Rekha Sharma",
     location: "Jaipur, Rajasthan", phone: "+91 98XXX XXX41",
     incidentAt: "02 Sep 2026, 19:42 IST", reportedAt: "04 Sep 2026, 11:05 IST",
     fraudType: "Task-based job scam (Telegram)",
@@ -152,11 +152,11 @@ const DEMO = {
       { label:"Median trace time", value:"41 s", delta:"was 4-6 weeks", dir:"down" }
     ],
     recentCases:[
-      { id:"KZN-2026-0417", who:"Rekha Sharma", amt:1240000, chain:"TRON", status:"New", risk:null },
-      { id:"KZN-2026-0416", who:"Arun Menon", amt:860000, chain:"TRON", status:"Traced", risk:"HIGH" },
-      { id:"KZN-2026-0415", who:"Fatima Qureshi", amt:2150000, chain:"Ethereum", status:"Traced", risk:"HIGH" },
-      { id:"KZN-2026-0414", who:"S. Balaji", amt:430000, chain:"Bitcoin", status:"Notice sent", risk:"MEDIUM" },
-      { id:"KZN-2026-0413", who:"Priya Nair", amt:1780000, chain:"TRON", status:"Closed", risk:"HIGH" }
+      { id:"ANV-2026-0417", who:"Rekha Sharma", amt:1240000, chain:"TRON", status:"New", risk:null },
+      { id:"ANV-2026-0416", who:"Arun Menon", amt:860000, chain:"TRON", status:"Traced", risk:"HIGH" },
+      { id:"ANV-2026-0415", who:"Fatima Qureshi", amt:2150000, chain:"Ethereum", status:"Traced", risk:"HIGH" },
+      { id:"ANV-2026-0414", who:"S. Balaji", amt:430000, chain:"Bitcoin", status:"Notice sent", risk:"MEDIUM" },
+      { id:"ANV-2026-0413", who:"Priya Nair", amt:1780000, chain:"TRON", status:"Closed", risk:"HIGH" }
     ]
   }
 };
@@ -176,7 +176,7 @@ Verify: open the file in a browser, zero console errors, sidebar nav switches pl
 Build the real Dashboard screen (replacing its placeholder), reading only from `DEMO.dashboard`.
 
 - KPI strip: 4 `.raised` cards left-to-right, each with a 44px `.raised-sm` icon tile (pick a fitting Lucide icon per KPI: e.g. `folder-open`, `check-circle-2`, `indian-rupee` or `wallet`, `timer`), uppercase label, big mono number that counts up from 0 via requestAnimationFrame (700ms ease-out) on first render, a delta chip (moss pill + up arrow if `dir:"up"`, vermillion... actually median trace time improving is good news even though `dir:"down"` — use moss for both, arrow direction follows `dir`), and a small inline SVG sparkline (decorative, hand-drawn path, no library needed).
-- Left column (2/3 width): "Recent cases" table from `DEMO.dashboard.recentCases` — columns Case ID (mono) · Complainant · Amount (₹ Indian grouping) · Chain · Status pill (colour: New=sky, Traced=teal, "Notice sent"=violet, Closed=moss) · Risk badge (HIGH=vermillion fill, MEDIUM=gold fill, null=empty dash). Top row (KZN-2026-0417) and the `+ New Case` sidebar button both set `APP.screen='newcase'` and call render.
+- Left column (2/3 width): "Recent cases" table from `DEMO.dashboard.recentCases` — columns Case ID (mono) · Complainant · Amount (₹ Indian grouping) · Chain · Status pill (colour: New=sky, Traced=teal, "Notice sent"=violet, Closed=moss) · Risk badge (HIGH=vermillion fill, MEDIUM=gold fill, null=empty dash). Top row (ANV-2026-0417) and the `+ New Case` sidebar button both set `APP.screen='newcase'` and call render.
 - Right column (1/3): "Campaign alert" card, vermillion-tinted, text "38 complaints across 11 states share one wallet." (pull `38`/`11` from `DEMO.campaign`), with a `View campaign` link (routes to a `campaign` screen — if that screen doesn't exist yet, show a "Coming in v2" tooltip per Global Constraints #6, do not error).
 - Below both columns: "Trace activity, last 14 days" — a Chart.js line chart per the Global Constraints chart styling: lives in a `.pressed` well, grid `#CDD5E0` 1px, `--ink-soft` 12px axis labels, 2.5px teal stroke, `tension:0.4`, gradient fill to transparent, points hidden until hover, custom `.raised-sm` pill tooltip (not default Chart.js black tooltip), `legend:{display:false}`. Use 14 synthetic but plausible daily trace-count values you invent (consistent with "147 active cases" scale) — label this data as illustrative only in a code comment, not in the UI (no separate on-screen disclaimer needed beyond the global DEMO DATA chip).
 - Primary action bottom-right: solid-indigo `+ Register new case` → routes to `newcase` screen.
@@ -287,7 +287,7 @@ Build the Evidence screen (replacing its placeholder) inside one large `.raised`
 
 **Tab 1 — Fund flow graph:** Cytoscape.js graph filling the panel on a `.flat` canvas with a `.pressed` inner border. Build nodes/edges from `DEMO.case`, `DEMO.routeA`, `DEMO.routeB`, `DEMO.exchange`: victim (sky), scammer's wallet (vermillion), intermediate wallets (teal), the bridge (violet diamond shape), the collection wallet (vermillion, larger, "Collection wallet · 38 victims" using `DEMO.campaign.cases`), the exchange (gold hexagon shape, larger, `DEMO.exchange.name`). Edges labelled with amounts; edges on the criminal path get an animated `line-dash-offset` loop so money visibly flows toward the exchange. Layout `breadthfirst`, `directed:true`, left-to-right. Every node's label includes a plain-English sub-label under the technical one (Cytoscape multi-line label or a wrapped HTML label extension — plain text label with `\n` and `text-wrap` if simpler). Clicking a node opens a right-hand `.raised` detail drawer (address, balance/amount, first-seen timestamp, transaction count if available, `Copy address` button). Controls as `.raised-sm` chips above the graph: `Fit` · `Show Route A` · `Show Route B` · `Show both` · `Animate flow`, each actually filtering/restyling the graph. A legend in a `.pressed` well bottom-left explaining the colour semantics.
 
-**Tab 2 — Investigation report:** an A4-proportioned white page preview inside a `.pressed` well, scrollable, built as real HTML (not an image) so `html2pdf.js` can export it. Contents, all pulled from DEMO: KAIZEN header + `DEMO.case.id` + a generated timestamp (use current date at render time) · complainant + case details · the suspect wallet address · Route A and Route B hop tables (full untruncated addresses, amounts, timestamps) · exchange attribution + evidence list · risk score + the five contributing factors · a short methodology note (plain paragraph, can be authored freeform consistent with the rest of the project's tone) · an integrity block showing a SHA-256 hash of a JSON.stringify of the evidence set (compute with `crypto.subtle.digest` at render time — wrap in try/catch, if unavailable e.g. non-secure context show a static placeholder hash rather than crashing) and the line "Generated by KAIZEN v1.0 — reproducible, no third-party data". A `Download PDF` button wired to `html2pdf.js` targeting this report element, producing a real downloadable file.
+**Tab 2 — Investigation report:** an A4-proportioned white page preview inside a `.pressed` well, scrollable, built as real HTML (not an image) so `html2pdf.js` can export it. Contents, all pulled from DEMO: ANVESHAK header + `DEMO.case.id` + a generated timestamp (use current date at render time) · complainant + case details · the suspect wallet address · Route A and Route B hop tables (full untruncated addresses, amounts, timestamps) · exchange attribution + evidence list · risk score + the five contributing factors · a short methodology note (plain paragraph, can be authored freeform consistent with the rest of the project's tone) · an integrity block showing a SHA-256 hash of a JSON.stringify of the evidence set (compute with `crypto.subtle.digest` at render time — wrap in try/catch, if unavailable e.g. non-secure context show a static placeholder hash rather than crashing) and the line "Generated by ANVESHAK v1.0 — reproducible, no third-party data". A `Download PDF` button wired to `html2pdf.js` targeting this report element, producing a real downloadable file.
 
 **Tab 3 — Lawful action:** three stacked `.raised` action cards, each with a status chip:
 1. `Request to the exchange` — pre-filled editable letter body (textarea or contenteditable) requesting KYC and account freeze for `DEMO.exchange.depositAddr`, quoting `DEMO.case.id`. Status `READY TO SEND` (sky/teal chip). Button `Preview & send`.
@@ -309,7 +309,7 @@ Build the final Case Closed screen (replacing its placeholder), reading from `DE
 
 - Single centred `.raised` card: large moss check icon in a `.pressed` circular well, then "Case {DEMO.case.id} traced." and "From one wallet address to a named exchange and a signed notice — in 47 seconds." (the 47s figure is illustrative flavor text consistent with the dashboard's "Median trace time" — fine to state directly here since it's the specific-case narrative, not a duplicated DEMO field).
 - Four `.pressed` stat wells: `{routeA.hops + something reasonable} hops followed` — actually just use a clear combined figure: state "6 hops followed" consistent with routeA.hops(5)+1 exchange hop, or simplest: pull `Math.max(routeA.hops, routeB.hops)+1`; `2 routes`; `1 exchange identified`; `{campaign.cases} linked cases`.
-- Comparison strip: "Manual investigation: 4–6 weeks. KAIZEN: 47 seconds." with two proportional horizontal bars (one long muted bar, one tiny moss bar) illustrating the scale difference.
+- Comparison strip: "Manual investigation: 4–6 weeks. ANVESHAK: 47 seconds." with two proportional horizontal bars (one long muted bar, one tiny moss bar) illustrating the scale difference.
 - Buttons: `View campaign (38 cases)` (Coming in v2 tooltip if no campaign screen exists), `Start a new case` (routes to `newcase`, ideally resetting any edited case-field state back to DEMO defaults), `Back to dashboard` (routes to `dashboard`).
 
 Also, in this task: do a full click-through polish pass across all 8 screens — confirm the 7-step rail correctly marks completed/current/future steps at every screen, confirm `Reset demo` (top bar) returns to dashboard from every screen, confirm Judge Mode toggle visibly does something real now (pulsing ring via CSS animation on the next primary action / suggested click target on each screen, plus a coach-mark strip pinned bottom-center with a one-line instruction per screen — implement this fully now, it was stubbed in Task 1), and confirm reduced-motion is respected everywhere animations were added in Tasks 2, 4, 5, 7.

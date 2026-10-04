@@ -31,7 +31,7 @@ export type Draft = {
   created: IntakeCaseOut | null
 }
 
-const KEY = 'kaizen.intake.draft.v1'
+const KEY = 'anveshak.intake.draft.v1'
 
 export const EMPTY: Draft = {
   stage: 0,

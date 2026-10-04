@@ -225,7 +225,7 @@ export function WhatIf() {
                   {qualifies ? (
                     <span className="text-crimson">still above the notice threshold, so the case still qualifies.</span>
                   ) : (
-                    <span className="text-moss">below the notice threshold, so KAIZEN would not recommend a notice.</span>
+                    <span className="text-moss">below the notice threshold, so ANVESHAK would not recommend a notice.</span>
                   )}
                 </>
               )}

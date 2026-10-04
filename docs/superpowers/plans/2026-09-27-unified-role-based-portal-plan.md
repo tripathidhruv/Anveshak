@@ -4,7 +4,7 @@
 
 **Goal:** One login (OTP or guest) that routes officers, exchange compliance contacts, and citizens to role-appropriate views of the same backend; a real case-status/ticket lifecycle with officer replies and an AI auto-reply on resolution; plus 6 previously-flagged backlog items closed in the same pass.
 
-**Architecture:** See `docs/superpowers/specs/2026-09-27-unified-role-based-portal-design.md` for full rationale. Summary: `E:/API` stays identity-only (unmodified); KAIZEN's own new `UserRole` table owns officer/exchange/citizen authorization; a "ticket" is a `Case` with a new persisted `status` field, not a new entity; guest citizens get a token-based ticket link (same pattern as the existing VASP portal), logged-in citizens get a "my complaints" view by email.
+**Architecture:** See `docs/superpowers/specs/2026-09-27-unified-role-based-portal-design.md` for full rationale. Summary: `E:/API` stays identity-only (unmodified); ANVESHAK's own new `UserRole` table owns officer/exchange/citizen authorization; a "ticket" is a `Case` with a new persisted `status` field, not a new entity; guest citizens get a token-based ticket link (same pattern as the existing VASP portal), logged-in citizens get a "my complaints" view by email.
 
 **Tech Stack:** Same as the existing backend (FastAPI/SQLAlchemy/Pydantic) and frontend (React 19/TS/Tailwind v4). No new dependencies.
 
@@ -86,7 +86,7 @@ VaspLabelSeed(
 ```bash
 cd E:/kaizen && grep -rn "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t" backend/ frontend/
 ```
-Expected: no matches after the fix (the real address must not appear anywhere in the repo as a *seed* entry; it's fine if it appears inside a `raw_response`-style fixture file that's simulating a real TronGrid API response, since that's recorded third-party data, not a KAIZEN-authored label).
+Expected: no matches after the fix (the real address must not appear anywhere in the repo as a *seed* entry; it's fine if it appears inside a `raw_response`-style fixture file that's simulating a real TronGrid API response, since that's recorded third-party data, not a ANVESHAK-authored label).
 
 - [ ] **Step 4: Run the full backend suite**
 
@@ -209,7 +209,7 @@ class UserRole(Base):
 
 ```python
 """Authorization layer on top of app.auth.jwt's pure identity verification. E:/API (Lighthouse
-Auth API) proves WHO is logged in; this module decides WHAT they're allowed to see in KAIZEN,
+Auth API) proves WHO is logged in; this module decides WHAT they're allowed to see in ANVESHAK,
 via the UserRole table this project owns. See docs/superpowers/specs/2026-09-27-unified-role-
 based-portal-design.md for why role lives here and not in the shared auth service."""
 from __future__ import annotations
@@ -234,7 +234,7 @@ class Identity:
 
 
 def resolve_role(db: Session, email: str) -> str:
-    """Look up (or auto-create, defaulting to citizen) the KAIZEN role for a verified email.
+    """Look up (or auto-create, defaulting to citizen) the ANVESHAK role for a verified email.
     Case-insensitive and idempotent -- the same email always resolves to the same row."""
     normalized = email.strip().lower()
     row = db.query(UserRole).filter(UserRole.email == normalized).one_or_none()
@@ -250,7 +250,7 @@ def get_current_identity(
     claims: OfficerClaims = Depends(get_current_officer),
     db: Session = Depends(get_db),
 ) -> Identity:
-    """Any authenticated KAIZEN-tenant user, regardless of role."""
+    """Any authenticated ANVESHAK-tenant user, regardless of role."""
     if not claims.email:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token has no email claim")
     return Identity(email=claims.email.strip().lower(), role=resolve_role(db, claims.email))
@@ -314,7 +314,7 @@ app.dependency_overrides[get_db] = override_get_db
 client = TestClient(app)
 
 def _token(email: str) -> str:
-    payload = {"user_id": "u1", "tenant_id": "kaizen", "email": email,
+    payload = {"user_id": "u1", "tenant_id": "anveshak", "email": email,
                "exp": datetime.now(timezone.utc) + timedelta(minutes=5)}
     return pyjwt.encode(payload, settings.auth_jwt_secret, algorithm="HS256")
 
@@ -455,12 +455,12 @@ app.dependency_overrides[get_db] = override_get_db
 client = TestClient(app)
 
 def _officer_token() -> str:
-    payload = {"user_id": "u1", "tenant_id": "kaizen", "email": "dhruv@carvelle.in",
+    payload = {"user_id": "u1", "tenant_id": "anveshak", "email": "dhruv@carvelle.in",
                "exp": datetime.now(timezone.utc) + timedelta(minutes=5)}
     return pyjwt.encode(payload, settings.auth_jwt_secret, algorithm="HS256")
 
 def _citizen_token() -> str:
-    payload = {"user_id": "u2", "tenant_id": "kaizen", "email": "tripathidhruv2704@gmail.com",
+    payload = {"user_id": "u2", "tenant_id": "anveshak", "email": "tripathidhruv2704@gmail.com",
                "exp": datetime.now(timezone.utc) + timedelta(minutes=5)}
     return pyjwt.encode(payload, settings.auth_jwt_secret, algorithm="HS256")
 
@@ -637,7 +637,7 @@ app.dependency_overrides[get_db] = override_get_db
 client = TestClient(app)
 
 def _officer_token() -> str:
-    payload = {"user_id": "u1", "tenant_id": "kaizen", "email": "dhruv@carvelle.in",
+    payload = {"user_id": "u1", "tenant_id": "anveshak", "email": "dhruv@carvelle.in",
                "exp": datetime.now(timezone.utc) + timedelta(minutes=5)}
     return pyjwt.encode(payload, settings.auth_jwt_secret, algorithm="HS256")
 
@@ -805,7 +805,7 @@ app.dependency_overrides[get_db] = override_get_db
 client = TestClient(app)
 
 def _citizen_token(email="tripathidhruv2704@gmail.com") -> str:
-    payload = {"user_id": "u2", "tenant_id": "kaizen", "email": email,
+    payload = {"user_id": "u2", "tenant_id": "anveshak", "email": email,
                "exp": datetime.now(timezone.utc) + timedelta(minutes=5)}
     return pyjwt.encode(payload, settings.auth_jwt_secret, algorithm="HS256")
 
@@ -847,7 +847,7 @@ def test_officer_filed_case_via_authenticated_officer_has_no_guest_token():
     db.add(UserRole(email="dhruv@carvelle.in", role="officer"))
     db.commit()
     db.close()
-    officer_payload = {"user_id": "u1", "tenant_id": "kaizen", "email": "dhruv@carvelle.in",
+    officer_payload = {"user_id": "u1", "tenant_id": "anveshak", "email": "dhruv@carvelle.in",
                         "exp": datetime.now(timezone.utc) + timedelta(minutes=5)}
     token = pyjwt.encode(officer_payload, settings.auth_jwt_secret, algorithm="HS256")
     created = client.post("/api/v1/cases", json=BASE_PAYLOAD, headers={"Authorization": f"Bearer {token}"})
@@ -1007,12 +1007,12 @@ app.dependency_overrides[get_db] = override_get_db
 client = TestClient(app)
 
 def _officer_token() -> str:
-    payload = {"user_id": "u1", "tenant_id": "kaizen", "email": "dhruv@carvelle.in",
+    payload = {"user_id": "u1", "tenant_id": "anveshak", "email": "dhruv@carvelle.in",
                "exp": datetime.now(timezone.utc) + timedelta(minutes=5)}
     return pyjwt.encode(payload, settings.auth_jwt_secret, algorithm="HS256")
 
 def _citizen_token() -> str:
-    payload = {"user_id": "u2", "tenant_id": "kaizen", "email": "tripathidhruv2704@gmail.com",
+    payload = {"user_id": "u2", "tenant_id": "anveshak", "email": "tripathidhruv2704@gmail.com",
                "exp": datetime.now(timezone.utc) + timedelta(minutes=5)}
     return pyjwt.encode(payload, settings.auth_jwt_secret, algorithm="HS256")
 
@@ -1151,7 +1151,7 @@ git commit -m "fix(backend): tracer passes since= to chain clients (stale commen
 - [ ] **Step 1: Write `backend/scripts/seed_user_roles.py`**
 
 ```python
-"""One-off, safely re-runnable: seeds the initial KAIZEN role assignments this feature needs.
+"""One-off, safely re-runnable: seeds the initial ANVESHAK role assignments this feature needs.
 Run: backend/.venv/Scripts/python.exe scripts/seed_user_roles.py (from backend/)."""
 from app.db import SessionLocal, Base, engine
 from app.models import UserRole, VaspSubscriber
@@ -1196,14 +1196,14 @@ Expected output: 3 "seeded:" lines (or "skip" lines on a re-run).
 - [ ] **Step 3: Run the EXISTING `E:/API` seed script for the 2 new emails** (this is the actual fix for "cntcitachi@gmail.com not getting an OTP code" — that email has never been provisioned for OTP login at all):
 
 ```bash
-cd E:/API && .venv/Scripts/python.exe scripts/seed_kaizen_tenant.py cntcitachi@gmail.com
-cd E:/API && .venv/Scripts/python.exe scripts/seed_kaizen_tenant.py tripathidhruv2704@gmail.com
+cd E:/API && .venv/Scripts/python.exe scripts/seed_anveshak_tenant.py cntcitachi@gmail.com
+cd E:/API && .venv/Scripts/python.exe scripts/seed_anveshak_tenant.py tripathidhruv2704@gmail.com
 ```
 Expected: both succeed (the script is documented as idempotent/safely re-runnable per `docs/HANDOFF.md`).
 
 - [ ] **Step 4: Live-verify** (both services must be running — see `docs/HANDOFF.md`'s "Running the whole thing locally" section): call `POST /capAm/authentication/sendOtp` for `cntcitachi@gmail.com` against the real running E:/API instance and confirm an OTP email actually arrives (check the inbox, or `E:/API`'s own logs for the SMTP send confirmation) — do not just assume the seed fixed it, prove it end-to-end.
 
-- [ ] **Step 5: Commit (KAIZEN repo only — the seed script; E:/API's own commit, if any, is that project's separate concern per existing convention)**
+- [ ] **Step 5: Commit (ANVESHAK repo only — the seed script; E:/API's own commit, if any, is that project's separate concern per existing convention)**
 
 ```bash
 cd E:/kaizen && git add backend/scripts/seed_user_roles.py

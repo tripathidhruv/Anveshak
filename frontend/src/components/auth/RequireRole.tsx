@@ -17,7 +17,7 @@ function isRole(value: string): value is Role {
  * pages/Login.tsx) -- reconstructed here rather than also persisted separately, since it's a
  * deterministic function of the role alone in this demo-only, no-real-auth deployment. */
 function demoEmailFor(role: Role): string {
-  return `${role}@kaizen.demo`
+  return `${role}@anveshak.demo`
 }
 
 /**
@@ -105,7 +105,7 @@ function NotAuthorized() {
         Not authorized
       </h1>
       <p className="max-w-sm text-sm text-muted-foreground">
-        Your account doesn&rsquo;t have access to this part of KAIZEN.
+        Your account doesn&rsquo;t have access to this part of ANVESHAK.
       </p>
     </div>
   )

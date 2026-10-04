@@ -111,7 +111,7 @@ export default function LearningPage() {
             </>
           }
           title="Officer Feedback Loop"
-          tech="Every attribution and risk call KAIZEN makes goes to an officer for a verdict. Accepted, rejected and corrected calls nudge the scoring weights — slowly, visibly, and only after two officers agree."
+          tech="Every attribution and risk call ANVESHAK makes goes to an officer for a verdict. Accepted, rejected and corrected calls nudge the scoring weights — slowly, visibly, and only after two officers agree."
           actions={
             <Link to="/audit">
               <Button>
@@ -127,7 +127,7 @@ export default function LearningPage() {
         {[
           { k: 'Waiting for your verdict', v: queue.filter((q) => !stamped[q.id]).length, suf: '', sub: 'attribution and risk calls', tone: 'ember' as Tone, icon: <Inbox /> },
           { k: 'Verdicts this week', v: BASE_REVIEWED + session, suf: '', sub: session ? `${session} from you this session` : '5 officers · 3 districts', tone: 'sky' as Tone, icon: <UserCheck /> },
-          { k: 'Officers agree with KAIZEN', v: Math.round(agreement * 100), suf: '%', sub: 'accepted without changes', tone: 'moss' as Tone, icon: <ShieldCheck /> },
+          { k: 'Officers agree with ANVESHAK', v: Math.round(agreement * 100), suf: '%', sub: 'accepted without changes', tone: 'moss' as Tone, icon: <ShieldCheck /> },
           { k: 'Weight updates shipped', v: 3, suf: '', sub: 'v12 → v14 · all double-signed', tone: 'neutral' as Tone, icon: <GitCommitHorizontal /> },
         ].map((s, i) => (
           <Reveal key={s.k} delay={0.05 + i * 0.05}>

@@ -132,7 +132,7 @@ export default function CompliancePage() {
             </>
           }
           title="Exchange Compliance"
-          tech="Every other tool stops at “notice sent”. KAIZEN keeps the clock running on each notice, escalates automatically when an exchange goes quiet, and grades every exchange on how it actually behaves."
+          tech="Every other tool stops at “notice sent”. ANVESHAK keeps the clock running on each notice, escalates automatically when an exchange goes quiet, and grades every exchange on how it actually behaves."
           actions={
             <>
               <span className="k-btn-ghost inline-flex h-9 items-center gap-1.5 rounded-[10px] px-3 text-[13.5px] text-muted">
@@ -219,7 +219,7 @@ export default function CompliancePage() {
                 format={(v) => `${v} h`}
               />
               <p className="mt-3 text-[12.5px] leading-relaxed text-dim">
-                Meridian is drifting towards the 72 h limit — KAIZEN will shorten its reminder to 48 h if the trend holds for 7 more days.
+                Meridian is drifting towards the 72 h limit — ANVESHAK will shorten its reminder to 48 h if the trend holds for 7 more days.
               </p>
             </div>
           </Card>
@@ -595,7 +595,7 @@ function LadderPanel({
         </div>
         <p className="mt-3 flex items-start gap-1.5 text-[12px] leading-relaxed text-dim">
           <Scale className="mt-px size-3 shrink-0" />
-          Draft for officer review — not legal advice. Reminders and escalation letters are pre-filled; nothing leaves KAIZEN without an officer's sign-off.
+          Draft for officer review — not legal advice. Reminders and escalation letters are pre-filled; nothing leaves ANVESHAK without an officer's sign-off.
         </p>
       </div>
     </Card>
@@ -610,7 +610,7 @@ function Scorecard() {
     <Card className="h-full pb-3">
       <CardHeader
         title="How each exchange behaves"
-        tech="responsiveness scorecard · every notice KAIZEN has sent"
+        tech="responsiveness scorecard · every notice ANVESHAK has sent"
         right={<Chip tone="gold" dot>6 exchanges</Chip>}
       />
       <div className="mt-3 hidden grid-cols-[22px_minmax(0,1.6fr)_70px_minmax(0,1fr)_minmax(0,1fr)_44px] items-center gap-3 px-5 text-[12px] text-dim md:grid">

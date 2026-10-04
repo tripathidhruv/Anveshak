@@ -1,4 +1,4 @@
-"""Shared feature shape for KAIZEN's risk scoring (Task H8).
+"""Shared feature shape for ANVESHAK's risk scoring (Task H8).
 
 `TraceFeatures` is the single, plain data contract both `rules.py` (the always-available
 rule-based score) and `model.py` (the gated ML score) are built from. It intentionally reuses

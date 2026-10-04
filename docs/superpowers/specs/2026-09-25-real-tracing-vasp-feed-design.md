@@ -10,7 +10,7 @@ The current app (`frontend/`, Tasks 1-7) is a fully-built UI running entirely on
 **Explicitly out of scope for this phase** (see `docs/DECISIONS.md`):
 - Idea 1 (sovereign on-chain/off-chain join) — needs NCRP/bank/UPI data the team does not have access to; stays roadmap/deck-only.
 - Idea 2 (operator fingerprinting) — a real, separate feature; deferred to its own design/build phase, not bolted onto this one.
-- A live, synchronous, query-before-transaction oracle — needs a statutory mandate and real VASP integration neither of which exist. This phase builds the broadcast/feed model instead (KAIZEN pushes flagged wallets out; VASPs don't need to query us mid-transaction).
+- A live, synchronous, query-before-transaction oracle — needs a statutory mandate and real VASP integration neither of which exist. This phase builds the broadcast/feed model instead (ANVESHAK pushes flagged wallets out; VASPs don't need to query us mid-transaction).
 
 ## Architecture
 
@@ -67,7 +67,7 @@ Query `hops` for wallets receiving from many distinct `case_id`s — N+ separate
 - Receives the webhook.
 - Shows a live "incoming deposit screening" view — an operator at this simulated exchange sees a deposit attempt to a flagged address get auto-held, with reason codes displayed.
 
-This is what proves the broadcast model live rather than just narrating it: judges watch KAIZEN flag a wallet and see it arrive, unprompted, at a second, independent-looking system within seconds.
+This is what proves the broadcast model live rather than just narrating it: judges watch ANVESHAK flag a wallet and see it arrive, unprompted, at a second, independent-looking system within seconds.
 
 ## Frontend integration
 

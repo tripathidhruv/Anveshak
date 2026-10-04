@@ -172,7 +172,7 @@ export default function ExchangeAttribution() {
               Could this wallet be innocent?
             </h3>
             <p className="mt-1 text-xs text-muted-foreground">
-              Every risk factor elsewhere in KAIZEN accuses. This is the only check that can say &ldquo;not this
+              Every risk factor elsewhere in ANVESHAK accuses. This is the only check that can say &ldquo;not this
               one&rdquo; — shown with equal weight, not buried.
             </p>
           </div>

@@ -55,7 +55,7 @@ Each item: purpose → approach → API sketch. All endpoints under `/api/v1`.
 
 ### 5. Travel Rule & OSINT (`intel/`)
 - Travel Rule eligibility: threshold + both VASPs' compliance status → "record should exist" + draft request.
-  KAIZEN never reads Travel Rule messages itself.
+  ANVESHAK never reads Travel Rule messages itself.
 - OSINT: scheduled ingest of public scam-report sources (configurable, offline cache), match on
   address, credibility score (corroboration, age, consistency with on-chain behaviour).
 - `GET /intel/travel-rule?trace_id=`, `GET /intel/osint/{addr}`, `POST /intel/osint/scan`.

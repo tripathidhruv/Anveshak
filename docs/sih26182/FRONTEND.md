@@ -50,7 +50,7 @@ web/src/
                   PageHeader, Reveal, KV, IconTile, useCountdown, useTick,
                   Sparkline, CurveChart, BarColumns, HeatGrid, Donut, FlowGraph, Sankey, tone.ts
     animate-ui/   copied Animate UI components (adapted overlay styling)
-  data/demo.ts    shared synthetic dataset (case KZN-2026-0417, exchanges, routes, risk, cases, syndicates)
+  data/demo.ts    shared synthetic dataset (case ANV-2026-0417, exchanges, routes, risk, cases, syndicates)
   lib/format.ts   inr(), num(), usdt(), short(), pct(), mmss()
   pages/          one file per screen, plus a lowercase folder per screen for page-local data/components
 ```

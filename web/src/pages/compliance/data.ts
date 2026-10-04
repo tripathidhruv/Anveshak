@@ -35,16 +35,16 @@ export const LADDER: { day: number; title: string; sub: string; tone: Tone }[] =
 export const LADDER_MAX_DAY = 11
 
 export const NOTICES: Notice[] = [
-  { id: 'NTC-2026-0931', caseId: 'KZN-2026-0417', victim: 'Rekha Sharma', exchange: 'meridian', type: 'Freeze + KYC request', sentAt: '04 Sep, 12:10', ageHrs: 19.7, status: 'awaiting', freezeINR: 1240000, wallets: 2 },
-  { id: 'NTC-2026-0929', caseId: 'KZN-2026-0416', victim: 'Arun Menon', exchange: 'meridian', type: 'Freeze request', sentAt: '03 Sep, 14:52', ageHrs: 41.2, status: 'awaiting', freezeINR: 860000, wallets: 1 },
-  { id: 'NTC-2026-0927', caseId: 'KZN-2026-0415', victim: 'Fatima Qureshi', exchange: 'northwind', type: 'KYC disclosure', sentAt: '03 Sep, 09:30', ageHrs: 46.5, repliedHrs: 18, status: 'responded', freezeINR: 2150000, wallets: 3, outcome: 'KYC shared · 2 accounts frozen' },
-  { id: 'NTC-2026-0924', caseId: 'KZN-2026-0412', victim: 'Harpreet Gill', exchange: 'meridian', type: 'Freeze + KYC request', sentAt: '01 Sep, 16:05', ageHrs: 88.4, status: 'breached', freezeINR: 655000, wallets: 2 },
-  { id: 'NTC-2026-0913', caseId: 'KZN-2026-0406', victim: 'Sunita Yadav', exchange: 'meridian', type: 'Freeze request', sentAt: '02 Sep, 00:40', ageHrs: 61.3, status: 'awaiting', freezeINR: 760000, wallets: 1 },
-  { id: 'NTC-2026-0920', caseId: 'KZN-2026-0410', victim: 'Meera Joshi', exchange: 'orbita', type: 'Freeze + KYC request', sentAt: '28 Aug, 11:20', ageHrs: 178.6, status: 'escalated', freezeINR: 2890000, wallets: 4 },
-  { id: 'NTC-2026-0918', caseId: 'KZN-2026-0414', victim: 'S. Balaji', exchange: 'kestrel', type: 'Freeze request', sentAt: '03 Sep, 18:02', ageHrs: 37.9, repliedHrs: 6, status: 'responded', freezeINR: 430000, wallets: 1, outcome: 'Account frozen · ₹4.3 L held' },
-  { id: 'NTC-2026-0915', caseId: 'KZN-2026-0411', victim: 'Ankit Verma', exchange: 'arcadia', type: 'KYC disclosure', sentAt: '25 Aug, 21:15', ageHrs: 244.9, status: 'escalated', freezeINR: 312000, wallets: 1 },
-  { id: 'NTC-2026-0911', caseId: 'KZN-2026-0408', victim: 'Deepa Rao', exchange: 'kestrel', type: 'Freeze request', sentAt: '01 Sep, 10:45', ageHrs: 93.3, repliedHrs: 4, status: 'responded', freezeINR: 1120000, wallets: 2, outcome: 'Account frozen · ₹11.2 L held' },
-  { id: 'NTC-2026-0905', caseId: 'KZN-2026-0407', victim: 'Rohit Das', exchange: 'orbita', type: 'Freeze request', sentAt: '30 Aug, 22:30', ageHrs: 130.2, status: 'breached', freezeINR: 540000, wallets: 1 },
+  { id: 'NTC-2026-0931', caseId: 'ANV-2026-0417', victim: 'Rekha Sharma', exchange: 'meridian', type: 'Freeze + KYC request', sentAt: '04 Sep, 12:10', ageHrs: 19.7, status: 'awaiting', freezeINR: 1240000, wallets: 2 },
+  { id: 'NTC-2026-0929', caseId: 'ANV-2026-0416', victim: 'Arun Menon', exchange: 'meridian', type: 'Freeze request', sentAt: '03 Sep, 14:52', ageHrs: 41.2, status: 'awaiting', freezeINR: 860000, wallets: 1 },
+  { id: 'NTC-2026-0927', caseId: 'ANV-2026-0415', victim: 'Fatima Qureshi', exchange: 'northwind', type: 'KYC disclosure', sentAt: '03 Sep, 09:30', ageHrs: 46.5, repliedHrs: 18, status: 'responded', freezeINR: 2150000, wallets: 3, outcome: 'KYC shared · 2 accounts frozen' },
+  { id: 'NTC-2026-0924', caseId: 'ANV-2026-0412', victim: 'Harpreet Gill', exchange: 'meridian', type: 'Freeze + KYC request', sentAt: '01 Sep, 16:05', ageHrs: 88.4, status: 'breached', freezeINR: 655000, wallets: 2 },
+  { id: 'NTC-2026-0913', caseId: 'ANV-2026-0406', victim: 'Sunita Yadav', exchange: 'meridian', type: 'Freeze request', sentAt: '02 Sep, 00:40', ageHrs: 61.3, status: 'awaiting', freezeINR: 760000, wallets: 1 },
+  { id: 'NTC-2026-0920', caseId: 'ANV-2026-0410', victim: 'Meera Joshi', exchange: 'orbita', type: 'Freeze + KYC request', sentAt: '28 Aug, 11:20', ageHrs: 178.6, status: 'escalated', freezeINR: 2890000, wallets: 4 },
+  { id: 'NTC-2026-0918', caseId: 'ANV-2026-0414', victim: 'S. Balaji', exchange: 'kestrel', type: 'Freeze request', sentAt: '03 Sep, 18:02', ageHrs: 37.9, repliedHrs: 6, status: 'responded', freezeINR: 430000, wallets: 1, outcome: 'Account frozen · ₹4.3 L held' },
+  { id: 'NTC-2026-0915', caseId: 'ANV-2026-0411', victim: 'Ankit Verma', exchange: 'arcadia', type: 'KYC disclosure', sentAt: '25 Aug, 21:15', ageHrs: 244.9, status: 'escalated', freezeINR: 312000, wallets: 1 },
+  { id: 'NTC-2026-0911', caseId: 'ANV-2026-0408', victim: 'Deepa Rao', exchange: 'kestrel', type: 'Freeze request', sentAt: '01 Sep, 10:45', ageHrs: 93.3, repliedHrs: 4, status: 'responded', freezeINR: 1120000, wallets: 2, outcome: 'Account frozen · ₹11.2 L held' },
+  { id: 'NTC-2026-0905', caseId: 'ANV-2026-0407', victim: 'Rohit Das', exchange: 'orbita', type: 'Freeze request', sentAt: '30 Aug, 22:30', ageHrs: 130.2, status: 'breached', freezeINR: 540000, wallets: 1 },
 ]
 
 export function ex(id: string): Exchange {

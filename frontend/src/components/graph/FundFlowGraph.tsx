@@ -275,7 +275,7 @@ export function FundFlowGraph({ graph, onSelectNode, routeA, routeB }: FundFlowG
               const Icon = isMixerStop ? ShieldAlert : isUnconfirmedBridge ? HelpCircle : KIND_ICON[node.kind]
               const size = NODE_SIZE[node.kind]
               const dimmed = activePath ? !activePath.nodeIds.has(node.id) : false
-              // Indigo is a defined KAIZEN accent (CLAUDE.md's slide-deck palette; already a
+              // Indigo is a defined ANVESHAK accent (CLAUDE.md's slide-deck palette; already a
               // `--color-indigo` token used for the selection ring) that isn't one of the six
               // "fixed" colour semantics -- reusing vermillion here would make a mixer stop look
               // like just another generic criminal-path hop, which is exactly the bug being fixed.

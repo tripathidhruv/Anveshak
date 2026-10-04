@@ -6,7 +6,7 @@ import type {
   Exchange,
   GraphData,
   GraphNode,
-  KaizenApi,
+  AnveshakApi,
   NoticeResult,
   NoticeType,
   RecentCase,
@@ -17,7 +17,7 @@ import type {
 } from '../types'
 // Type-only imports of the real endpoints' response shapes -- these three functions
 // (getSimilarOperators/getSanctionsMatches/getAuditLog+verifyAuditChain) are standalone
-// `httpApi.ts` exports, not part of `KaizenApi`, so their mock counterparts below are also
+// `httpApi.ts` exports, not part of `AnveshakApi`, so their mock counterparts below are also
 // standalone exports rather than additions to `mockApi`. No runtime dependency on httpApi.ts
 // is introduced -- `import type` is erased at build time.
 import type { AuditLogEntryOut, AuditVerifyOut, SanctionsMatchOut, SimilarOperatorsOut } from './httpApi'
@@ -43,7 +43,7 @@ export function delay(ms: number): Promise<void> {
  */
 const DEMO = {
   case: {
-    id: 'KZN-2026-0417',
+    id: 'ANV-2026-0417',
     ncrp: '31402260041789',
     complainant: 'Rekha Sharma',
     location: 'Jaipur, Rajasthan',
@@ -175,11 +175,11 @@ const DEMO = {
     // (`backend/app/api/v1/cases.py`'s `RecoverabilityState`) in shape only, not in how they
     // were computed -- a live trace never actually ran for this demo data.
     recentCases: [
-      { id: 'KZN-2026-0417', who: 'Rekha Sharma', amt: 1240000, chain: 'TRON', status: 'New', risk: null, recoverabilityState: 'moving', recoverabilityDeadlineMinutes: null },
-      { id: 'KZN-2026-0416', who: 'Arun Menon', amt: 860000, chain: 'TRON', status: 'Traced', risk: 'HIGH', recoverabilityState: 'at_rest', recoverabilityDeadlineMinutes: 45 },
-      { id: 'KZN-2026-0415', who: 'Fatima Qureshi', amt: 2150000, chain: 'Ethereum', status: 'Traced', risk: 'HIGH', recoverabilityState: 'at_exchange', recoverabilityDeadlineMinutes: 180 },
-      { id: 'KZN-2026-0414', who: 'S. Balaji', amt: 430000, chain: 'Bitcoin', status: 'Notice sent', risk: 'MEDIUM', recoverabilityState: 'at_exchange', recoverabilityDeadlineMinutes: 600 },
-      { id: 'KZN-2026-0413', who: 'Priya Nair', amt: 1780000, chain: 'TRON', status: 'Closed', risk: 'HIGH', recoverabilityState: 'unknown', recoverabilityDeadlineMinutes: null },
+      { id: 'ANV-2026-0417', who: 'Rekha Sharma', amt: 1240000, chain: 'TRON', status: 'New', risk: null, recoverabilityState: 'moving', recoverabilityDeadlineMinutes: null },
+      { id: 'ANV-2026-0416', who: 'Arun Menon', amt: 860000, chain: 'TRON', status: 'Traced', risk: 'HIGH', recoverabilityState: 'at_rest', recoverabilityDeadlineMinutes: 45 },
+      { id: 'ANV-2026-0415', who: 'Fatima Qureshi', amt: 2150000, chain: 'Ethereum', status: 'Traced', risk: 'HIGH', recoverabilityState: 'at_exchange', recoverabilityDeadlineMinutes: 180 },
+      { id: 'ANV-2026-0414', who: 'S. Balaji', amt: 430000, chain: 'Bitcoin', status: 'Notice sent', risk: 'MEDIUM', recoverabilityState: 'at_exchange', recoverabilityDeadlineMinutes: 600 },
+      { id: 'ANV-2026-0413', who: 'Priya Nair', amt: 1780000, chain: 'TRON', status: 'Closed', risk: 'HIGH', recoverabilityState: 'unknown', recoverabilityDeadlineMinutes: null },
     ],
   } satisfies DashboardData,
 }
@@ -219,7 +219,7 @@ function buildGraph(): GraphData {
     // violet diamond in FundFlowGraph (shape-diamond + --node-accent: var(--color-violet)),
     // matches GraphLegend's "Bridge (cross-chain)" entry, and graphLayout's computeRoutePaths
     // correctly flags any path through it as crossesBridge (Route B). Confirmed by running the
-    // mock-mode demo case (KZN-2026-0417) end to end in a browser: the bridge node renders,
+    // mock-mode demo case (ANV-2026-0417) end to end in a browser: the bridge node renders,
     // clicking it opens the node-detail panel with the label "Bridge contract" (matching the
     // backend's new role string from Task 3), and "Show Route A" / "Show Route B" correctly
     // dim/highlight the two paths. No rendering bug found — no other code change was needed.
@@ -316,7 +316,7 @@ function buildMockManifestEntries(): Record<string, unknown>[] {
   ]
 }
 
-/** Mock counterpart to `httpApi.ts`'s real `getRiskScore` -- this call isn't part of `KaizenApi`
+/** Mock counterpart to `httpApi.ts`'s real `getRiskScore` -- this call isn't part of `AnveshakApi`
  * (no mock/real switch in `api/index.ts` covers it), so `RiskScore.tsx` picks between this and
  * the real `httpApi.ts` function directly on `VITE_USE_MOCK`, same pattern as `getEvidencePack`
  * below. Reuses `DEMO.risk`'s existing plain-English factor narrative, rescaled onto the real
@@ -362,7 +362,7 @@ export async function getFlaggedWallets(_token: string): Promise<import('./httpA
       address: DEMO.routeA.trail[5].addr,
       chain: 'TRON',
       riskScore: 0.87,
-      caseIds: ['KZN-2026-0417', 'KZN-2026-0416', 'KZN-2026-0415'],
+      caseIds: ['ANV-2026-0417', 'ANV-2026-0416', 'ANV-2026-0415'],
       flaggedAt: '2026-09-04T20:20:00+05:30',
       broadcastStatus: { delivered: 3, acknowledged: 1 },
     },
@@ -370,7 +370,7 @@ export async function getFlaggedWallets(_token: string): Promise<import('./httpA
       address: DEMO.routeA.trail[4].addr,
       chain: 'TRON',
       riskScore: 0.71,
-      caseIds: ['KZN-2026-0417'],
+      caseIds: ['ANV-2026-0417'],
       flaggedAt: '2026-09-04T19:55:00+05:30',
       broadcastStatus: { delivered: 3, acknowledged: 0 },
     },
@@ -378,7 +378,7 @@ export async function getFlaggedWallets(_token: string): Promise<import('./httpA
       address: '0x2c8da154fe37b09c42',
       chain: 'Ethereum',
       riskScore: 0.64,
-      caseIds: ['KZN-2026-0414'],
+      caseIds: ['ANV-2026-0414'],
       flaggedAt: '2026-09-01T14:10:00+05:30',
       broadcastStatus: { delivered: 2, acknowledged: 2 },
     },
@@ -451,7 +451,7 @@ export async function getMyCases(_token: string): Promise<Case[]> {
     },
     {
       ...DEMO.case,
-      id: 'KZN-2026-0299',
+      id: 'ANV-2026-0299',
       ncrp: '31402260029981',
       fraudType: 'Fake investment app',
       amountINR: 82000,
@@ -491,10 +491,10 @@ export async function getCaseReplies(caseId: string, _token: string): Promise<im
 }
 
 /** Mock counterpart to `httpApi.ts`'s real `getEvidencePack` -- these two calls aren't part of
- * `KaizenApi` (no mock/real switch in `api/index.ts` covers them, same as `getRiskScore`/
+ * `AnveshakApi` (no mock/real switch in `api/index.ts` covers them, same as `getRiskScore`/
  * `getCampaignsList`/etc.), so `Evidence.tsx` picks between this pair and the real `httpApi.ts`
  * pair directly on `VITE_USE_MOCK`, the same one-env-var-switch spirit as `index.ts`'s own
- * `USE_MOCK`, just resolved locally since these calls sit outside the `KaizenApi` surface. */
+ * `USE_MOCK`, just resolved locally since these calls sit outside the `AnveshakApi` surface. */
 export async function getEvidencePack(caseId: string): Promise<EvidencePackOut> {
   await delay(500)
   const manifestEntries = buildMockManifestEntries()
@@ -570,14 +570,14 @@ export async function verifyEvidencePack(caseId: string): Promise<EvidenceVerify
  * `api.getCampaign()` -- out of scope here, left untouched). The first entry restates
  * `DEMO.campaign`'s own numbers (38 victims, ₹4.7 Cr, hub `TNh8yW5vC2mQ7fL4xK9pR`) so the two
  * don't visibly disagree in mock mode; `caseIds`/`statesTouched` are synthetic filler in the same
- * `KZN-2026-####` / Indian-state style as the rest of `DEMO` (CLAUDE.md rule 1: synthetic only).
+ * `ANV-2026-####` / Indian-state style as the rest of `DEMO` (CLAUDE.md rule 1: synthetic only).
  * A second, smaller campaign is included so the list page has more than one row to render. */
 const DEMO_CAMPAIGNS: CampaignDetailOut[] = [
   {
     id: 'CAMP-2026-01',
     hubAddress: DEMO.campaign.sharedWallet,
     chain: 'TRON',
-    caseIds: Array.from({ length: DEMO.campaign.cases }, (_, i) => `KZN-2026-${String(417 - i).padStart(4, '0')}`),
+    caseIds: Array.from({ length: DEMO.campaign.cases }, (_, i) => `ANV-2026-${String(417 - i).padStart(4, '0')}`),
     totalAmountINR: DEMO.campaign.totalINR,
     statesTouched: [
       'Rajasthan', 'Maharashtra', 'Karnataka', 'Delhi', 'Tamil Nadu', 'West Bengal',
@@ -588,7 +588,7 @@ const DEMO_CAMPAIGNS: CampaignDetailOut[] = [
     id: 'CAMP-2026-02',
     hubAddress: '0x9e4b8f07a2c6d13e5b4a1',
     chain: 'Ethereum',
-    caseIds: ['KZN-2026-0512', 'KZN-2026-0509', 'KZN-2026-0503', 'KZN-2026-0498', 'KZN-2026-0491', 'KZN-2026-0487'],
+    caseIds: ['ANV-2026-0512', 'ANV-2026-0509', 'ANV-2026-0503', 'ANV-2026-0498', 'ANV-2026-0491', 'ANV-2026-0487'],
     totalAmountINR: 3850000,
     statesTouched: ['Maharashtra', 'Karnataka', 'Delhi'],
   },
@@ -641,17 +641,17 @@ export async function getSimilarOperators(caseId: string): Promise<SimilarOperat
     caseId,
     results: [
       {
-        caseId: 'KZN-2026-0402',
+        caseId: 'ANV-2026-0402',
         similarityScore: 0.91,
         featureBreakdown: { sweepLatencySec: 38, hopCount: 5, consolidationHub: true, valuePreservedPct: 99.4 },
       },
       {
-        caseId: 'KZN-2026-0388',
+        caseId: 'ANV-2026-0388',
         similarityScore: 0.77,
         featureBreakdown: { sweepLatencySec: 51, hopCount: 4, consolidationHub: true, valuePreservedPct: 98.1 },
       },
       {
-        caseId: 'KZN-2026-0371',
+        caseId: 'ANV-2026-0371',
         similarityScore: 0.62,
         featureBreakdown: { sweepLatencySec: 65, hopCount: 6, consolidationHub: false, valuePreservedPct: 94.7 },
       },
@@ -775,11 +775,11 @@ export async function getDepositIndexMatches(chain: string, address: string): Pr
 }
 
 /**
- * Mock implementation of `KaizenApi`, backed entirely by `DEMO`. Every case-scoped method
+ * Mock implementation of `AnveshakApi`, backed entirely by `DEMO`. Every case-scoped method
  * ignores the `caseId`/`campaignId` argument's actual value and returns the single demo case —
  * there is only one case in the source dataset, which is the point of a hackathon demo.
  */
-export const mockApi: KaizenApi = {
+export const mockApi: AnveshakApi = {
   async createCase(input: CaseInput): Promise<Case> {
     await delay(400)
     return { ...DEMO.case, ...input }

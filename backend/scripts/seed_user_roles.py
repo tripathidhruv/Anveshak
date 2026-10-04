@@ -1,4 +1,4 @@
-"""One-off, safely re-runnable: seeds the initial KAIZEN role assignments this feature needs.
+"""One-off, safely re-runnable: seeds the initial ANVESHAK role assignments this feature needs.
 Run: backend/.venv/Scripts/python.exe scripts/seed_user_roles.py (from backend/)."""
 from __future__ import annotations
 

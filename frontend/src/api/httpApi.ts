@@ -1,9 +1,9 @@
 import { request } from './client'
 import { createKeyedPromiseCache } from './traceCache'
-import type { Case, CaseInput, KaizenApi, RecentCase, RecoverabilityState, Route, TicketStatus, TraceResult } from '../types'
+import type { Case, CaseInput, AnveshakApi, RecentCase, RecoverabilityState, Route, TicketStatus, TraceResult } from '../types'
 
 // `GET /api/v1/me` and its `MeResponse` shape used to live here (Task 2,
-// `backend/app/api/v1/me.py`) -- resolving a verified JWT's email to its KAIZEN role for
+// `backend/app/api/v1/me.py`) -- resolving a verified JWT's email to its ANVESHAK role for
 // `pages/Login.tsx`'s OTP flow and `RequireRole`'s hard-refresh rehydration. Both call sites were
 // retired when the real email+OTP login against E:/API's Lighthouse Auth API was replaced with an
 // instant, no-backend role picker (this deployment target never has that auth microservice
@@ -181,7 +181,7 @@ function toRoute(trace: BackendTraceOut): Route {
 /** Real HTTP implementation — covers what backend/ Sprint 1 (amended) actually serves.
  * Everything else stays `notImplemented` until the VASP feed / freeze / evidence-hash
  * sprints land (see docs/superpowers/plans/2026-09-25-backend-sprint1-multichain.md). */
-export const httpApiPartial: Partial<KaizenApi> = {
+export const httpApiPartial: Partial<AnveshakApi> = {
   createCase: (input: CaseInput) => request<Case>('/api/v1/cases', { method: 'POST', body: input }),
   getCase: (id: string) => request<Case>(`/api/v1/cases/${id}`),
   listCases: async (): Promise<RecentCase[]> => {
@@ -291,7 +291,7 @@ export function rejectNotice(noticeId: string, reason?: string): Promise<LegalNo
 }
 
 /** `POST /api/v1/legal/notices/{id}/send`. Named `sendLegalNotice` (not `sendNotice`) to stay
- * distinct from the unrelated mock-only `KaizenApi.sendNotice(caseId, NoticeType)` already used
+ * distinct from the unrelated mock-only `AnveshakApi.sendNotice(caseId, NoticeType)` already used
  * by `components/action/LawfulActionTab.tsx` -- same English verb, different notices/FSM
  * entirely. Never sends anything for real; only flips the in-memory FSM to `sent`, and only
  * succeeds if the notice was already `approved` (`legal.py`'s `send_notice` docstring). */

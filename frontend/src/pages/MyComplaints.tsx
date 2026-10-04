@@ -28,7 +28,7 @@ const STATUS_COLOUR: Record<TicketStatus, SemanticColour> = {
   handled: 'safe',
 }
 
-/** `getMyCases`/`getCaseReplies` aren't part of the shared `KaizenApi` mock/real switch
+/** `getMyCases`/`getCaseReplies` aren't part of the shared `AnveshakApi` mock/real switch
  * (`api/index.ts`), so this screen resolves the same one-env-var switch locally -- same pattern
  * `Evidence.tsx`/`RiskScore.tsx` already use for their own standalone endpoint pairs. Real bug
  * fixed here (2026-09-28): this screen previously always called the real backend regardless of

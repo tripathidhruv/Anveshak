@@ -5,7 +5,7 @@
 
 ## Why this exists
 
-The user wants KAIZEN to operate on real wallet addresses in production, and to unify three
+The user wants ANVESHAK to operate on real wallet addresses in production, and to unify three
 audiences behind one login: police officers, exchange (VASP) compliance contacts, and citizens
 filing a complaint — plus a guest path for citizens with no account. Today these are three
 disconnected surfaces: officer login (JWT via a separate auth microservice), a public
@@ -24,7 +24,7 @@ also folds in 5 previously-flagged backlog items that touch the same code paths.
 5. **6 minor whole-branch-review items**: `tracer.py`'s stale `since`-not-passed comment/bug,
    `unreportedVictims: []` ambiguity, and the others listed in `docs/TASKS.md` P1.6.
 6. **Root cause of "cntcitachi@gmail.com not getting an OTP code"**: that email was never seeded
-   into the Lighthouse Auth API's `kaizen` tenant — VASP/exchange access has only ever used the
+   into the Lighthouse Auth API's `anveshak` tenant — VASP/exchange access has only ever used the
    separate, login-free `access_token` portal link. There is nothing broken in the mailer; the
    email simply has no `UserAuth` row, so `request_otp` silently no-ops (anti-enumeration design).
    Fixing this *is* the unification work below, not a bug patch.
@@ -35,24 +35,24 @@ also folds in 5 previously-flagged backlog items that touch the same code paths.
 ### Identity vs. role: two different services, on purpose
 
 `E:/API` ("Lighthouse Auth API") is a **shared** microservice used by other tenants besides
-KAIZEN. It already does exactly one job well: prove "this email received and entered a code we
+ANVESHAK. It already does exactly one job well: prove "this email received and entered a code we
 just sent it," and mint a JWT with `{user_id, tenant_id, email, exp}` — no role. We will **not**
-add a KAIZEN-specific role column to its shared schema. Instead:
+add a ANVESHAK-specific role column to its shared schema. Instead:
 
-- **E:/API stays identity-only.** We reuse its existing, working `seed_kaizen_tenant.py` script
+- **E:/API stays identity-only.** We reuse its existing, working `seed_anveshak_tenant.py` script
   to seed the *additional* emails this feature needs (`cntcitachi@gmail.com`,
-  `tripathidhruv2704@gmail.com`) into the `kaizen` tenant, exactly the same mechanism already
+  `tripathidhruv2704@gmail.com`) into the `anveshak` tenant, exactly the same mechanism already
   used for `dhruv@carvelle.in`. No code changes to `E:/API` are needed for this — it's a seeding
   operation, run once.
-- **KAIZEN's own backend owns authorization.** A new small table, `UserRole` (email, role,
-  linked_subscriber_id nullable, created_at), maps an authenticated email to exactly one KAIZEN
-  role: `officer | exchange | citizen`. After JWT verification, KAIZEN looks up the verified
+- **ANVESHAK's own backend owns authorization.** A new small table, `UserRole` (email, role,
+  linked_subscriber_id nullable, created_at), maps an authenticated email to exactly one ANVESHAK
+  role: `officer | exchange | citizen`. After JWT verification, ANVESHAK looks up the verified
   email in `UserRole` to decide what the user can see and do. This is the single new concept the
   rest of the plan hangs off of.
 - Seed data: `dhruv@carvelle.in` → `officer`; `cntcitachi@gmail.com` → `exchange` (linked to the
   existing `VaspSubscriber` row for "Demo Exchange"); `tripathidhruv2704@gmail.com` → `citizen`.
 - A `UserRole` row is auto-created as `citizen` the first time an email with no existing row logs
-  in successfully — nobody with a valid KAIZEN-tenant login is ever refused a role; officer/exchange
+  in successfully — nobody with a valid ANVESHAK-tenant login is ever refused a role; officer/exchange
   are allowlisted explicitly, everyone else defaults to citizen. This matches "give
   tripathidhruv2704@gmail.com as user" (explicit) while not hard-coding every future citizen email.
 
@@ -121,7 +121,7 @@ always visible to both the exchange and the officer.
 ## Frontend shape
 
 One login page (`/login`), one flow: OTP as today, plus a "Continue as guest" button. On success,
-call a new KAIZEN-side `GET /api/v1/me` (not E:/API's `/me` — that has no role) returning
+call a new ANVESHAK-side `GET /api/v1/me` (not E:/API's `/me` — that has no role) returning
 `{email, role}`; store it (new tiny `authStore.ts`, replacing the current pattern of reading
 `localStorage` ad hoc from two different pages). `App.tsx`'s route tree branches on `role`:
 
@@ -137,6 +137,6 @@ call a new KAIZEN-side `GET /api/v1/me` (not E:/API's `/me` — that has no role
 
 - Not modifying `E:/API`'s code or schema.
 - Not building a notification/email-on-reply system for citizens — they check their ticket page.
-- Not retrofitting officer-only auth onto every existing KAIZEN endpoint (case creation stays
+- Not retrofitting officer-only auth onto every existing ANVESHAK endpoint (case creation stays
   open at the backend, same disclosed scope limit as today — the frontend route gating is what
   actually separates officer/citizen/guest UI, consistent with the existing pattern).

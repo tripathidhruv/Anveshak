@@ -31,27 +31,27 @@ SYNDICATES = [
 # (address, chain, syndicate, [(case_id, relation, unit, city, state, amount_inr, at, event)])
 WALLETS = [
     ("TXk99ZPWKtvn7dYqDom1KHPjujmpXKraUm", "tron", "SYN-07", [
-        ("KZN-2026-0406", "one_hop", "Cyber PS Patna", "Patna", "Bihar", 760000, _t(2026, 8, 21, 16, 5), "linked"),
-        ("KZN-2026-0412", "same_wallet", "Cyber PS Ludhiana", "Ludhiana", "Punjab", 655000, _t(2026, 8, 29, 14, 40), "submitted"),
-        ("KZN-2026-0416", "same_wallet", "Cyber PS Kochi", "Kochi", "Kerala", 860000, _t(2026, 9, 3, 9, 18), "submitted"),
+        ("ANV-2026-0406", "one_hop", "Cyber PS Patna", "Patna", "Bihar", 760000, _t(2026, 8, 21, 16, 5), "linked"),
+        ("ANV-2026-0412", "same_wallet", "Cyber PS Ludhiana", "Ludhiana", "Punjab", 655000, _t(2026, 8, 29, 14, 40), "submitted"),
+        ("ANV-2026-0416", "same_wallet", "Cyber PS Kochi", "Kochi", "Kerala", 860000, _t(2026, 9, 3, 9, 18), "submitted"),
     ]),
     ("TNh8yW5vC2mQ7fL4xK9pR", "tron", "SYN-07", [
-        ("KZN-2026-0398", "shared_hub", "Cyber PS Indore", "Indore", "Madhya Pradesh", 540000, _t(2026, 8, 12, 11, 30), "linked"),
-        ("KZN-2026-0406", "shared_hub", "Cyber PS Patna", "Patna", "Bihar", 760000, _t(2026, 8, 21, 16, 20), "linked"),
+        ("ANV-2026-0398", "shared_hub", "Cyber PS Indore", "Indore", "Madhya Pradesh", 540000, _t(2026, 8, 12, 11, 30), "linked"),
+        ("ANV-2026-0406", "shared_hub", "Cyber PS Patna", "Patna", "Bihar", 760000, _t(2026, 8, 21, 16, 20), "linked"),
     ]),
     ("TRw2pD9kH5sM3nV8cF1qL", "tron", "SYN-03", [
-        ("KZN-2026-0371", "same_wallet", "Cyber PS Bengaluru", "Bengaluru", "Karnataka", 2350000, _t(2026, 7, 30, 10, 0), "submitted"),
-        ("KZN-2026-0402", "shared_hub", "Cyber PS Hyderabad", "Hyderabad", "Telangana", 1800000, _t(2026, 8, 17, 18, 45), "linked"),
+        ("ANV-2026-0371", "same_wallet", "Cyber PS Bengaluru", "Bengaluru", "Karnataka", 2350000, _t(2026, 7, 30, 10, 0), "submitted"),
+        ("ANV-2026-0402", "shared_hub", "Cyber PS Hyderabad", "Hyderabad", "Telangana", 1800000, _t(2026, 8, 17, 18, 45), "linked"),
     ]),
     ("0x4f1c92ad07be33e5a8", "ethereum", "SYN-11", [
-        ("KZN-2026-0385", "same_wallet", "Cyber PS Lucknow", "Lucknow", "Uttar Pradesh", 420000, _t(2026, 8, 5, 13, 10), "submitted"),
+        ("ANV-2026-0385", "same_wallet", "Cyber PS Lucknow", "Lucknow", "Uttar Pradesh", 420000, _t(2026, 8, 5, 13, 10), "submitted"),
     ]),
     ("TGm6vB2nQ8xK4hR7pL3wD", "tron", "SYN-02", [
-        ("KZN-2026-0390", "same_wallet", "Cyber PS Pune", "Pune", "Maharashtra", 3100000, _t(2026, 8, 9, 15, 25), "submitted"),
-        ("KZN-2026-0409", "one_hop", "Cyber PS Chennai", "Chennai", "Tamil Nadu", 1450000, _t(2026, 8, 25, 12, 0), "linked"),
+        ("ANV-2026-0390", "same_wallet", "Cyber PS Pune", "Pune", "Maharashtra", 3100000, _t(2026, 8, 9, 15, 25), "submitted"),
+        ("ANV-2026-0409", "one_hop", "Cyber PS Chennai", "Chennai", "Tamil Nadu", 1450000, _t(2026, 8, 25, 12, 0), "linked"),
     ]),
     ("TLp4cV9xN2mQ6rT8kH3sY", "tron", "SYN-03", [
-        ("KZN-2026-0393", "one_hop", "Cyber PS Ahmedabad", "Ahmedabad", "Gujarat", 980000, _t(2026, 8, 10, 9, 40), "linked"),
+        ("ANV-2026-0393", "one_hop", "Cyber PS Ahmedabad", "Ahmedabad", "Gujarat", 980000, _t(2026, 8, 10, 9, 40), "linked"),
     ]),
 ]
 

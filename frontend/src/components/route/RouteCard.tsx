@@ -46,7 +46,7 @@ function isUnconfirmedBridgeHop(hop: Hop): boolean {
 }
 
 function hopDotColour(hop: Hop, route: Route): string {
-  // Indigo is a defined KAIZEN accent (CLAUDE.md's slide-deck palette) not already claimed by
+  // Indigo is a defined ANVESHAK accent (CLAUDE.md's slide-deck palette) not already claimed by
   // one of the six fixed colour semantics -- using it here (rather than reusing vermillion)
   // is exactly what makes a mixer stop visually distinct from a generic criminal-path hop.
   if (isMixerHop(hop)) return 'var(--color-indigo)'

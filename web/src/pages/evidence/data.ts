@@ -33,7 +33,7 @@ export const CUSTODY = [
   { at: '11:05', what: 'Complaint received via NCRP', who: 'System' },
   { at: '11:06', what: 'Trace started · 41 s', who: 'SI Kavita Rathore' },
   { at: '11:31', what: 'Attribution confirmed · Meridian (0.94)', who: 'SI Kavita Rathore' },
-  { at: '11:47', what: 'Pack sealed · 6 artefacts hashed', who: 'KAIZEN' },
+  { at: '11:47', what: 'Pack sealed · 6 artefacts hashed', who: 'ANVESHAK' },
 ]
 
 export const TX = {
@@ -44,9 +44,9 @@ export const TX = {
 export type NoticeKey = 'n94' | 'n106' | 'n63'
 
 export const NOTICES: { key: NoticeKey; tab: string; section: string; title: string; ref: string; verify?: boolean }[] = [
-  { key: 'n94', tab: 'Data & freeze request', section: 'BNSS §94', title: 'Notice for production of records and request to freeze', ref: 'KZN/JPR/2026/0417/N1', verify: true },
-  { key: 'n106', tab: 'Seizure order request', section: 'BNSS §106', title: 'Request to seize property suspected to be proceeds of crime', ref: 'KZN/JPR/2026/0417/N2' },
-  { key: 'n63', tab: 'Electronic-evidence certificate', section: 'BSA §63', title: 'Certificate for admissibility of electronic records', ref: 'KZN/JPR/2026/0417/C1' },
+  { key: 'n94', tab: 'Data & freeze request', section: 'BNSS §94', title: 'Notice for production of records and request to freeze', ref: 'ANV/JPR/2026/0417/N1', verify: true },
+  { key: 'n106', tab: 'Seizure order request', section: 'BNSS §106', title: 'Request to seize property suspected to be proceeds of crime', ref: 'ANV/JPR/2026/0417/N2' },
+  { key: 'n63', tab: 'Electronic-evidence certificate', section: 'BSA §63', title: 'Certificate for admissibility of electronic records', ref: 'ANV/JPR/2026/0417/C1' },
 ]
 
 export const STEPS = ['Draft', 'Officer review', 'SP approval', 'Sent via SAHYOG', 'Acknowledged']

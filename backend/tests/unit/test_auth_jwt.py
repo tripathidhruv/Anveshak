@@ -14,7 +14,7 @@ from fastapi.testclient import TestClient
 
 from app.auth.jwt import OfficerClaims, get_current_officer
 
-TEST_SECRET = "kaizen-test-shared-secret"
+TEST_SECRET = "anveshak-test-shared-secret"
 
 
 def _make_app() -> FastAPI:

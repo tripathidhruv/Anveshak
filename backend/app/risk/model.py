@@ -2,7 +2,7 @@
 
 *** THIS MODEL IS TRAINED ENTIRELY ON PROCEDURALLY GENERATED SYNTHETIC DATA. ***
 
-KAIZEN has no real labelled fraud dataset -- this is a stated, deliberate architectural fact
+ANVESHAK has no real labelled fraud dataset -- this is a stated, deliberate architectural fact
 (CLAUDE.md's "label scarcity" thesis), not something this task works around by inventing
 fake-real data. `_generate_synthetic_training_data` below builds several hundred synthetic
 feature rows whose labels are correlated with the SAME rule-based signals
@@ -42,7 +42,7 @@ from app.detectors.deposit import MIN_DISTINCT_PAYERS
 
 SYNTHETIC_DATA_DISCLOSURE = (
     "This machine-learning score was produced by a model trained entirely on procedurally "
-    "generated synthetic data, not on any real fraud cases -- KAIZEN has no real labelled "
+    "generated synthetic data, not on any real fraud cases -- ANVESHAK has no real labelled "
     "fraud dataset to train on (see the project's own documented 'label scarcity' constraint). "
     "Treat this number as an experimental second opinion alongside the rule-based score, never "
     "as an independently verified fact."

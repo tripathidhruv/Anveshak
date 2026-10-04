@@ -1,14 +1,14 @@
-# KAIZEN — local Docker Compose stack (frontend + backend).
+# ANVESHAK — local Docker Compose stack (frontend + backend).
 #
 # Honest scoping notes (see backend/Dockerfile, frontend/Dockerfile, and Task H9's report at
 # .superpowers/sdd/task-H9-report.md for the full writeup):
 #
 # - No `postgres` service. `backend/app/db.py` builds its SQLAlchemy engine from
-#   `KAIZEN_DATABASE_URL`, which defaults to `sqlite:///./kaizen.db` (see backend/app/config.py)
+#   `ANVESHAK_DATABASE_URL`, which defaults to `sqlite:///./anveshak.db` (see backend/app/config.py)
 #   and nothing in this repo wires a Postgres connection today. Shipping a `postgres:16`
 #   service here would be unused decoration, not real support — so this stack runs SQLite,
 #   persisted to a named volume so data survives `docker compose down`/`up` cycles. Swap in a
-#   real Postgres service (and set KAIZEN_DATABASE_URL accordingly) if/when the backend actually
+#   real Postgres service (and set ANVESHAK_DATABASE_URL accordingly) if/when the backend actually
 #   grows Postgres wiring.
 # - No `redis` service and no separate worker container. Task H2's VASP webhook delivery (the
 #   only background-job-shaped feature in this backend) runs on FastAPI's own `BackgroundTasks`
@@ -28,12 +28,12 @@ services:
     environment:
       # SQLite file path inside the container; matches the named volume mount below so the
       # database persists across `docker compose down && up`.
-      KAIZEN_DATABASE_URL: sqlite:////app/data/kaizen.db
+      ANVESHAK_DATABASE_URL: sqlite:////app/data/anveshak.db
       # Optional: set real keys via a local `.env` file (untracked) or your shell environment
       # before running `docker compose up` if you have TronGrid/Etherscan API keys; the backend
       # runs fine without them within their respective free-tier/public-endpoint limits.
-      KAIZEN_TRONGRID_API_KEY: ${KAIZEN_TRONGRID_API_KEY:-}
-      KAIZEN_ETHERSCAN_API_KEY: ${KAIZEN_ETHERSCAN_API_KEY:-}
+      ANVESHAK_TRONGRID_API_KEY: ${ANVESHAK_TRONGRID_API_KEY:-}
+      ANVESHAK_ETHERSCAN_API_KEY: ${ANVESHAK_ETHERSCAN_API_KEY:-}
     volumes:
       - backend-db:/app/data
     healthcheck:

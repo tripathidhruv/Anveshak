@@ -15,7 +15,7 @@ import {
 import { getAuditLog as getAuditLogMock, verifyAuditChain as verifyAuditChainMock } from '../api/mock'
 
 /** Same locally-resolved one-env-var switch as `OperatorFingerprint.tsx`/`SanctionsScreening.tsx`
- * -- neither `getAuditLog` nor `verifyAuditChain` is part of the shared `KaizenApi` surface. Both
+ * -- neither `getAuditLog` nor `verifyAuditChain` is part of the shared `AnveshakApi` surface. Both
  * are system-wide (no `caseId` argument, matching the real endpoints' own signatures exactly). */
 const USE_MOCK = import.meta.env.VITE_USE_MOCK !== 'false'
 const fetchAuditLog: () => Promise<AuditLogEntryOut[]> = USE_MOCK ? getAuditLogMock : getAuditLogHttp
@@ -87,13 +87,13 @@ export default function AuditLog() {
       <header className="flex max-w-2xl flex-col gap-1.5">
         <div className="flex items-center gap-2">
           <h1 className="font-[family-name:var(--font-display)] text-2xl font-bold text-foreground">
-            Everything KAIZEN has done, in order
+            Everything ANVESHAK has done, in order
           </h1>
           <Badge variant="outline">DEMO DATA</Badge>
         </div>
         <p className="text-[15px] text-muted-foreground">
           Every action any officer or the system itself took is recorded here, in the order it happened, and each
-          entry is cryptographically linked to the one before it — so nobody, including KAIZEN's own operators, can
+          entry is cryptographically linked to the one before it — so nobody, including ANVESHAK's own operators, can
           quietly edit or remove a past entry without it showing up as broken below.
         </p>
         <p className="text-xs text-muted-foreground">
@@ -205,7 +205,7 @@ export default function AuditLog() {
       {!error && entries && entries.length > 0 && (
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
           <ShieldAlert size={14} />
-          This log itself proves nothing about the underlying case facts — it only proves that KAIZEN's own
+          This log itself proves nothing about the underlying case facts — it only proves that ANVESHAK's own
           records haven't been silently altered after the fact.
         </div>
       )}

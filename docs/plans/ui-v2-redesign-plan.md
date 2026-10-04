@@ -1,4 +1,4 @@
-# KAIZEN UI v2 — flat/white-card redesign plan
+# ANVESHAK UI v2 — flat/white-card redesign plan
 
 This is a **re-skin, not a rebuild.** Every page's data-fetching, routing, zustand store usage, and business logic is already correct and stays untouched — only the JSX's className/structure and the CSS change, from the old neumorphic CSS-Modules system to the new Tailwind + shadcn-style primitives in `frontend/src/components/ui/` (Button, Card, Badge, IconTile, Tabs, Dialog, AuroraBackground — already built and committed).
 

@@ -1,5 +1,5 @@
 /**
- * KAIZEN prototype dataset — ALL SYNTHETIC.
+ * ANVESHAK prototype dataset — ALL SYNTHETIC.
  * Every person, wallet, transaction and exchange below is fabricated demo data.
  * Exchange names are fictional; never substitute a real exchange name.
  * Values are shared across screens so the story stays consistent everywhere.
@@ -10,7 +10,7 @@ export type Chain = 'TRON' | 'Ethereum' | 'Bitcoin'
 
 /* ───────────── Primary case ───────────── */
 export const CASE = {
-  id: 'KZN-2026-0417',
+  id: 'ANV-2026-0417',
   ncrp: '31402260041789',
   fir: 'FIR 0312/2026 · Cyber PS Jaipur',
   complainant: 'Rekha Sharma',
@@ -138,18 +138,18 @@ export const CASES: {
   type: string
   filed: string
 }[] = [
-  { id: 'KZN-2026-0417', who: 'Rekha Sharma', city: 'Jaipur', state: 'RJ', amt: 1240000, chain: 'TRON', status: 'Tracing', risk: 'HIGH', recover: 'moving', goldenMin: 38, syndicate: 'SYN-07', exchange: 'meridian', type: 'Task-based job scam', filed: '04 Sep' },
-  { id: 'KZN-2026-0416', who: 'Arun Menon', city: 'Kochi', state: 'KL', amt: 860000, chain: 'TRON', status: 'Traced', risk: 'HIGH', recover: 'at_rest', goldenMin: 45, syndicate: 'SYN-07', exchange: 'meridian', type: 'Investment app scam', filed: '04 Sep' },
-  { id: 'KZN-2026-0415', who: 'Fatima Qureshi', city: 'Lucknow', state: 'UP', amt: 2150000, chain: 'Ethereum', status: 'Notice sent', risk: 'HIGH', recover: 'at_exchange', goldenMin: 180, syndicate: 'SYN-07', exchange: 'northwind', type: 'Pig-butchering (romance)', filed: '03 Sep' },
-  { id: 'KZN-2026-0414', who: 'S. Balaji', city: 'Chennai', state: 'TN', amt: 430000, chain: 'Bitcoin', status: 'Frozen', risk: 'MEDIUM', recover: 'frozen', goldenMin: null, exchange: 'kestrel', type: 'Fake customs parcel', filed: '03 Sep' },
-  { id: 'KZN-2026-0413', who: 'Priya Nair', city: 'Bengaluru', state: 'KA', amt: 1780000, chain: 'TRON', status: 'Closed', risk: 'HIGH', recover: 'frozen', goldenMin: null, syndicate: 'SYN-03', exchange: 'halcyon', type: 'Task-based job scam', filed: '02 Sep' },
-  { id: 'KZN-2026-0412', who: 'Harpreet Gill', city: 'Ludhiana', state: 'PB', amt: 655000, chain: 'TRON', status: 'Traced', risk: 'HIGH', recover: 'at_exchange', goldenMin: 92, syndicate: 'SYN-07', exchange: 'meridian', type: 'Investment app scam', filed: '02 Sep' },
-  { id: 'KZN-2026-0411', who: 'Ankit Verma', city: 'Indore', state: 'MP', amt: 312000, chain: 'Ethereum', status: 'Tracing', risk: 'MEDIUM', recover: 'moving', goldenMin: 21, exchange: 'arcadia', type: 'Digital arrest', filed: '02 Sep' },
-  { id: 'KZN-2026-0410', who: 'Meera Joshi', city: 'Pune', state: 'MH', amt: 2890000, chain: 'TRON', status: 'Notice sent', risk: 'HIGH', recover: 'at_exchange', goldenMin: 240, syndicate: 'SYN-03', exchange: 'orbita', type: 'Pig-butchering (romance)', filed: '01 Sep' },
-  { id: 'KZN-2026-0409', who: 'Imran Shaikh', city: 'Ahmedabad', state: 'GJ', amt: 198000, chain: 'Bitcoin', status: 'Intake', risk: null, recover: 'moving', goldenMin: 12, type: 'Sextortion', filed: '01 Sep' },
-  { id: 'KZN-2026-0408', who: 'Deepa Rao', city: 'Hyderabad', state: 'TG', amt: 1120000, chain: 'TRON', status: 'Frozen', risk: 'HIGH', recover: 'frozen', goldenMin: null, syndicate: 'SYN-07', exchange: 'kestrel', type: 'Task-based job scam', filed: '31 Aug' },
-  { id: 'KZN-2026-0407', who: 'Rohit Das', city: 'Kolkata', state: 'WB', amt: 540000, chain: 'TRON', status: 'Traced', risk: 'MEDIUM', recover: 'lost', goldenMin: null, exchange: 'orbita', type: 'Loan app extortion', filed: '31 Aug' },
-  { id: 'KZN-2026-0406', who: 'Sunita Yadav', city: 'Patna', state: 'BR', amt: 760000, chain: 'TRON', status: 'Traced', risk: 'HIGH', recover: 'at_exchange', goldenMin: 130, syndicate: 'SYN-07', exchange: 'meridian', type: 'Task-based job scam', filed: '30 Aug' },
+  { id: 'ANV-2026-0417', who: 'Rekha Sharma', city: 'Jaipur', state: 'RJ', amt: 1240000, chain: 'TRON', status: 'Tracing', risk: 'HIGH', recover: 'moving', goldenMin: 38, syndicate: 'SYN-07', exchange: 'meridian', type: 'Task-based job scam', filed: '04 Sep' },
+  { id: 'ANV-2026-0416', who: 'Arun Menon', city: 'Kochi', state: 'KL', amt: 860000, chain: 'TRON', status: 'Traced', risk: 'HIGH', recover: 'at_rest', goldenMin: 45, syndicate: 'SYN-07', exchange: 'meridian', type: 'Investment app scam', filed: '04 Sep' },
+  { id: 'ANV-2026-0415', who: 'Fatima Qureshi', city: 'Lucknow', state: 'UP', amt: 2150000, chain: 'Ethereum', status: 'Notice sent', risk: 'HIGH', recover: 'at_exchange', goldenMin: 180, syndicate: 'SYN-07', exchange: 'northwind', type: 'Pig-butchering (romance)', filed: '03 Sep' },
+  { id: 'ANV-2026-0414', who: 'S. Balaji', city: 'Chennai', state: 'TN', amt: 430000, chain: 'Bitcoin', status: 'Frozen', risk: 'MEDIUM', recover: 'frozen', goldenMin: null, exchange: 'kestrel', type: 'Fake customs parcel', filed: '03 Sep' },
+  { id: 'ANV-2026-0413', who: 'Priya Nair', city: 'Bengaluru', state: 'KA', amt: 1780000, chain: 'TRON', status: 'Closed', risk: 'HIGH', recover: 'frozen', goldenMin: null, syndicate: 'SYN-03', exchange: 'halcyon', type: 'Task-based job scam', filed: '02 Sep' },
+  { id: 'ANV-2026-0412', who: 'Harpreet Gill', city: 'Ludhiana', state: 'PB', amt: 655000, chain: 'TRON', status: 'Traced', risk: 'HIGH', recover: 'at_exchange', goldenMin: 92, syndicate: 'SYN-07', exchange: 'meridian', type: 'Investment app scam', filed: '02 Sep' },
+  { id: 'ANV-2026-0411', who: 'Ankit Verma', city: 'Indore', state: 'MP', amt: 312000, chain: 'Ethereum', status: 'Tracing', risk: 'MEDIUM', recover: 'moving', goldenMin: 21, exchange: 'arcadia', type: 'Digital arrest', filed: '02 Sep' },
+  { id: 'ANV-2026-0410', who: 'Meera Joshi', city: 'Pune', state: 'MH', amt: 2890000, chain: 'TRON', status: 'Notice sent', risk: 'HIGH', recover: 'at_exchange', goldenMin: 240, syndicate: 'SYN-03', exchange: 'orbita', type: 'Pig-butchering (romance)', filed: '01 Sep' },
+  { id: 'ANV-2026-0409', who: 'Imran Shaikh', city: 'Ahmedabad', state: 'GJ', amt: 198000, chain: 'Bitcoin', status: 'Intake', risk: null, recover: 'moving', goldenMin: 12, type: 'Sextortion', filed: '01 Sep' },
+  { id: 'ANV-2026-0408', who: 'Deepa Rao', city: 'Hyderabad', state: 'TG', amt: 1120000, chain: 'TRON', status: 'Frozen', risk: 'HIGH', recover: 'frozen', goldenMin: null, syndicate: 'SYN-07', exchange: 'kestrel', type: 'Task-based job scam', filed: '31 Aug' },
+  { id: 'ANV-2026-0407', who: 'Rohit Das', city: 'Kolkata', state: 'WB', amt: 540000, chain: 'TRON', status: 'Traced', risk: 'MEDIUM', recover: 'lost', goldenMin: null, exchange: 'orbita', type: 'Loan app extortion', filed: '31 Aug' },
+  { id: 'ANV-2026-0406', who: 'Sunita Yadav', city: 'Patna', state: 'BR', amt: 760000, chain: 'TRON', status: 'Traced', risk: 'HIGH', recover: 'at_exchange', goldenMin: 130, syndicate: 'SYN-07', exchange: 'meridian', type: 'Task-based job scam', filed: '30 Aug' },
 ]
 
 /* ───────────── Dashboard series ───────────── */
@@ -189,9 +189,9 @@ export const SYNDICATES = [
 
 /* ───────────── Live activity feed ───────────── */
 export const ACTIVITY = [
-  { icon: 'snow', title: 'Freeze confirmed · Kestrel Exchange', sub: 'KZN-2026-0408 · 2 min ago', value: '+₹11.2 L', tone: 'moss' as Tone },
-  { icon: 'route', title: 'Trace completed in 41 s', sub: 'KZN-2026-0417 · 6 min ago', value: '6 hops', tone: 'teal' as Tone },
-  { icon: 'link', title: 'Case linked to syndicate SYN-07', sub: 'KZN-2026-0412 · 14 min ago', value: '38 cases', tone: 'crimson' as Tone },
+  { icon: 'snow', title: 'Freeze confirmed · Kestrel Exchange', sub: 'ANV-2026-0408 · 2 min ago', value: '+₹11.2 L', tone: 'moss' as Tone },
+  { icon: 'route', title: 'Trace completed in 41 s', sub: 'ANV-2026-0417 · 6 min ago', value: '6 hops', tone: 'teal' as Tone },
+  { icon: 'link', title: 'Case linked to syndicate SYN-07', sub: 'ANV-2026-0412 · 14 min ago', value: '38 cases', tone: 'crimson' as Tone },
   { icon: 'alert', title: 'Pre-emptive freeze alert sent', sub: 'Meridian · ETA 06m · 22 min ago', value: '₹4.1 L', tone: 'ember' as Tone },
   { icon: 'clock', title: 'Notice SLA breached — escalated', sub: 'Orbita Exchange · 1 h ago', value: 'FIU-IND', tone: 'gold' as Tone },
 ]

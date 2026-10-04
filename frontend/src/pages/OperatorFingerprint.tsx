@@ -16,7 +16,7 @@ import {
 import { getSimilarOperators as getSimilarOperatorsMock } from '../api/mock'
 
 /** Resolves the same one-env-var switch locally, matching `api/index.ts`'s own `VITE_USE_MOCK`
- * handling -- `getSimilarOperators` isn't part of the shared `KaizenApi` surface (same reasoning
+ * handling -- `getSimilarOperators` isn't part of the shared `AnveshakApi` surface (same reasoning
  * as `Evidence.tsx`'s `getEvidencePack`/`Campaigns.tsx`'s `getCampaignsList`: a real endpoint with
  * no client function/mock at all until this task). */
 const USE_MOCK = import.meta.env.VITE_USE_MOCK !== 'false'
@@ -26,7 +26,7 @@ const fetchSimilarOperators: (caseId: string) => Promise<SimilarOperatorsOut> = 
 
 /** Only case in the DEMO dataset with any clustered siblings behind it (mirrors the same
  * `FULL_DATA_CASE_ID` convention `Reports.tsx`/`Cases.tsx` already use). */
-const FULL_DATA_CASE_ID = 'KZN-2026-0417'
+const FULL_DATA_CASE_ID = 'ANV-2026-0417'
 
 function similarityBadgeVariant(score: number): 'vermillion' | 'gold' | 'secondary' {
   if (score >= 0.8) return 'vermillion'
@@ -130,7 +130,7 @@ export default function OperatorFingerprint() {
           <Badge variant="outline">DEMO DATA</Badge>
         </div>
         <p className="text-[15px] text-muted-foreground">
-          KAIZEN groups cases by how the money moved — sweep speed, number of hops, whether funds landed in a shared
+          ANVESHAK groups cases by how the money moved — sweep speed, number of hops, whether funds landed in a shared
           collection wallet — and flags the ones that look like the same person or group ran them, even without any
           shared wallet address between them.
         </p>

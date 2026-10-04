@@ -45,7 +45,7 @@ export const HIST_BINS = ['0–2', '2–4', '4–6', '6–8', '8–10', '10–12
 
 export const SCENARIOS: Scenario[] = [
   {
-    caseId: 'KZN-2026-0417',
+    caseId: 'ANV-2026-0417',
     movingINR: 410000,
     movingCrypto: '4,910 USDT',
     chain: 'TRON',
@@ -77,7 +77,7 @@ export const SCENARIOS: Scenario[] = [
     ],
   },
   {
-    caseId: 'KZN-2026-0411',
+    caseId: 'ANV-2026-0411',
     movingINR: 312000,
     movingCrypto: '3,740 USDT',
     chain: 'Ethereum',
@@ -108,7 +108,7 @@ export const SCENARIOS: Scenario[] = [
     ],
   },
   {
-    caseId: 'KZN-2026-0409',
+    caseId: 'ANV-2026-0409',
     movingINR: 198000,
     movingCrypto: '0.038 BTC',
     chain: 'Bitcoin',
@@ -143,12 +143,12 @@ export const SCENARIOS: Scenario[] = [
 export type AlertOutcome = 'held' | 'missed' | 'pending'
 
 export const PAST_ALERTS: { caseId: string; exchangeId: string; amt: number; outcome: AlertOutcome; when: string; note: string }[] = [
-  { caseId: 'KZN-2026-0406', exchangeId: 'meridian', amt: 380000, outcome: 'held', when: 'Today, 13:12', note: 'held 4m 50s after alert' },
-  { caseId: 'KZN-2026-0408', exchangeId: 'kestrel', amt: 1120000, outcome: 'held', when: 'Yesterday, 21:47', note: 'held 7m 12s after alert' },
-  { caseId: 'KZN-2026-0403', exchangeId: 'arcadia', amt: 190000, outcome: 'pending', when: 'Yesterday, 18:05', note: 'exchange has not replied' },
-  { caseId: 'KZN-2026-0402', exchangeId: 'northwind', amt: 245000, outcome: 'missed', when: '30 Sep, 22:31', note: 'deposit landed 1 min before alert' },
-  { caseId: 'KZN-2026-0399', exchangeId: 'meridian', amt: 610000, outcome: 'held', when: '29 Sep, 19:58', note: 'held 3m 05s after alert' },
-  { caseId: 'KZN-2026-0396', exchangeId: 'kestrel', amt: 275000, outcome: 'held', when: '28 Sep, 20:14', note: 'held 9m 40s after alert' },
+  { caseId: 'ANV-2026-0406', exchangeId: 'meridian', amt: 380000, outcome: 'held', when: 'Today, 13:12', note: 'held 4m 50s after alert' },
+  { caseId: 'ANV-2026-0408', exchangeId: 'kestrel', amt: 1120000, outcome: 'held', when: 'Yesterday, 21:47', note: 'held 7m 12s after alert' },
+  { caseId: 'ANV-2026-0403', exchangeId: 'arcadia', amt: 190000, outcome: 'pending', when: 'Yesterday, 18:05', note: 'exchange has not replied' },
+  { caseId: 'ANV-2026-0402', exchangeId: 'northwind', amt: 245000, outcome: 'missed', when: '30 Sep, 22:31', note: 'deposit landed 1 min before alert' },
+  { caseId: 'ANV-2026-0399', exchangeId: 'meridian', amt: 610000, outcome: 'held', when: '29 Sep, 19:58', note: 'held 3m 05s after alert' },
+  { caseId: 'ANV-2026-0396', exchangeId: 'kestrel', amt: 275000, outcome: 'held', when: '28 Sep, 20:14', note: 'held 9m 40s after alert' },
 ]
 
 /** last-30-day totals before this session */

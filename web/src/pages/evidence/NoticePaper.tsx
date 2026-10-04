@@ -4,7 +4,7 @@ import { short } from '@/lib/format'
 import { cn } from '@/lib/utils'
 import { ARTEFACTS, NOTICES, ROOT, TX, type NoticeKey } from './data'
 
-/** Auto-filled field — highlighted in soft gold so the officer sees what KAIZEN filled in. */
+/** Auto-filled field — highlighted in soft gold so the officer sees what ANVESHAK filled in. */
 function F({ children, className }: { children: React.ReactNode; className?: string }) {
   return <span className={cn('rounded-[3px] bg-gold/25 px-[3px] py-px text-zinc-900 shadow-[inset_0_-1px_0_var(--k-gold)]', className)}>{children}</span>
 }
@@ -201,7 +201,7 @@ function Body63() {
   return (
     <>
       <p className="mt-4">
-        I, <F>{CASE.officer}</F>, Investigating Officer, certify that the electronic records listed below were produced by the KAIZEN analysis system from public blockchain data during its regular use, that the system was operating properly throughout, and that each record is an accurate output of that process. Each record is identified by its SHA-256 hash value.
+        I, <F>{CASE.officer}</F>, Investigating Officer, certify that the electronic records listed below were produced by the ANVESHAK analysis system from public blockchain data during its regular use, that the system was operating properly throughout, and that each record is an accurate output of that process. Each record is identified by its SHA-256 hash value.
       </p>
       <div className="mt-3 overflow-x-auto">
         <table className="w-full min-w-[520px] border-collapse text-left text-[12.5px]">

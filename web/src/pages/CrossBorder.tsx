@@ -98,7 +98,7 @@ export default function CrossBorderPage() {
             </>
           }
           title="Cross-border routing"
-          tech="Finding a foreign exchange is not the finish line — an exchange in Seychelles or the UAE has no duty to honour an Indian notice. KAIZEN works out the right legal channel for that exchange's country, the realistic response time, and drafts the request. · MLAT / jurisdiction routing"
+          tech="Finding a foreign exchange is not the finish line — an exchange in Seychelles or the UAE has no duty to honour an Indian notice. ANVESHAK works out the right legal channel for that exchange's country, the realistic response time, and drafts the request. · MLAT / jurisdiction routing"
           actions={
             <span className="k-btn-ghost inline-flex h-9 items-center gap-1.5 rounded-[10px] px-3 text-[13px] text-muted">
               <TriangleAlert className="size-3.5 text-gold" /> Country data illustrative — verify with the central authority
@@ -414,7 +414,7 @@ function DecisionPath({ ex, j, urgent, setUrgent, left }: { ex: Exchange; j: Jur
     <Card className="h-full pb-5">
       <CardHeader
         title="Why this route"
-        tech="four questions KAIZEN answers for every foreign exchange"
+        tech="four questions ANVESHAK answers for every foreign exchange"
         icon={<Radio className="size-4" />}
         right={
           <label className="flex cursor-pointer items-center gap-2 text-[12.5px] text-muted">

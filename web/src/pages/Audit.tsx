@@ -107,7 +107,7 @@ export default function AuditPage() {
         <PageHeader
           eyebrow={
             <>
-              <span>Chain of custody · KZN-2026-0417</span>
+              <span>Chain of custody · ANV-2026-0417</span>
               <DemoChip />
             </>
           }
@@ -408,7 +408,7 @@ export default function AuditPage() {
                   <AnimatePresence mode="popLayout" initial={false}>
                     {exported ? (
                       <motion.span key="d" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} className="inline-flex items-center gap-1.5 text-moss">
-                        <Check /> Custody log ready · KZN-2026-0417
+                        <Check /> Custody log ready · ANV-2026-0417
                       </motion.span>
                     ) : (
                       <motion.span key="e" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} className="inline-flex items-center gap-1.5">

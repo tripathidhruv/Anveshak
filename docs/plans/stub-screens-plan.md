@@ -8,7 +8,7 @@ These five sidebar nav items currently toast "Coming in v2" (never real routes i
 
 - Reuse the existing design system exactly: `Card`, `Badge`, `IconTile`, `Button`, `Tabs`, `Well`/`Stat` from `frontend/src/components/ui/`, imported via the `@/components/ui/*` alias (established convention as of the Task 6 cleanup).
 - Every screen gets its data through `frontend/src/api/` (`import { api } from '@/api'`), never a direct mock import.
-- Since the mock dataset has exactly ONE full case (`KZN-2026-0417`), list/registry screens that reference "other" cases should read from `api.listCases()` (which already returns multiple `RecentCase` rows per `DEMO.dashboard.recentCases`) for the list view, but any "drill into full detail" action should route into the one real case's existing flow — don't fabricate full trace/risk/evidence detail for the other 4 recentCases entries that don't have it. If a row doesn't have full backing data, clicking it shows a toast ("Full detail available for KZN-2026-0417 in this demo") rather than silently rendering broken/empty screens.
+- Since the mock dataset has exactly ONE full case (`ANV-2026-0417`), list/registry screens that reference "other" cases should read from `api.listCases()` (which already returns multiple `RecentCase` rows per `DEMO.dashboard.recentCases`) for the list view, but any "drill into full detail" action should route into the one real case's existing flow — don't fabricate full trace/risk/evidence detail for the other 4 recentCases entries that don't have it. If a row doesn't have full backing data, clicking it shows a toast ("Full detail available for ANV-2026-0417 in this demo") rather than silently rendering broken/empty screens.
 - Same spacing/contrast bar as the rest of the app: `gap-6`/`p-6` Tailwind scale, `text-foreground`/`text-muted-foreground`, solid `IconTile` fills (not faint tints — this was just fixed app-wide, don't regress it).
 
 ## Routing/nav wiring (controller does this first)
@@ -20,7 +20,7 @@ These five sidebar nav items currently toast "Coming in v2" (never real routes i
 
 ## Task 1: Cases registry
 
-New file `frontend/src/pages/Cases.tsx`. A table/list screen: every row from `api.listCases()`, columns Case ID (mono) / Complainant / Amount (₹) / Chain / Status badge / Risk badge — same visual pattern as Dashboard's recent-cases table, just full-width and on its own screen with a search/filter row (status filter chips: All/New/Traced/Notice sent/Closed — client-side filter over the returned list, no new API needed). Clicking the `KZN-2026-0417` row (the one with full backing data) routes to `/case/KZN-2026-0417/tracing` or wherever its current stage implies (reuse whatever routing logic Dashboard already uses for its top row). Clicking any other row shows a toast per the Global Constraints note above.
+New file `frontend/src/pages/Cases.tsx`. A table/list screen: every row from `api.listCases()`, columns Case ID (mono) / Complainant / Amount (₹) / Chain / Status badge / Risk badge — same visual pattern as Dashboard's recent-cases table, just full-width and on its own screen with a search/filter row (status filter chips: All/New/Traced/Notice sent/Closed — client-side filter over the returned list, no new API needed). Clicking the `ANV-2026-0417` row (the one with full backing data) routes to `/case/ANV-2026-0417/tracing` or wherever its current stage implies (reuse whatever routing logic Dashboard already uses for its top row). Clicking any other row shows a toast per the Global Constraints note above.
 
 ## Task 2: Trace (quick-trace entry point)
 
@@ -32,7 +32,7 @@ New file `frontend/src/pages/Campaigns.tsx`. A list screen showing campaign(s) f
 
 ## Task 4: Reports archive
 
-New file `frontend/src/pages/Reports.tsx`. A list of generated evidence reports — one row per case that has a report (`KZN-2026-0417` from `api.generateReport()`), showing case ID, generated date, a `Download PDF` button reusing the exact `html2pdf.js` export logic already built in `frontend/src/components/report/ReportDocument.tsx` (import and reuse that component/logic, don't reimplement PDF export). If useful, also surface a `View` button that routes to `/case/KZN-2026-0417/evidence?tab=report` (the existing report tab).
+New file `frontend/src/pages/Reports.tsx`. A list of generated evidence reports — one row per case that has a report (`ANV-2026-0417` from `api.generateReport()`), showing case ID, generated date, a `Download PDF` button reusing the exact `html2pdf.js` export logic already built in `frontend/src/components/report/ReportDocument.tsx` (import and reuse that component/logic, don't reimplement PDF export). If useful, also surface a `View` button that routes to `/case/ANV-2026-0417/evidence?tab=report` (the existing report tab).
 
 ## Task 5: Exchanges registry
 

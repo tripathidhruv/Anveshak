@@ -190,7 +190,7 @@ function ResultCard({ r }: { r: Lookup }) {
           </div>
         </div>
         <p className="mt-3 text-[13.5px] leading-relaxed text-muted">
-          No unit has submitted this wallet, and none of the 2,41,860 known wallets has sent money to or received money from it. KAIZEN will trace it from
+          No unit has submitted this wallet, and none of the 2,41,860 known wallets has sent money to or received money from it. ANVESHAK will trace it from
           scratch — and from now on, if any officer in any state submits a connected wallet, both of you are alerted.
         </p>
         <div className="mt-3 grid grid-cols-2 gap-2">
@@ -308,7 +308,7 @@ function SeedPanel() {
       <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-3">
         {[
           { k: 'Wallet node', v: 'address + chain', tone: 'ember' as const },
-          { k: 'Case reference', v: 'KZN case ID only', tone: 'sky' as const },
+          { k: 'Case reference', v: 'ANV case ID only', tone: 'sky' as const },
           { k: 'Edges', v: 'added as the trace runs', tone: 'teal' as const },
         ].map((x) => (
           <div key={x.k} className="rounded-xl border border-dashed p-3" style={{ borderColor: toneA(x.tone, 0.35) }}>

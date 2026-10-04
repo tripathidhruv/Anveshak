@@ -27,7 +27,7 @@ async def lifespan(_app: FastAPI):
     yield
 
 
-app = FastAPI(title="KAIZEN backend", lifespan=lifespan)
+app = FastAPI(title="ANVESHAK backend", lifespan=lifespan)
 
 # Two browser origins talk to this backend: the 26183 Vite app on port 5173 (frontend/) and the
 # 26182 console on port 5180 (web/). Both localhost and 127.0.0.1 are listed since browsers

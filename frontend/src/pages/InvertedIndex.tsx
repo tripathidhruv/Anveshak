@@ -14,7 +14,7 @@ import { getDepositIndexMatches as getDepositIndexMatchesHttp, type DepositIndex
 import { getDepositIndexMatches as getDepositIndexMatchesMock } from '../api/mock'
 
 /** Same locally-resolved one-env-var switch as `OperatorFingerprint.tsx`/`SanctionsScreening.tsx`
- * -- `getDepositIndexMatches` isn't part of the shared `KaizenApi` surface. Unlike those two,
+ * -- `getDepositIndexMatches` isn't part of the shared `AnveshakApi` surface. Unlike those two,
  * the real endpoint is officer-gated (`require_role("officer")`, matching
  * `vasp_feed.py`'s `/replies` pattern -- see `backend/app/api/v1/deposit_index.py`'s own
  * docstring), so the http branch needs a bearer token the same way `FlaggedWallets.tsx` does;
@@ -133,7 +133,7 @@ export default function InvertedIndex() {
           <Badge variant="outline">DEMO DATA</Badge>
         </div>
         <p className="text-[15px] text-muted-foreground">
-          KAIZEN keeps a pre-built index of every address that has been directly observed sending funds into a
+          ANVESHAK keeps a pre-built index of every address that has been directly observed sending funds into a
           vetted exchange's own wallet. Paste any address below and this checks that index instantly — no
           blockchain crawl runs while you wait.
         </p>

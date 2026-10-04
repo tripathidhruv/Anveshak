@@ -57,5 +57,5 @@ export function getCurrentRailStepKey(pathname: string): string | null {
 
 export function getPageTitle(pathname: string): string {
   const match = PAGE_TITLES.find(({ pattern }) => matchPath(pattern, pathname) !== null)
-  return match ? match.title : 'KAIZEN'
+  return match ? match.title : 'ANVESHAK'
 }

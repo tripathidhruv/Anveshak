@@ -1,5 +1,5 @@
 import { request } from './client'
-import type { KaizenApi } from './index'
+import type { AnveshakApi } from './index'
 import type { CaseListItemWire, CaseStage, CaseSummary } from './types'
 
 const STAGE: Record<string, CaseStage> = { new: 'Intake', in_progress: 'Tracing', handled: 'Closed' }
@@ -25,7 +25,7 @@ function toSummary(c: CaseListItemWire): CaseSummary {
   }
 }
 
-export const httpApi: KaizenApi = {
+export const httpApi: AnveshakApi = {
   parseComplaint: (body, signal) => request('/api/v1/intake/parse', { method: 'POST', body, signal }),
   createCaseFromIntake: (body) => request('/api/v1/intake/cases', { method: 'POST', body }),
   lookupWallet: (address, signal) => request(`/api/v1/memory/wallets/${encodeURIComponent(address)}`, { signal }),

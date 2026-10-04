@@ -87,7 +87,7 @@ export default function SyndicatesPage() {
             </>
           }
           title="Syndicate Graph"
-          tech="Each FIR is usually investigated alone. KAIZEN checks every new trace against one persistent graph — shared wallets, collection hubs and deposit addresses reveal a single syndicate behind many cases in many states. · entity resolution · persistent wallet graph"
+          tech="Each FIR is usually investigated alone. ANVESHAK checks every new trace against one persistent graph — shared wallets, collection hubs and deposit addresses reveal a single syndicate behind many cases in many states. · entity resolution · persistent wallet graph"
           actions={
             <>
               <span className="k-btn-ghost inline-flex h-7 items-center gap-1.5 rounded-lg px-2.5 text-[12.5px]">

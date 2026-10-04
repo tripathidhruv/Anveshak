@@ -66,7 +66,7 @@ def _to_out(case: Case) -> CaseOut:
 def _resolve_filer(credentials: HTTPAuthorizationCredentials | None, db: Session) -> tuple[str, str | None]:
     """Determines who is filing a new case from an OPTIONAL bearer token (missing/invalid ->
     guest, tracked only by their case's own `guest_ticket_token`; a valid token -> that user's
-    resolved KAIZEN role and their verified email). Deliberately local to this router rather
+    resolved ANVESHAK role and their verified email). Deliberately local to this router rather
     than a change to `app.auth.jwt.get_current_officer` (which hard-401s on a missing/invalid
     token) -- Global Constraints keep that file's auth-verification contract untouched; this is
     a citizen/guest-filing concern, not an auth-verification one.

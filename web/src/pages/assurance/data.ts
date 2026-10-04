@@ -31,7 +31,7 @@ export const RELIABILITY: { p: number; o: number; n: number }[] = [
   { p: 0.95, o: 0.96, n: 70 },
 ]
 
-/** Which exchange? rows = true exchange, cols = KAIZEN's top-1 pick (183 attributed cases) */
+/** Which exchange? rows = true exchange, cols = ANVESHAK's top-1 pick (183 attributed cases) */
 export const EXCHANGE_ORDER = ['meridian', 'kestrel', 'northwind', 'arcadia', 'halcyon', 'orbita']
 export const EXCHANGE_CONFUSION: number[][] = [
   [59, 1, 1, 0, 0, 1],

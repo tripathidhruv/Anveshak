@@ -11,7 +11,7 @@ import { getSanctionsMatches as getSanctionsMatchesHttp, type SanctionsMatchOut 
 import { getSanctionsMatches as getSanctionsMatchesMock } from '../api/mock'
 
 /** Same locally-resolved one-env-var switch as `OperatorFingerprint.tsx`/`Evidence.tsx`'s
- * `getEvidencePack` -- `getSanctionsMatches` isn't part of the shared `KaizenApi` surface. */
+ * `getEvidencePack` -- `getSanctionsMatches` isn't part of the shared `AnveshakApi` surface. */
 const USE_MOCK = import.meta.env.VITE_USE_MOCK !== 'false'
 const fetchSanctionsMatches: (caseId: string) => Promise<SanctionsMatchOut[]> = USE_MOCK
   ? getSanctionsMatchesMock
@@ -19,7 +19,7 @@ const fetchSanctionsMatches: (caseId: string) => Promise<SanctionsMatchOut[]> = 
 
 /** Same `FULL_DATA_CASE_ID` convention as `Reports.tsx`/`Cases.tsx` -- the one DEMO case with a
  * (synthetic) sanctions hit behind it in mock mode. */
-const FULL_DATA_CASE_ID = 'KZN-2026-0417'
+const FULL_DATA_CASE_ID = 'ANV-2026-0417'
 
 function MatchCard({ match }: { match: SanctionsMatchOut }) {
   return (
@@ -107,7 +107,7 @@ export default function SanctionsScreening() {
         </div>
         <p className="text-[15px] text-muted-foreground">
           Every wallet this case's trace touched is checked against published international sanctions lists (e.g.
-          OFAC's SDN list). A match here is a serious, independent red flag on top of KAIZEN's own risk score.
+          OFAC's SDN list). A match here is a serious, independent red flag on top of ANVESHAK's own risk score.
         </p>
         <p className="text-xs text-muted-foreground">
           Technical name: sanctions/watchlist screening against the OFAC SDN seed list.

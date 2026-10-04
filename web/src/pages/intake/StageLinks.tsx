@@ -40,7 +40,7 @@ export function StageLinks({ draft, patch }: { draft: Draft; patch: (p: Partial<
         <Card className="h-full pb-5">
           <CardHeader title="What kind of scam is this?" tech="typology classifier · keyword + phrase weights" right={<Chip tone="ember">{Math.round((t.classes[0]?.p ?? 0) * 100)}% sure</Chip>} />
           <div className="px-5 pt-3">
-            <div className="text-[12.5px] text-muted">Pick the category for the FIR — KAIZEN's best guess is selected.</div>
+            <div className="text-[12.5px] text-muted">Pick the category for the FIR — ANVESHAK's best guess is selected.</div>
             <div className="mt-2 space-y-1.5" role="radiogroup" aria-label="Scam category">
               {t.classes.map((c, i) => {
                 const on = chosen === c.name

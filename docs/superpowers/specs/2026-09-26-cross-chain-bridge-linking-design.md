@@ -18,7 +18,7 @@ Task F10's own commit message).
 
 Real fraud money routinely crosses a bridge mid-trace (TRON USDT → a bridge → Ethereum
 USDT is the pairing this project's own asset list already anticipates). Without this,
-KAIZEN's trace silently stops the moment money leaves the chain it started tracing on —
+ANVESHAK's trace silently stops the moment money leaves the chain it started tracing on —
 exactly the kind of dead-end this project's whole "sweep signature" thesis is supposed to
 see through.
 

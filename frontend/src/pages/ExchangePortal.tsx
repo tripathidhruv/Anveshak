@@ -12,7 +12,7 @@ import { useAuthStore } from '@/store/authStore'
 import { getFlaggedWallets, getVaspReplies } from '../api/mock'
 import { getFlaggedWallets as getFlaggedWalletsHttp, type BackendFlaggedWallet } from '../api/httpApi'
 
-/** `getFlaggedWallets` isn't part of the shared `KaizenApi` mock/real switch -- same pattern as
+/** `getFlaggedWallets` isn't part of the shared `AnveshakApi` mock/real switch -- same pattern as
  * `FlaggedWallets.tsx`/`VaspReplies.tsx` (the officer-only equivalents this screen's data is
  * modeled on). This is the Exchange role's real landing page, replacing the "coming soon"
  * placeholder `App.tsx` shipped with -- an external exchange contact's view of the wallets

@@ -126,7 +126,7 @@ def demo_screening(chain: str, address: str) -> DemoScreeningOut:
         reasonCodes=["FLAGGED_WALLET_FEED_MATCH", f"RISK_SCORE_{held_info['riskScore']:.2f}"],
         message=(
             "This deposit was automatically held for manual review because the sending "
-            "address appears on the (simulated) KAIZEN flagged-wallet feed, linked to "
+            "address appears on the (simulated) ANVESHAK flagged-wallet feed, linked to "
             f"{len(held_info['caseIds'])} traced fraud case(s). This is demo data from a "
             "simulated exchange, not a real hold at a real exchange."
         ),

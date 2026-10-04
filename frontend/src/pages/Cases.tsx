@@ -66,7 +66,7 @@ function recoverabilitySortKey(row: RecentCase): [number, number] {
 /** The case with full backing trace/risk/evidence data in this demo — see `mock.ts`. It also
  * gets a shortcut into the 7-step trace workflow from the detail dialog below, alongside the
  * real reply/status machinery every case now has. */
-const FULL_DATA_CASE_ID = 'KZN-2026-0417'
+const FULL_DATA_CASE_ID = 'ANV-2026-0417'
 
 /** The real, persisted workflow status (unified role-based portal, Task 3) -- the only three
  * states a case can be in, in this fixed order. A row whose `ticketStatus` wasn't populated

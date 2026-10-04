@@ -1,5 +1,5 @@
 /**
- * Wire types for the KAIZEN 26182 backend. Each block mirrors a Pydantic model in
+ * Wire types for the ANVESHAK 26182 backend. Each block mirrors a Pydantic model in
  * `backend/app/api/v1/<module>.py` — keep the two in step, field for field (camelCase on the wire).
  */
 

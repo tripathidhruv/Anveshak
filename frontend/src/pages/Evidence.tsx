@@ -27,7 +27,7 @@ import { useUIStore, type EvidenceTab } from '../store/uiStore'
 import type { GraphData, GraphNode, ReportData } from '../types'
 import { ROUTES } from '../utils/constants'
 
-/** These two calls aren't part of `KaizenApi` (no mock/real switch in `api/index.ts` covers
+/** These two calls aren't part of `AnveshakApi` (no mock/real switch in `api/index.ts` covers
  * them -- see the doc comment above both real functions in `api/httpApi.ts`), so this screen
  * resolves the same one-env-var switch locally, matching `api/index.ts`'s own `VITE_USE_MOCK`
  * check exactly. */

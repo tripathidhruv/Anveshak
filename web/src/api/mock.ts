@@ -5,7 +5,7 @@
  */
 import { CASES } from '@/data/demo'
 import { SAMPLE_COMPLAINT, SAMPLE_TX } from '@/data/intakeSamples'
-import type { KaizenApi } from './index'
+import type { AnveshakApi } from './index'
 import type { CaseSummary, EntityType, IntakeEntity, IntakeField, IntakeParseOut, MemoryLookup } from './types'
 
 const wait = (ms: number, signal?: AbortSignal) =>
@@ -52,7 +52,7 @@ const FIELDS: IntakeField[] = [
   { id: 'complainant', label: 'Complainant', value: 'Rekha Sharma', normalized: 'Rekha Sharma', confidence: 0.9, reason: 'Self-introduction “main Rekha Sharma”.', sources: ['text'], entityIds: [] },
   { id: 'location', label: 'Location', value: 'Jaipur, Rajasthan', normalized: 'Jaipur, Rajasthan', confidence: 0.92, reason: '“Jaipur se” — a known city, mapped to its state.', sources: ['text'], entityIds: [] },
   { id: 'typology', label: 'Type of scam', value: 'Task-based job scam', normalized: 'task_job', confidence: 0.91, reason: 'Triggered by “part-time task job”, “YouTube videos like”, “registration fee”, “bada task”.', sources: ['text'], entityIds: [] },
-  { id: 'victimWallet', label: "Victim's own wallet", value: '', normalized: null, confidence: 0, reason: 'Not in the complaint. Ask the complainant, or KAIZEN reads it from the transaction during the trace.', sources: [], entityIds: [] },
+  { id: 'victimWallet', label: "Victim's own wallet", value: '', normalized: null, confidence: 0, reason: 'Not in the complaint. Ask the complainant, or ANVESHAK reads it from the transaction during the trace.', sources: [], entityIds: [] },
 ]
 
 const SAMPLE_RESULT: Omit<IntakeParseOut, 'elapsedMs'> = {
@@ -89,15 +89,15 @@ const KNOWN: MemoryLookup = {
   firstSeen: '2026-08-21T16:05:00+05:30',
   submissionCount: 3,
   linkedCases: [
-    { caseId: 'KZN-2026-0416', relation: 'same_wallet', city: 'Kochi', state: 'Kerala', amountInr: 860000, reportedAt: '2026-09-03T09:18:00+05:30' },
-    { caseId: 'KZN-2026-0412', relation: 'same_wallet', city: 'Ludhiana', state: 'Punjab', amountInr: 655000, reportedAt: '2026-08-29T14:40:00+05:30' },
-    { caseId: 'KZN-2026-0406', relation: 'one_hop', city: 'Patna', state: 'Bihar', amountInr: 760000, reportedAt: '2026-08-21T16:05:00+05:30' },
+    { caseId: 'ANV-2026-0416', relation: 'same_wallet', city: 'Kochi', state: 'Kerala', amountInr: 860000, reportedAt: '2026-09-03T09:18:00+05:30' },
+    { caseId: 'ANV-2026-0412', relation: 'same_wallet', city: 'Ludhiana', state: 'Punjab', amountInr: 655000, reportedAt: '2026-08-29T14:40:00+05:30' },
+    { caseId: 'ANV-2026-0406', relation: 'one_hop', city: 'Patna', state: 'Bihar', amountInr: 760000, reportedAt: '2026-08-21T16:05:00+05:30' },
   ],
   syndicate: { id: 'SYN-07', name: 'Telegram task-scam ring “Saffron Desk”', caseCount: 38, stateCount: 11, valueInr: 47000000, confidence: 0.93, hub: 'TNh8yW5vC2mQ7fL4xK9pR' },
   provenance: [
-    { at: '2026-09-03T09:18:00+05:30', unit: 'Cyber PS Kochi', state: 'Kerala', event: 'submitted', detail: 'Named as the receiving wallet in KZN-2026-0416' },
-    { at: '2026-08-29T14:40:00+05:30', unit: 'Cyber PS Ludhiana', state: 'Punjab', event: 'submitted', detail: 'Named as the receiving wallet in KZN-2026-0412' },
-    { at: '2026-08-21T16:05:00+05:30', unit: 'Cyber PS Patna', state: 'Bihar', event: 'linked', detail: 'One hop from the wallet in KZN-2026-0406' },
+    { at: '2026-09-03T09:18:00+05:30', unit: 'Cyber PS Kochi', state: 'Kerala', event: 'submitted', detail: 'Named as the receiving wallet in ANV-2026-0416' },
+    { at: '2026-08-29T14:40:00+05:30', unit: 'Cyber PS Ludhiana', state: 'Punjab', event: 'submitted', detail: 'Named as the receiving wallet in ANV-2026-0412' },
+    { at: '2026-08-21T16:05:00+05:30', unit: 'Cyber PS Patna', state: 'Bihar', event: 'linked', detail: 'One hop from the wallet in ANV-2026-0406' },
   ],
   disclaimer: DISCLAIMER,
 }
@@ -115,7 +115,7 @@ const unknown = (address: string): MemoryLookup => ({
 })
 
 /* Cases opened through Smart Intake this session — kept in sessionStorage so the queue still shows them after a reload. */
-const CREATED_KEY = 'kaizen.mock.createdCases.v1'
+const CREATED_KEY = 'anveshak.mock.createdCases.v1'
 function created(): CaseSummary[] {
   try {
     return JSON.parse(sessionStorage.getItem(CREATED_KEY) ?? '[]') as CaseSummary[]
@@ -132,7 +132,7 @@ function remember(c: CaseSummary) {
 }
 const CHAIN_NAME = { tron: 'TRON', ethereum: 'Ethereum', bitcoin: 'Bitcoin' } as const
 
-export const mockApi: KaizenApi = {
+export const mockApi: AnveshakApi = {
   async parseComplaint({ text }, signal) {
     const t0 = performance.now()
     await wait(700, signal)
@@ -149,7 +149,7 @@ export const mockApi: KaizenApi = {
   },
   async createCaseFromIntake(body) {
     await wait(650)
-    const caseId = `KZN-2026-${String(418 + created().length).padStart(4, '0')}`
+    const caseId = `ANV-2026-${String(418 + created().length).padStart(4, '0')}`
     const known = body.suspectWallet === SUSPECT
     const [city, state = ''] = body.location.split(',').map((s) => s.trim())
     remember({

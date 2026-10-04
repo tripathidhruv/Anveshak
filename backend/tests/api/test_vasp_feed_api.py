@@ -253,13 +253,13 @@ def test_demo_receiver_holds_deposit_after_receiving_the_real_webhook(monkeypatc
 
 # --- VASP wallet-sharing portal (Feature 2) ---
 
-TEST_JWT_SECRET = "kaizen-test-shared-secret-vasp-portal"
+TEST_JWT_SECRET = "anveshak-test-shared-secret-vasp-portal"
 
 
 def _officer_token(secret: str = TEST_JWT_SECRET, expires_delta: timedelta = timedelta(minutes=30)) -> str:
     payload = {
         "user_id": "officer-1",
-        "tenant_id": "kaizen",
+        "tenant_id": "anveshak",
         "email": "officer@example.com",
         "exp": datetime.now(timezone.utc) + expires_delta,
     }
@@ -338,7 +338,7 @@ def test_portal_reply_is_accepted_and_visible_only_via_internal_replies_endpoint
     anon = client.get("/api/v1/vasp-feed/replies")
     assert anon.status_code == 401
 
-    # ...only visible to a logged-in officer. `/replies` is now gated on the resolved KAIZEN
+    # ...only visible to a logged-in officer. `/replies` is now gated on the resolved ANVESHAK
     # role (`require_role("officer")`), not just a valid JWT (Task 6), so the officer's email
     # must have an `officer` UserRole row -- otherwise `resolve_role` would auto-create it as
     # the "citizen" default and this would 403.

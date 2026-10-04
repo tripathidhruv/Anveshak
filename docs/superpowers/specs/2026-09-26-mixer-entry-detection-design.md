@@ -6,7 +6,7 @@ documented here for the record per this project's standing practice of writing a
 
 ## What this actually fixes
 
-`docs/SCOPE.md` has claimed since day one: "KAIZEN can flag entry into a mixer." **This was never
+`docs/SCOPE.md` has claimed since day one: "ANVESHAK can flag entry into a mixer." **This was never
 implemented — grep of the entire backend confirms zero mixer-related code exists anywhere.**
 This is a real gap between documented and actual behavior, not a hypothetical improvement.
 

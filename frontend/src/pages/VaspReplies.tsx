@@ -52,7 +52,7 @@ function walletKey(address: string, chain: string): string {
  * own nav item keeps the same one-concern-per-sidebar-entry pattern every other screen here
  * already follows, instead of reshaping Exchanges.tsx around a second, unrelated dataset.
  *
- * First real UI call to attach the officer's JWT (`Authorization: Bearer`) to a KAIZEN
+ * First real UI call to attach the officer's JWT (`Authorization: Bearer`) to a ANVESHAK
  * backend request -- reuses `getAuthToken()` from `lib/authToken.ts` (Feature 1), not a new
  * token-storage mechanism.
  *

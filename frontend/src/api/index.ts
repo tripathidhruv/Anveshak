@@ -1,4 +1,4 @@
-import type { KaizenApi } from '../types'
+import type { AnveshakApi } from '../types'
 import { mockApi } from './mock'
 import { httpApiPartial } from './httpApi'
 
@@ -11,7 +11,7 @@ function notImplemented(method: string): never {
 
 /** Real HTTP implementation. Methods not yet backed by a real endpoint throw clearly
  * instead of silently falling back to mock data (per CLAUDE.md's honest-provenance rule). */
-const httpApi: KaizenApi = {
+const httpApi: AnveshakApi = {
   createCase: httpApiPartial.createCase!,
   getCase: httpApiPartial.getCase!,
   listCases: httpApiPartial.listCases!,
@@ -26,4 +26,4 @@ const httpApi: KaizenApi = {
   getCampaign: () => notImplemented('getCampaign'),
 }
 
-export const api: KaizenApi = USE_MOCK ? mockApi : httpApi
+export const api: AnveshakApi = USE_MOCK ? mockApi : httpApi

@@ -27,7 +27,7 @@ export async function request<T>(path: string, { method = 'GET', body, signal }:
     })
   } catch (e) {
     if ((e as Error).name === 'AbortError') throw e
-    throw new ApiError('The KAIZEN server is not reachable. Is the backend running on port 8000?', 0, null)
+    throw new ApiError('The ANVESHAK server is not reachable. Is the backend running on port 8000?', 0, null)
   }
   const isJson = res.headers.get('content-type')?.includes('application/json') ?? false
   const payload: unknown = isJson ? await res.json().catch(() => null) : null

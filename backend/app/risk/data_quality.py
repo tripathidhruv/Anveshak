@@ -1,4 +1,4 @@
-"""The data-quality gate for KAIZEN's ML risk score (Task H8).
+"""The data-quality gate for ANVESHAK's ML risk score (Task H8).
 
 This is the single most important piece of Task H8 (per its brief): it must genuinely and
 correctly DISABLE the ML score -- falling back to the rule-based score alone -- whenever the

@@ -137,7 +137,7 @@ export function StageComplaint({ draft, patch }: { draft: Draft; patch: (p: Part
                   <p className="line-clamp-4 px-3.5 pb-3 pt-1 text-[13.5px] leading-relaxed text-text/80">{draft.text}</p>
                 </motion.div>
               )}
-              <div className="border-t border-line px-3.5 py-2 text-[12px] text-dim">Read-only import — KAIZEN never writes back to NCRP. Records shown are synthetic.</div>
+              <div className="border-t border-line px-3.5 py-2 text-[12px] text-dim">Read-only import — ANVESHAK never writes back to NCRP. Records shown are synthetic.</div>
             </motion.div>
           )}
         </div>
@@ -145,7 +145,7 @@ export function StageComplaint({ draft, patch }: { draft: Draft; patch: (p: Part
 
       <div className="grid content-start gap-3">
         <Card className="pb-4">
-          <CardHeader title="What KAIZEN pulls out" tech="every value comes with a confidence and the reason behind it" />
+          <CardHeader title="What ANVESHAK pulls out" tech="every value comes with a confidence and the reason behind it" />
           <div className="px-5 pt-3">
             <EntityLegend />
             <ul className="mt-4 space-y-3 text-[13.5px]">

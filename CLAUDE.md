@@ -1,16 +1,16 @@
-# CLAUDE.md — Context for AI sessions on KAIZEN
+# CLAUDE.md — Context for AI sessions on ANVESHAK
 
 ## What this project is
-KAIZEN traces cryptocurrency fraud from a victim's complaint to the exchange
+ANVESHAK traces cryptocurrency fraud from a victim's complaint to the exchange
 where the stolen funds were cashed out, and produces a court-ready evidence
 pack plus a pre-filled legal notice.
 
 Built for **Smart India Hackathon 2026, Problem Statement 26183**
 (cryptocurrency fraud detection and exchange attribution).
-Team: KAIZEN. Owner: Dhruv Tripathi (@tripathidhruv).
+Team: ANVESHAK. Owner: Dhruv Tripathi (@tripathidhruv).
 
 ## The one-line pitch
-The police get a wallet address. KAIZEN turns it into the name of an exchange
+The police get a wallet address. ANVESHAK turns it into the name of an exchange
 and a signed legal notice, in under a minute.
 
 ## Why it works — the two core ideas

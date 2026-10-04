@@ -16,7 +16,7 @@ SWEEP_MAX_VALUE_PRESERVED = 1.02  # allows small rounding/fee-inclusive slack ab
                                    # not "sweeping this deposit" on its own
 
 def detect_sweep(wallet_address: str, incoming: list[Transfer], outgoing: list[Transfer]) -> SweepSignal:
-    """KAIZEN's core behavioural fingerprint: stolen funds leave a receiving wallet within
+    """ANVESHAK's core behavioural fingerprint: stolen funds leave a receiving wallet within
     seconds with ~99% of value preserved — a pattern automation produces, humans don't.
     Needs no labelled training data (see CLAUDE.md 'Why it works')."""
     if not incoming or not outgoing:

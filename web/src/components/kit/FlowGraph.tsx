@@ -35,7 +35,7 @@ export type FlowEdge = {
 }
 
 /**
- * Layered relationship graph with glowing Bézier strands — KAIZEN's signature visual.
+ * Layered relationship graph with glowing Bézier strands — ANVESHAK's signature visual.
  * Nodes are HTML cards absolutely positioned over an SVG strand layer.
  */
 export function FlowGraph({

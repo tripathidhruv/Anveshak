@@ -1,6 +1,6 @@
-/** Demo identity storage for KAIZEN's standalone/EC2 demo deployment -- there is no real auth
+/** Demo identity storage for ANVESHAK's standalone/EC2 demo deployment -- there is no real auth
  * microservice reachable here any more (E:/API's Lighthouse Auth API is a separate repo and
- * isn't deployed alongside KAIZEN for this deployment target), so this now stores the plain
+ * isn't deployed alongside ANVESHAK for this deployment target), so this now stores the plain
  * role string (`'officer' | 'exchange' | 'citizen'`) a visitor picked on the /login role-picker
  * screen (pages/Login.tsx), never a real JWT. A per-viewer convenience, not shared/collaborative
  * state, so localStorage is still the right place per this project's own storage conventions.
@@ -16,7 +16,7 @@
  * expected and out of scope here; this deployment keeps `VITE_USE_MOCK=true` as the default.)
  * Read by the route guard (components/auth/RequireRole.tsx) and written by pages/Login.tsx's
  * role-picker buttons. */
-const STORAGE_KEY = 'kaizen_demo_role'
+const STORAGE_KEY = 'anveshak_demo_role'
 
 export function getAuthToken(): string | null {
   try {
@@ -54,7 +54,7 @@ export function hasAuthToken(): boolean {
  * refreshes the complaint-filing page mid-form stays a guest instead of being bounced back to
  * /login -- `RequireRole` reads this to rehydrate `useAuthStore`'s `isGuest` after a reload,
  * exactly like it reads `getAuthToken()` to rehydrate an officer/exchange/citizen's role. */
-const GUEST_MODE_KEY = 'kaizen_guest_mode'
+const GUEST_MODE_KEY = 'anveshak_guest_mode'
 
 export function setGuestMode(): void {
   try {

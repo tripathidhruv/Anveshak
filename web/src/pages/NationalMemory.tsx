@@ -43,7 +43,7 @@ export default function NationalMemoryPage() {
             </>
           }
           title="SAHYOG National Memory"
-          tech="Every wallet any police unit submits through SAHYOG joins one permanent national graph. When another unit, in any state, submits a connected wallet months later, KAIZEN already knows — and says who solved it."
+          tech="Every wallet any police unit submits through SAHYOG joins one permanent national graph. When another unit, in any state, submits a connected wallet months later, ANVESHAK already knows — and says who solved it."
           actions={
             <Link to="/audit" className="k-btn-ghost inline-flex h-9 items-center gap-1.5 rounded-[10px] px-3.5 text-[14px]">
               <ScrollText className="size-3.5" /> Lookup audit ledger
@@ -288,7 +288,7 @@ function PlatformOnly() {
         ))}
       </ul>
       <p className="mt-4 px-5 text-[13.5px] leading-relaxed text-muted">
-        The memory only exists where every unit already submits — at the platform level. A vendor can copy KAIZEN’s trace engine; it cannot copy{' '}
+        The memory only exists where every unit already submits — at the platform level. A vendor can copy ANVESHAK’s trace engine; it cannot copy{' '}
         <span className="text-text">two years of every cyber cell’s answers</span>.
       </p>
     </Card>
