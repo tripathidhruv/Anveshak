@@ -324,7 +324,7 @@ function Slider({
           style={{ width: `${f * 100}%`, background: `linear-gradient(90deg, ${toneA(tone, 0.35)}, ${toneHex(tone)})`, boxShadow: `0 0 10px ${toneA(tone, 0.45)}` }}
         />
         <div
-          className="pointer-events-none absolute top-1/2 size-4 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-[#111] transition-transform group-active:scale-110 group-has-[:focus-visible]:ring-2 group-has-[:focus-visible]:ring-ember"
+          className="pointer-events-none absolute top-1/2 size-4 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-[var(--k-solid)] transition-transform group-active:scale-110 group-has-[:focus-visible]:ring-2 group-has-[:focus-visible]:ring-ember"
           style={{ left: `${f * 100}%`, background: toneHex('white'), boxShadow: `0 0 0 3px ${toneA(tone, 0.35)}` }}
         />
         <input
@@ -374,7 +374,7 @@ function LiveRing({ value, tone, size = 112, stroke = 10 }: { value: number; ton
           style={{ filter: `drop-shadow(0 0 6px ${toneA(tone, 0.6)})` }}
         />
         {/* threshold tick */}
-        <circle cx={tx} cy={ty} r={3.5} fill={toneHex('white')} stroke="#111" strokeWidth={2} />
+        <circle cx={tx} cy={ty} r={3.5} fill={toneHex('white')} strokeWidth={2} style={{ stroke: 'var(--k-solid)' }} />
       </svg>
       <div className="absolute inset-0 grid place-items-center text-center">
         <div>

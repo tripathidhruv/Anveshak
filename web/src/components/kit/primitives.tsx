@@ -369,7 +369,7 @@ export function IconTile({ children, tone, className, size = 36 }: { children: R
       style={{
         width: size,
         height: size,
-        background: tone ? `radial-gradient(circle at 30% 25%, ${toneA(tone, 0.35)}, ${toneA(tone, 0.08)})` : 'linear-gradient(180deg,#232326,#18181a)',
+        background: tone ? `radial-gradient(circle at 30% 25%, ${toneA(tone, 0.35)}, ${toneA(tone, 0.08)})` : 'var(--k-glass-hi)',
         color: tone ? toneHex(tone) : '#e4e4e7',
       }}
     >

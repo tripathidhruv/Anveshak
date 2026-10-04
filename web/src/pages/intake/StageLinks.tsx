@@ -221,11 +221,11 @@ function LinkBurst({ m }: { m: MemoryLookup }) {
         />
       ))}
       <circle cx={c} cy={c} r={36} fill="url(#lb-core)" />
-      <motion.circle cx={c} cy={c} r={13} fill="#141415" stroke={toneHex('crimson')} strokeWidth={2} initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring', stiffness: 400, damping: 18 }} />
+      <motion.circle cx={c} cy={c} r={13} style={{ fill: 'var(--k-solid)' }} stroke={toneHex('crimson')} strokeWidth={2} initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring', stiffness: 400, damping: 18 }} />
       <motion.circle cx={c} cy={c} r={13} fill="none" stroke={toneHex('crimson')} initial={{ scale: 1, opacity: 0.8 }} animate={{ scale: 2.6, opacity: 0 }} transition={{ duration: 1.8, repeat: Infinity, ease: 'easeOut' }} style={{ transformOrigin: `${c}px ${c}px` }} />
       {nodes.map((n, i) => (
         <motion.g key={n.caseId} initial={{ opacity: 0, scale: 0.4 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.55 + i * 0.12, type: 'spring', stiffness: 380, damping: 20 }} style={{ transformOrigin: `${n.x}px ${n.y}px` }}>
-          <circle cx={n.x} cy={n.y} r={8} fill="#1a1a1c" stroke={n.relation === 'same_wallet' ? toneHex('crimson') : toneHex('gold')} strokeWidth={1.5} />
+          <circle cx={n.x} cy={n.y} r={8} style={{ fill: 'var(--k-solid)' }} stroke={n.relation === 'same_wallet' ? toneHex('crimson') : toneHex('gold')} strokeWidth={1.5} />
           <text x={n.x} y={n.y + (n.y > c ? 22 : -14)} textAnchor="middle" className="fill-[#8b8b90] text-[10px]">
             {n.caseId.slice(-4)}
           </text>

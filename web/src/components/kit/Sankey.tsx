@@ -149,7 +149,7 @@ export function Sankey({
               height: h,
               background: n.tone
                 ? `linear-gradient(180deg, ${toneHex(n.tone)}, ${toneA(n.tone, 0.65)})`
-                : 'linear-gradient(180deg, #2a2a2d, #1c1c1f)',
+                : 'var(--k-glass-hi)',
               borderColor: n.tone ? toneA(n.tone, 0.8) : 'rgba(255,255,255,0.1)',
               boxShadow: n.tone ? `0 0 24px -4px ${toneA(n.tone, 0.6)}` : 'inset 0 1px 0 rgba(255,255,255,0.06)',
             }}

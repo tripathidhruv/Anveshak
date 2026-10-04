@@ -15,7 +15,7 @@ export function Sidebar({ collapsed, onToggle, onNavigate }: { collapsed: boolea
         'relative flex h-full flex-col border-r border-line bg-sidebar transition-[width] duration-300',
         collapsed ? 'w-[76px]' : 'w-[256px]',
       )}
-      style={{ background: 'linear-gradient(180deg, #111112 0%, #0c0c0d 60%, #0a0a0b 100%)' }}
+      style={{ background: 'linear-gradient(180deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.015) 100%)', backdropFilter: 'blur(26px) saturate(160%)', WebkitBackdropFilter: 'blur(26px) saturate(160%)' }}
     >
       <div className={cn('flex h-16 shrink-0 items-center px-5', collapsed ? 'justify-center px-0' : 'justify-between')}>
         {collapsed ? <LogoMark /> : <Wordmark />}
@@ -57,7 +57,7 @@ export function Sidebar({ collapsed, onToggle, onNavigate }: { collapsed: boolea
                             layoutId="nav-active"
                             className="absolute inset-0 rounded-[10px] border border-line-2"
                             style={{
-                              background: 'linear-gradient(180deg, #2a2a2d 0%, #1e1e20 100%)',
+                              background: 'var(--k-glass-hi)',
                               boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.08), 0 6px 16px -8px rgba(0,0,0,0.9)',
                             }}
                             transition={{ type: 'spring', stiffness: 420, damping: 34 }}

@@ -208,7 +208,7 @@ function KnowledgeReused() {
       <ul className="mt-2 divide-y divide-line px-5">
         {rows.map((r) => (
           <li key={r.k} className="flex items-start gap-3 py-3">
-            <span className="mt-0.5 grid size-9 shrink-0 place-items-center rounded-full border border-line-2 [&_svg]:size-4" style={{ color: toneHex(r.tone), background: 'linear-gradient(180deg,#232326,#18181a)' }}>
+            <span className="mt-0.5 grid size-9 shrink-0 place-items-center rounded-full border border-line-2 [&_svg]:size-4" style={{ color: toneHex(r.tone), background: 'var(--k-glass-hi)' }}>
               {r.icon}
             </span>
             <div className="min-w-0 flex-1">

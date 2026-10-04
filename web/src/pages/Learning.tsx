@@ -371,7 +371,7 @@ export default function LearningPage() {
                             <div className="flex items-center gap-2">
                               <span
                                 className="relative z-10 size-3 shrink-0 rounded-full border-2"
-                                style={{ borderColor: toneHex(tone), background: v.state === 'retired' ? '#141415' : toneHex(tone), boxShadow: v.state !== 'retired' ? `0 0 10px ${toneA(tone, 0.7)}` : undefined }}
+                                style={{ borderColor: toneHex(tone), background: v.state === 'retired' ? 'var(--k-solid)' : toneHex(tone), boxShadow: v.state !== 'retired' ? `0 0 10px ${toneA(tone, 0.7)}` : undefined }}
                               />
                               {i < VERSIONS.length - 1 && <span className="hidden h-px flex-1 bg-line-2 md:block" />}
                             </div>
@@ -512,7 +512,7 @@ const ReviewCard = React.forwardRef<HTMLDivElement, { item: ReviewItem; stamp?: 
                 id={selectId}
                 value={alt}
                 onChange={(e) => setAlt(e.target.value)}
-                className="h-7 min-w-0 flex-1 rounded-lg border border-line-2 bg-[#18181a] px-2 text-[13px] text-text outline-none focus-visible:border-gold/60"
+                className="h-7 min-w-0 flex-1 rounded-lg border border-line-2 bg-[var(--k-pop)] px-2 text-[13px] text-text outline-none focus-visible:border-gold/60"
               >
                 {item.alts.map((a) => (
                   <option key={a} value={a}>

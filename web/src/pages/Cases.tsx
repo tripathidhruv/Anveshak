@@ -335,7 +335,7 @@ export default function CasesPage() {
       {/* ── Mobile / tablet detail sheet ── */}
       {selected && (
         <Sheet open={sheetOpen && !isXl} onOpenChange={setSheetOpen}>
-          <SheetContent className="w-[92vw] max-w-[400px] overflow-y-auto border-line-2 bg-[#141415] p-0">
+          <SheetContent className="w-[92vw] max-w-[400px] overflow-y-auto border-line-2 bg-[var(--k-pop)] p-0">
             <SheetHeader className="px-5 pb-0 pt-5">
               <SheetTitle className="k-num text-[18px] text-text">{selected.id}</SheetTitle>
               <SheetDescription className="text-[13.5px] text-muted">

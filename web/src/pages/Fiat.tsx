@@ -267,7 +267,7 @@ function HowItLeaves() {
                 {i === 1 ? (
                   <div className="flex flex-col items-center gap-1 px-1">
                     <span className="h-6 w-px border-l border-dashed border-white/30" />
-                    <span className="whitespace-nowrap rounded-full border border-line-2 bg-[#141415] px-2 py-0.5 text-[11px] text-muted">
+                    <span className="whitespace-nowrap rounded-full border border-line-2 bg-[var(--k-pop)] px-2 py-0.5 text-[11px] text-muted">
                       Other tools stop here
                     </span>
                     <span className="h-6 w-px border-l border-dashed border-white/30" />

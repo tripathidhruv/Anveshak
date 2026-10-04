@@ -354,13 +354,12 @@ function Reliability() {
             cy={y(b.o)}
             r={r}
             fill={toneA('ember', 0.85)}
-            stroke="#141415"
             strokeWidth={1.5}
             initial={{ scale: 0, opacity: 0 }}
             whileInView={{ scale: 1, opacity: 1 }}
             viewport={{ once: true }}
             transition={{ delay: 0.5 + i * 0.07, type: 'spring', stiffness: 300, damping: 18 }}
-            style={{ filter: `drop-shadow(0 0 6px ${toneA('ember', 0.7)})`, transformBox: 'fill-box', transformOrigin: 'center' }}
+            style={{ stroke: 'var(--k-solid)', filter: `drop-shadow(0 0 6px ${toneA('ember', 0.7)})`, transformBox: 'fill-box', transformOrigin: 'center' }}
           >
             <title>{`Predicted ${Math.round(b.p * 100)}% · observed ${Math.round(b.o * 100)}% · ${b.n} cases`}</title>
           </motion.circle>

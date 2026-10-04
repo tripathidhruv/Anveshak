@@ -650,7 +650,7 @@ function IndiaTiles({ selected, onSelect }: { selected: string | null; onSelect:
               </TooltipTrigger>
               <TooltipContent
                 sideOffset={6}
-                className="border border-line-2 bg-[#1d1d20] text-text [&_[data-slot=tooltip-arrow]]:bg-[#1d1d20] [&_[data-slot=tooltip-arrow]]:fill-[#1d1d20]"
+                className="border border-line-2 bg-[var(--k-pop)] text-text [&_[data-slot=tooltip-arrow]]:bg-[var(--k-pop)] [&_[data-slot=tooltip-arrow]]:fill-[var(--k-pop)]"
               >
                 <div className="text-[13.5px] font-medium">{t.name}</div>
                 <div className="text-[12.5px] text-muted">

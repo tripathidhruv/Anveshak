@@ -401,7 +401,7 @@ function MiniTimeline({ m }: { m: MatchRow }) {
           {tCred !== null && <Marker left={x(tCred)} top={72} tone="sky" label="Rupees credited" time={fmt(tCred)} delay={0.45} />}
           {tCred !== null && (
             <span
-              className="k-num absolute -translate-x-1/2 -translate-y-1/2 rounded-full border border-line-2 bg-[#141415] px-1.5 text-[11px] text-text"
+              className="k-num absolute -translate-x-1/2 -translate-y-1/2 rounded-full border border-line-2 bg-[var(--k-pop)] px-1.5 text-[11px] text-text"
               style={{ left: `${(x(tOrder) + x(tCred)) / 2}%`, top: 53 }}
             >
               {mmss(tCred - tOrder)}
@@ -429,7 +429,7 @@ function Marker({ left, top, tone, label, time, above, delay = 0 }: { left: numb
       transition={{ delay, type: 'spring', stiffness: 400, damping: 22 }}
     >
       <span
-        className="absolute size-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-[#111]"
+        className="absolute size-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-[var(--k-solid)]"
         style={{ background: toneHex(tone), boxShadow: `0 0 10px ${toneHex(tone)}` }}
       />
       <span

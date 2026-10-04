@@ -12,8 +12,8 @@ export function Section() {
     <div>
       <div className="k-scroll -mx-1 mb-5 mt-1 overflow-x-auto px-1 pb-1">
         <div
-          className="inline-flex items-center gap-1 rounded-2xl border border-line-2 p-1"
-          style={{ background: 'linear-gradient(180deg,#19191b,#121213)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05)' }}
+          className="k-glass-bar inline-flex items-center gap-1 rounded-full border p-1"
+          style={{ boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.08)' }}
           role="tablist"
         >
           {tabs.map((t) => (
@@ -24,7 +24,7 @@ export function Section() {
               role="tab"
               className={({ isActive }) =>
                 cn(
-                  'relative flex h-10 items-center gap-2 whitespace-nowrap rounded-xl px-4 text-[14.5px] transition-colors',
+                  'relative flex h-10 items-center gap-2 whitespace-nowrap rounded-full px-4 text-[14.5px] transition-colors',
                   isActive ? 'text-text' : 'text-muted hover:text-text',
                 )
               }
@@ -34,8 +34,8 @@ export function Section() {
                   {isActive && (
                     <motion.span
                       layoutId={`section-tab-${section?.to}`}
-                      className="absolute inset-0 rounded-xl border border-line-2"
-                      style={{ background: 'linear-gradient(180deg,#2c2c30,#1f1f22)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.09), 0 8px 18px -10px rgba(0,0,0,0.9)' }}
+                      className="absolute inset-0 rounded-full border border-white/15"
+                      style={{ background: 'var(--k-glass-hi)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.18), 0 8px 18px -10px rgba(0,0,0,0.9)' }}
                       transition={{ type: 'spring', stiffness: 420, damping: 34 }}
                     />
                   )}

@@ -148,7 +148,7 @@ export default function AuditPage() {
                       initial={{ scale: 0, rotate: -30 }}
                       animate={{ scale: 1, rotate: 0 }}
                       exit={{ scale: 0 }}
-                      className="absolute -top-[9px] left-[5px] z-20 grid size-[18px] place-items-center rounded-full border border-crimson/60 bg-[#1a0d0d] text-crimson sm:left-[7px]"
+                      className="absolute -top-[9px] left-[5px] z-20 grid size-[18px] place-items-center rounded-full border border-crimson/60 bg-[var(--k-solid)] text-crimson sm:left-[7px]"
                       aria-label="broken link"
                     >
                       <Unlink className="size-2.5" />
@@ -160,7 +160,7 @@ export default function AuditPage() {
                   className="absolute left-[5px] top-[16px] z-10 grid size-[18px] place-items-center rounded-full border-2 sm:left-[7px]"
                   animate={{
                     borderColor: st === 'ok' ? toneHex('moss') : st === 'bad' ? toneHex('crimson') : st === 'checking' ? toneHex('ember') : 'rgba(255,255,255,0.18)',
-                    backgroundColor: st === 'ok' ? toneA('moss', 0.2) : st === 'bad' ? toneA('crimson', 0.2) : '#141415',
+                    backgroundColor: st === 'ok' ? toneA('moss', 0.2) : st === 'bad' ? toneA('crimson', 0.2) : 'var(--k-solid)',
                     scale: st === 'checking' ? 1.25 : 1,
                   }}
                   transition={{ type: 'spring', stiffness: 400, damping: 22 }}

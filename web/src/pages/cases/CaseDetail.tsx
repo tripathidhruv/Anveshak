@@ -99,7 +99,7 @@ function CaseJourney({ c }: { c: CaseRow }) {
                 className="relative grid size-4 place-items-center rounded-full border-2"
                 style={{
                   borderColor: dead ? toneHex('neutral') : done ? toneHex('moss') : active ? toneHex('ember') : 'rgba(255,255,255,0.14)',
-                  background: done ? toneA('moss', 0.25) : active ? toneA('ember', 0.25) : '#141415',
+                  background: done ? toneA('moss', 0.25) : active ? toneA('ember', 0.25) : 'var(--k-solid)',
                 }}
               >
                 {done && <Check className="size-2.5 text-moss" strokeWidth={4} />}

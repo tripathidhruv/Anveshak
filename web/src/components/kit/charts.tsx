@@ -184,12 +184,12 @@ export function CurveChart({
             >
               <span className="k-pulse-ring absolute inset-0 rounded-full" style={{ background: toneHex(series[hiSeries].tone) }} />
               <span
-                className="relative block size-3 rounded-full border-2 border-[#1a1a1c]"
+                className="relative block size-3 rounded-full border-2 border-[var(--k-solid)]"
                 style={{ background: toneHex(series[hiSeries].tone), boxShadow: `0 0 12px ${toneHex(series[hiSeries].tone)}` }}
               />
             </div>
             <div
-              className="pointer-events-none absolute z-10 min-w-[150px] whitespace-nowrap rounded-lg border border-line-2 bg-[#1d1d20]/95 px-2.5 py-1.5 shadow-xl backdrop-blur"
+              className="pointer-events-none absolute z-10 min-w-[150px] whitespace-nowrap rounded-lg border border-line-2 bg-[var(--k-pop)] px-2.5 py-1.5 shadow-xl backdrop-blur"
               style={{
                 left: Math.min(Math.max(x(hi), 80), width - 80),
                 top: Math.max(4, y(series[hiSeries].data[hi]) - 58),
@@ -283,7 +283,7 @@ export function BarColumns({
                 />
               </div>
               {active && format && (
-                <div className="pointer-events-none absolute -top-6 whitespace-nowrap rounded-md bg-[#232326] px-1.5 py-0.5 text-[11.5px] text-text shadow">
+                <div className="pointer-events-none absolute -top-6 whitespace-nowrap rounded-md bg-[var(--k-pop)] px-1.5 py-0.5 text-[11.5px] text-text shadow">
                   {format(d.value)}
                 </div>
               )}

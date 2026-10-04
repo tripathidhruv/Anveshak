@@ -45,7 +45,7 @@ export function CommandPalette({ open, onOpenChange }: { open: boolean; onOpenCh
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         showCloseButton={false}
-        className="top-[18%] max-w-[600px] translate-y-0 gap-0 overflow-hidden rounded-2xl border-line-2 bg-[#141415] p-0 shadow-[0_40px_120px_-20px_rgba(0,0,0,0.9)] sm:max-w-[600px]"
+        className="top-[18%] max-w-[600px] translate-y-0 gap-0 overflow-hidden rounded-2xl border-line-2 bg-[var(--k-pop)] p-0 shadow-[0_40px_120px_-20px_rgba(0,0,0,0.9)] sm:max-w-[600px]"
       >
         <DialogTitle className="sr-only">Command palette</DialogTitle>
         <DialogDescription className="sr-only">Search screens, cases and wallet addresses</DialogDescription>

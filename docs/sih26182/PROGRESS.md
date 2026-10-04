@@ -2,6 +2,15 @@
 
 Newest first. Update at the end of every session.
 
+## 2026-10-04 (evening) · Liquid-glass restyle + three themes
+- Every surface (cards, buttons, pills, sidebar, top bar, section tabs) is now frosted glass over a themed
+  glow backdrop with fine grain; bigger radii, pill buttons.
+- Three switchable themes in the top bar, saved per browser: **Graphite** (default, monochrome, white
+  primary pill), **Ember** (original brand, glassier), **Violet** (midnight indigo glow). Only the brand
+  accent and backdrop change — meaning colours (crimson/gold/teal/violet/sky/moss) are fixed in all three.
+- Hard-coded dark fills in ~27 files moved to theme variables (`--k-solid`, `--k-pop`, `--k-glass`).
+- Content density unchanged by request ("light touch"); a deeper simplification pass is still open.
+
 ## 2026-10-04 (later) · Dhruv + Claude · Typology detection, staged trace, sub-tabs everywhere
 **Did:**
 - Backend `app/typology/`: on-chain crime typology (fraud/scam, ransomware, darknet market, terror-financing

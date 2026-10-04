@@ -476,7 +476,7 @@ export default function InterdictionPage() {
 
       {/* ── Confirm dialog ── */}
       <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
-        <DialogContent className="rounded-2xl border-line-2 bg-[#141415] p-0 text-text sm:max-w-[480px]">
+        <DialogContent className="rounded-2xl border-line-2 bg-[var(--k-pop)] p-0 text-text sm:max-w-[480px]">
           <div className="p-5 pb-0">
             <DialogHeader className="text-left">
               <div className="flex items-center gap-2.5">

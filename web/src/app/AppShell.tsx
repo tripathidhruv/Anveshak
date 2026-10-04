@@ -36,23 +36,23 @@ export function AppShell() {
   }, [cmd, mobile, lenis])
 
   return (
-    <div className="flex min-h-screen bg-bg">
+    <div className="flex min-h-screen">
       <div className="sticky top-0 hidden h-screen shrink-0 lg:block">
         <Sidebar collapsed={collapsed} onToggle={() => setCollapsed((c) => !c)} />
       </div>
 
       <Sheet open={mobile} onOpenChange={setMobile}>
-        <SheetContent side="left" showCloseButton={false} className="w-[256px] border-line bg-sidebar p-0">
+        <SheetContent side="left" showCloseButton={false} className="w-[256px] border-line bg-[var(--k-pop)] p-0 backdrop-blur-xl">
           <SheetTitle className="sr-only">Navigation</SheetTitle>
           <Sidebar collapsed={false} onToggle={() => setMobile(false)} onNavigate={() => setMobile(false)} />
         </SheetContent>
       </Sheet>
 
       <div className="relative min-w-0 flex-1">
-        {/* top spotlight like the reference */}
+        {/* soft top spotlight over the themed glow backdrop */}
         <div
-          className="pointer-events-none absolute inset-x-0 top-0 h-[520px]"
-          style={{ background: 'radial-gradient(60% 100% at 50% 0%, rgba(255,255,255,0.075) 0%, rgba(255,255,255,0) 70%)' }}
+          className="pointer-events-none absolute inset-x-0 top-0 h-[420px]"
+          style={{ background: 'radial-gradient(55% 100% at 50% 0%, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0) 70%)' }}
         />
         <TopBar onSearch={() => setCmd(true)} onMenu={() => setMobile(true)} />
         <AnimatePresence mode="wait">

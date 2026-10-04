@@ -37,7 +37,7 @@
   --k-sky: #60a5fa;
   --k-moss: #4ade80;
 
-  --k-radius: 18px;
+  --k-radius: 22px;
 
   /* shadcn bridge (Animate UI components read these) */
   --background: var(--k-bg);
@@ -47,7 +47,7 @@
   --popover: #18181a;
   --popover-foreground: var(--k-text);
   --primary: var(--k-ember);
-  --primary-foreground: #ffffff;
+  --primary-foreground: var(--k-primary-fg);
   --secondary: var(--k-raise);
   --secondary-foreground: var(--k-text);
   --muted: rgba(255, 255, 255, 0.04);
@@ -57,8 +57,70 @@
   --destructive: var(--k-crimson);
   --border: var(--k-line);
   --input: rgba(255, 255, 255, 0.08);
-  --ring: rgba(255, 79, 18, 0.55);
+  --ring: var(--k-ring);
   --radius: 0.75rem;
+
+  /* liquid glass — shared by every theme */
+  --k-glass: linear-gradient(180deg, rgba(255, 255, 255, 0.075) 0%, rgba(255, 255, 255, 0.028) 100%);
+  --k-glass-hi: linear-gradient(180deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.06) 100%);
+  --k-glass-edge: rgba(255, 255, 255, 0.11);
+  --k-glass-blur: blur(22px) saturate(150%);
+}
+
+/* ───────────── themes: Graphite (default) · Ember · Violet ─────────────
+   Only the brand accent, the backdrop glow and the solid fills change between themes.
+   Meaning colours (crimson, gold, teal, violet, sky, moss) are identical in all three. */
+:root,
+:root[data-theme='graphite'] {
+  --k-frame: #09090a;
+  --k-solid: #17171a;
+  --k-pop: rgba(26, 26, 30, 0.92);
+  --k-ember: #f2f2f4;
+  --k-ember-2: #ffffff;
+  --k-ring: rgba(255, 255, 255, 0.45);
+  --k-select: rgba(255, 255, 255, 0.22);
+  --k-glow-1: rgba(255, 255, 255, 0.13);
+  --k-glow-2: rgba(150, 150, 165, 0.11);
+  --k-glow-3: rgba(255, 255, 255, 0.06);
+  --k-primary-bg: linear-gradient(180deg, #ffffff 0%, #e4e4e8 100%);
+  --k-primary-fg: #0b0b0c;
+  --k-primary-shadow: 0 10px 30px -10px rgba(255, 255, 255, 0.35);
+}
+:root[data-theme='ember'] {
+  --k-frame: #0a0807;
+  --k-solid: #181412;
+  --k-pop: rgba(30, 24, 21, 0.92);
+  --k-ember: #ff4f12;
+  --k-ember-2: #ff7a3d;
+  --k-ring: rgba(255, 79, 18, 0.55);
+  --k-select: rgba(255, 79, 18, 0.35);
+  --k-glow-1: rgba(255, 79, 18, 0.22);
+  --k-glow-2: rgba(255, 150, 70, 0.10);
+  --k-glow-3: rgba(255, 79, 18, 0.08);
+  --k-primary-bg: linear-gradient(180deg, #ff6a2c 0%, #ff4f12 55%, #e8410a 100%);
+  --k-primary-fg: #ffffff;
+  --k-primary-shadow: 0 8px 24px -8px rgba(255, 79, 18, 0.7);
+}
+:root[data-theme='violet'] {
+  --k-frame: #07060e;
+  --k-solid: #15131f;
+  --k-pop: rgba(24, 21, 38, 0.92);
+  --k-ember: #b69cff;
+  --k-ember-2: #d3c4ff;
+  --k-ring: rgba(182, 156, 255, 0.55);
+  --k-select: rgba(140, 110, 255, 0.35);
+  --k-glow-1: rgba(118, 84, 255, 0.30);
+  --k-glow-2: rgba(60, 76, 255, 0.16);
+  --k-glow-3: rgba(196, 120, 255, 0.10);
+  --k-primary-bg: linear-gradient(180deg, #a78bfa 0%, #7c5cff 60%, #6646f0 100%);
+  --k-primary-fg: #ffffff;
+  --k-primary-shadow: 0 10px 28px -8px rgba(124, 92, 255, 0.7);
+}
+/* graphite's accent is white: anything sitting on a solid accent fill must turn dark */
+:root[data-theme='graphite'] .bg-ember,
+:root[data-theme='graphite'] .bg-ember.text-white,
+:root[data-theme='graphite'] .bg-ember .text-white {
+  color: #0b0b0c;
 }
 
 @theme inline {
@@ -123,7 +185,23 @@
     min-height: 100%;
   }
   body {
-    background: var(--k-frame);
+    background:
+      radial-gradient(60% 50% at 12% 0%, var(--k-glow-1) 0%, transparent 70%),
+      radial-gradient(50% 45% at 92% 18%, var(--k-glow-2) 0%, transparent 70%),
+      radial-gradient(70% 60% at 50% 110%, var(--k-glow-3) 0%, transparent 70%),
+      var(--k-frame);
+    background-attachment: fixed;
+  }
+  /* fine grain over the whole backdrop so the frosted panels have texture to blur */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    opacity: 0.22;
+    mix-blend-mode: overlay;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 0.8 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
     color: var(--k-text);
     font-family: var(--font-sans);
     font-feature-settings: 'cv11', 'ss01', 'ss03';
@@ -131,7 +209,7 @@
     -moz-osx-font-smoothing: grayscale;
   }
   ::selection {
-    background: rgba(255, 79, 18, 0.35);
+    background: var(--k-select);
   }
   :focus-visible {
     outline: 2px solid var(--k-ember);
@@ -145,22 +223,27 @@
   .k-card {
     position: relative;
     border-radius: var(--k-radius);
-    background: linear-gradient(180deg, #161618 0%, #111112 100%);
-    border: 1px solid var(--k-line);
+    background: var(--k-glass);
+    border: 1px solid var(--k-glass-edge);
+    -webkit-backdrop-filter: var(--k-glass-blur);
+    backdrop-filter: var(--k-glass-blur);
     box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.05),
-      0 20px 40px -24px rgba(0, 0, 0, 0.8);
+      inset 0 1px 0 rgba(255, 255, 255, 0.10),
+      inset 0 -1px 0 rgba(255, 255, 255, 0.02),
+      0 24px 50px -28px rgba(0, 0, 0, 0.85);
   }
   /* Raised / glass card with soft spotlight (Vaulto right-panel look) */
   .k-card-glass {
     position: relative;
     border-radius: var(--k-radius);
     background:
-      radial-gradient(120% 80% at 50% -10%, rgba(255, 255, 255, 0.09) 0%, rgba(255, 255, 255, 0) 55%),
-      linear-gradient(180deg, #1b1b1d 0%, #121213 100%);
-    border: 1px solid var(--k-line-2);
+      radial-gradient(120% 80% at 50% -10%, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0) 55%),
+      var(--k-glass);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    -webkit-backdrop-filter: var(--k-glass-blur);
+    backdrop-filter: var(--k-glass-blur);
     box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.08),
+      inset 0 1px 0 rgba(255, 255, 255, 0.16),
       0 30px 60px -30px rgba(0, 0, 0, 0.9);
   }
   /* Grain texture overlay (the speckled ETH/EURO tiles) */
@@ -177,8 +260,8 @@
   /* Top-right speckle glow (grain fading in from the corner) */
   .k-speckle {
     background:
-      radial-gradient(90% 90% at 100% 0%, rgba(255, 255, 255, 0.10) 0%, rgba(255, 255, 255, 0) 60%),
-      linear-gradient(180deg, #1a1a1c 0%, #111112 100%);
+      radial-gradient(90% 90% at 100% 0%, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0) 60%),
+      var(--k-glass);
   }
   .k-dashed {
     border-radius: var(--k-radius);
@@ -190,8 +273,8 @@
     align-items: center;
     gap: 0.375rem;
     border-radius: 999px;
-    border: 1px solid var(--k-line-2);
-    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid var(--k-glass-edge);
+    background: rgba(255, 255, 255, 0.06);
     padding: 0.125rem 0.5rem;
     font-size: 12px;
     line-height: 1.4;
@@ -212,7 +295,7 @@
     font-family: 'Unbounded', var(--font-display);
     font-weight: 700;
     letter-spacing: 0.09em;
-    background: linear-gradient(180deg, #ffffff 0%, #ffd2bd 100%);
+    background: linear-gradient(180deg, #ffffff 0%, var(--k-ember-2) 160%);
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
@@ -227,17 +310,28 @@
     letter-spacing: -0.01em;
   }
   .k-btn-ember {
-    background: linear-gradient(180deg, #ff6a2c 0%, #ff4f12 55%, #e8410a 100%);
+    background: var(--k-primary-bg);
     box-shadow:
       inset 0 1px 0 rgba(255, 255, 255, 0.35),
-      0 8px 24px -8px rgba(255, 79, 18, 0.7);
-    color: #fff;
+      var(--k-primary-shadow);
+    color: var(--k-primary-fg);
+    border-radius: 999px !important;
   }
   .k-btn-ghost {
-    background: linear-gradient(180deg, #202022 0%, #18181a 100%);
-    border: 1px solid var(--k-line-2);
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    background: var(--k-glass);
+    border: 1px solid var(--k-glass-edge);
+    -webkit-backdrop-filter: blur(14px);
+    backdrop-filter: blur(14px);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.10);
     color: var(--k-text);
+    border-radius: 999px !important;
+  }
+  /* frosted bar / panel for chrome (top bar, sidebar, sticky footers) */
+  .k-glass-bar {
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.025));
+    border-color: var(--k-glass-edge);
+    -webkit-backdrop-filter: blur(26px) saturate(160%);
+    backdrop-filter: blur(26px) saturate(160%);
   }
   .k-grid-bg {
     background-image:

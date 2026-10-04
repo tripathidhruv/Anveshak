@@ -32,7 +32,7 @@ export function MemoryLookup({ lookup }: { lookup: ReturnType<typeof useMemoryLo
             }}
             className="flex flex-col gap-2"
           >
-            <div className="flex h-10 items-center gap-2 rounded-xl border border-line-2 bg-[#18181a] px-3 focus-within:border-ember/60">
+            <div className="flex h-10 items-center gap-2 rounded-xl border border-line-2 bg-[var(--k-pop)] px-3 focus-within:border-ember/60">
               <Search className="size-4 shrink-0 text-dim" />
               <input
                 id={inputId}
@@ -232,7 +232,7 @@ function Provenance({ r }: { r: Lookup }) {
             className="relative grid grid-cols-[14px_1fr] gap-3 pb-3 last:pb-0"
           >
             {i < r.prov.length - 1 && <span className="absolute left-[6px] top-4 h-[calc(100%-8px)] w-px bg-line-2" />}
-            <span className="relative mt-1 size-3.5 rounded-full border-2 border-[#141415]" style={{ background: toneHex(p.tone), boxShadow: `0 0 8px ${toneA(p.tone, 0.6)}` }} />
+            <span className="relative mt-1 size-3.5 rounded-full border-2 border-[var(--k-solid)]" style={{ background: toneHex(p.tone), boxShadow: `0 0 8px ${toneA(p.tone, 0.6)}` }} />
             <div className={cn('min-w-0 rounded-lg', p.you && 'border border-ember/30 bg-ember/[0.06] px-2 py-1.5')}>
               <div className="flex flex-wrap items-baseline gap-x-2 text-[12.5px]">
                 <span className="k-mono text-muted">{p.date}</span>

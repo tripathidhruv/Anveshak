@@ -75,7 +75,7 @@ export function Slider({
         />
         {m !== null && <div className="absolute top-1/2 h-3.5 w-px -translate-y-1/2 bg-white/40" style={{ left: `${m * 100}%` }} />}
         <div
-          className="pointer-events-none absolute top-1/2 size-4 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-[#111] transition-transform group-active:scale-110 group-has-[:focus-visible]:ring-2 group-has-[:focus-visible]:ring-ember"
+          className="pointer-events-none absolute top-1/2 size-4 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-[var(--k-solid)] transition-transform group-active:scale-110 group-has-[:focus-visible]:ring-2 group-has-[:focus-visible]:ring-ember"
           style={{ left: `${f * 100}%`, background: toneHex('white'), boxShadow: `0 0 0 3px ${toneA(tone, 0.35)}` }}
         />
         <input
@@ -124,7 +124,7 @@ export function Select({
         id={id}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="h-8 w-full min-w-0 rounded-lg border border-line-2 bg-[#18181a] px-2 text-[14px] text-text outline-none focus-visible:border-ember/60"
+        className="h-8 w-full min-w-0 rounded-lg border border-line-2 bg-[var(--k-pop)] px-2 text-[14px] text-text outline-none focus-visible:border-ember/60"
       >
         {options.map((o) => (
           <option key={o.value} value={o.value}>

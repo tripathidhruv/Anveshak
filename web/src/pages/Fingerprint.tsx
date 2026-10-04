@@ -219,7 +219,7 @@ export default function FingerprintPage() {
                             initial={{ opacity: 0, scale: 0.8 }}
                             animate={{ opacity: 1, scale: 1 }}
                             exit={{ opacity: 0, scale: 0.8 }}
-                            className="rounded-xl bg-[#141415]/80 px-2 py-1 backdrop-blur"
+                            className="rounded-xl bg-[var(--k-pop)] px-2 py-1 backdrop-blur"
                           >
                             <div className="k-num text-[20px] leading-none" style={{ color: toneHex(simTone) }}>{sel.sim.toFixed(2)}</div>
                             <div className="text-[11px] text-dim">similarity</div>

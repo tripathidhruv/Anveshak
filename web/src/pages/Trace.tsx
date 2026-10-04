@@ -276,7 +276,7 @@ export default function TracePage() {
           </div>
         </div>
         <div className="flex w-full flex-wrap items-center gap-2 md:w-auto">
-          <div className="flex h-10 min-w-0 flex-1 items-center gap-2 rounded-xl border border-line-2 px-3 md:w-[400px] md:flex-none" style={{ background: 'linear-gradient(180deg,#1d1d20,#151517)' }}>
+          <div className="flex h-10 min-w-0 flex-1 items-center gap-2 rounded-xl border border-line-2 px-3 md:w-[400px] md:flex-none" style={{ background: 'var(--k-glass)' }}>
             <Wallet className="size-4 shrink-0 text-muted" />
             <span className="k-mono truncate text-[14px] text-text">{CASE.suspectWallet}</span>
             <Chip tone="crimson" className="ml-auto">TRON</Chip>

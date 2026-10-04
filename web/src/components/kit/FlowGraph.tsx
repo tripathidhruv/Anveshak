@@ -179,7 +179,7 @@ export function FlowGraph({
                 {e.label && (
                   <foreignObject x={(x1 + x2) / 2 - 50} y={(y1 + y2) / 2 - 11} width={100} height={22} style={{ overflow: 'visible' }}>
                     <div className="flex justify-center">
-                      <span className="rounded-full border border-line-2 bg-[#141415]/95 px-1.5 py-px text-[11px] whitespace-nowrap text-muted">{e.label}</span>
+                      <span className="rounded-full border border-line-2 bg-[var(--k-pop)] px-1.5 py-px text-[11px] whitespace-nowrap text-muted">{e.label}</span>
                     </div>
                   </foreignObject>
                 )}
@@ -244,7 +244,7 @@ export function FlowGraph({
               {n.live && (
                 <span className="absolute -right-1 -top-1 inline-flex size-2.5">
                   <span className="k-pulse-ring absolute inset-0 rounded-full" style={{ background: toneHex(n.tone) }} />
-                  <span className="relative size-2.5 rounded-full border border-[#111]" style={{ background: toneHex(n.tone) }} />
+                  <span className="relative size-2.5 rounded-full border border-[var(--k-solid)]" style={{ background: toneHex(n.tone) }} />
                 </span>
               )}
             </motion.button>

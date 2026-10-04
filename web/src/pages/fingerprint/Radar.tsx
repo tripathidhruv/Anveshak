@@ -129,9 +129,8 @@ export function Radar({
                   animate={{ cx: x, cy: y, r: activeAxis === i ? 4.5 : 3 }}
                   transition={spring}
                   fill={toneHex(s.tone)}
-                  stroke="#141415"
                   strokeWidth={1.5}
-                  style={{ filter: `drop-shadow(0 0 5px ${toneA(s.tone, 0.8)})` }}
+                  style={{ stroke: 'var(--k-solid)', filter: `drop-shadow(0 0 5px ${toneA(s.tone, 0.8)})` }}
                 />
               )
             })}

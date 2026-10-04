@@ -516,7 +516,7 @@ function LadderPanel({
               style={{
                 left: `${pct(s.day)}%`,
                 borderColor: reached(i) ? toneHex(s.tone) : 'rgba(255,255,255,0.18)',
-                background: reached(i) ? toneHex(s.tone) : '#141415',
+                background: reached(i) ? toneHex(s.tone) : 'var(--k-solid)',
                 boxShadow: reached(i) ? `0 0 10px ${toneA(s.tone, 0.7)}` : undefined,
               }}
             />
@@ -527,8 +527,8 @@ function LadderPanel({
             transition={{ type: 'spring', stiffness: 90, damping: 20 }}
           >
             <span className="k-pulse-ring absolute inset-0 rounded-full" style={{ background: toneHex(markerTone) }} />
-            <span className="relative block size-4 rounded-full border-2 border-[#141415]" style={{ background: toneHex(markerTone), boxShadow: `0 0 14px ${toneHex(markerTone)}` }} />
-            <span className="k-mono absolute -top-6 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-md bg-[#232326] px-1.5 py-0.5 text-[11.5px] text-text">
+            <span className="relative block size-4 rounded-full border-2 border-[var(--k-solid)]" style={{ background: toneHex(markerTone), boxShadow: `0 0 14px ${toneHex(markerTone)}` }} />
+            <span className="k-mono absolute -top-6 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-md bg-[var(--k-pop)] px-1.5 py-0.5 text-[11.5px] text-text">
               Day {markerDay.toFixed(1)}
             </span>
           </motion.div>
@@ -592,7 +592,7 @@ function LadderPanel({
                   className="relative"
                 >
                   <span
-                    className="absolute -left-4 top-1 size-[9px] rounded-full border-2 border-[#151517]"
+                    className="absolute -left-4 top-1 size-[9px] rounded-full border-2 border-[var(--k-solid)]"
                     style={{ background: toneHex(ev.tone), boxShadow: ev.fresh ? `0 0 10px ${toneHex(ev.tone)}` : undefined }}
                   />
                   <div className="flex items-baseline justify-between gap-2">

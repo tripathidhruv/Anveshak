@@ -132,7 +132,7 @@ export default function WatchlistsPage() {
                     <Zap className="size-3.5" /> Median push latency: <span className="text-text">1.8 s</span>
                   </span>
                 </TooltipTrigger>
-                <TooltipContent className="border border-line-2 bg-[#1d1d20] text-text">Time from ANVESHAK flagging a wallet to the exchange's server confirming receipt</TooltipContent>
+                <TooltipContent className="border border-line-2 bg-[var(--k-pop)] text-text">Time from ANVESHAK flagging a wallet to the exchange's server confirming receipt</TooltipContent>
               </Tooltip>
               <span className="text-dim">|</span>
               <span className="inline-flex items-center gap-1.5">
@@ -503,7 +503,7 @@ function ExchangePreview({ item, acted, setActed }: { item: FeedItem; acted: Act
   return (
     <Card className="h-full pb-4">
       <CardHeader title="What the exchange sees" tech="preview of the alert in a subscribed exchange's compliance console" right={<Chip tone="gold">Meridian view</Chip>} />
-      <div className="mx-4 mt-3 overflow-hidden rounded-xl border border-gold/20 bg-[#0b0b0c] shadow-[0_10px_40px_rgba(0,0,0,0.45)]">
+      <div className="mx-4 mt-3 overflow-hidden rounded-xl border border-gold/20 bg-black/40 shadow-[0_10px_40px_rgba(0,0,0,0.45)]">
         <div className="flex items-center justify-between gap-2 border-b border-line bg-gold/[0.06] px-3 py-2">
           <div className="flex min-w-0 items-center gap-2">
             <span className="k-mono grid size-6 shrink-0 place-items-center rounded-md bg-gold text-[11px] font-bold text-[#0b0b0c]">MD</span>
@@ -645,7 +645,7 @@ function SanctionsTable({ reviewed, setReviewed }: { reviewed: boolean; setRevie
                             <Chip tone="gold" dot>Possible match · needs review</Chip>
                           </button>
                         </TooltipTrigger>
-                        <TooltipContent className="max-w-[260px] border border-line-2 bg-[#1d1d20] text-text">
+                        <TooltipContent className="max-w-[260px] border border-line-2 bg-[var(--k-pop)] text-text">
                           This wallet received funds from a contract that also paid a listed address. Not on the list itself — an officer must decide.
                         </TooltipContent>
                       </Tooltip>

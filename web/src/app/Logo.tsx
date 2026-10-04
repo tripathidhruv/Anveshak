@@ -27,7 +27,7 @@ export function LogoMark({ size = 24 }: { size?: number }) {
       <path d="M6.5 26 L16 5.5 L25.5 26" fill="none" stroke={`url(#av-leg${id})`} strokeWidth="3.2" strokeLinecap="round" strokeLinejoin="round" />
       <path d="M11.2 18.6 H20.8" stroke="#ff7a3d" strokeWidth="2.4" strokeLinecap="round" strokeOpacity="0.85" />
       {/* victim → hub → exchange */}
-      <circle cx="6.5" cy="26" r="2.3" fill="#141415" stroke="#ff4f12" strokeWidth="1.6" />
+      <circle cx="6.5" cy="26" r="2.3" style={{ fill: 'var(--k-solid)' }} stroke="#ff4f12" strokeWidth="1.6" />
       <circle cx="16" cy="5.5" r="2.4" fill="#fff4ee" />
       <circle cx="25.5" cy="26" r="4.2" fill="#f5a524" opacity="0.55" filter={`url(#av-glow${id})`} />
       <circle cx="25.5" cy="26" r="2.9" fill={`url(#av-gold${id})`} />

@@ -159,7 +159,7 @@ export function DiffusionGraph({
         const r = lit ? result.risk[n.id] : 0
         const radius = listed ? 11 : 6.5 + r * 4.5
         const ring = listed ? toneHex('crimson') : n.kind === 'exchange' ? toneHex('gold') : n.kind === 'case' ? toneHex('teal') : 'rgba(255,255,255,0.28)'
-        const fill = !active ? '#1a1a1c' : r > 0 ? toneA('crimson', Math.min(1, 0.18 + r * 0.95)) : '#1c1c1f'
+        const fill = !active ? 'var(--k-solid)' : r > 0 ? toneA('crimson', Math.min(1, 0.18 + r * 0.95)) : 'var(--k-solid)'
         const sel = selected === n.id
         const cos = Math.cos((n.angle * Math.PI) / 180)
         const sin = Math.sin((n.angle * Math.PI) / 180)
