@@ -4,48 +4,12 @@ import { Building2, Check, Database, History, Link2, Loader2, MapPin, Search, Sp
 import { Address, Button, Card, CardHeader, Chip, FlowGraph, toneA, toneHex } from '@/components/kit'
 import { Progress, ProgressIndicator } from '@/components/animate-ui/primitives/radix/progress'
 import { cn } from '@/lib/utils'
-import { LOOKUPS, LOOKUP_STEPS, UNKNOWN, type Lookup } from './data'
+import { LOOKUPS, LOOKUP_STEPS, type Lookup } from './data'
+import type { useMemoryLookup } from './useMemoryLookup'
 
-type Phase = 'idle' | 'searching' | 'done'
-
-function resolve(addr: string): Lookup {
-  const a = addr.trim()
-  const hit = LOOKUPS.find((l) => l.addr.toLowerCase() === a.toLowerCase())
-  if (hit) return hit
-  const base = LOOKUPS.find((l) => l.addr === UNKNOWN)!
-  return { ...base, addr: a }
-}
-
-export function MemoryLookup() {
-  const [value, setValue] = React.useState(LOOKUPS[0].addr)
-  const [phase, setPhase] = React.useState<Phase>('idle')
-  const [step, setStep] = React.useState(0)
-  const [result, setResult] = React.useState<Lookup | null>(null)
-  const timer = React.useRef<number | null>(null)
+export function MemoryLookup({ lookup }: { lookup: ReturnType<typeof useMemoryLookup> }) {
+  const { value, setValue, phase, step, result, check } = lookup
   const inputId = React.useId()
-
-  React.useEffect(() => () => {
-    if (timer.current) window.clearInterval(timer.current)
-  }, [])
-
-  const check = (addr = value) => {
-    if (!addr.trim()) return
-    if (timer.current) window.clearInterval(timer.current)
-    setPhase('searching')
-    setStep(0)
-    let i = 0
-    timer.current = window.setInterval(() => {
-      i += 1
-      setStep(i)
-      if (i >= LOOKUP_STEPS.length) {
-        if (timer.current) window.clearInterval(timer.current)
-        timer.current = null
-        setResult(resolve(addr))
-        setPhase('done')
-      }
-    }, 340)
-  }
-
   const pct = phase === 'idle' ? 0 : phase === 'done' ? 100 : (step / LOOKUP_STEPS.length) * 100
 
   return (

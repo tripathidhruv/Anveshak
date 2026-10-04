@@ -27,6 +27,7 @@ import {
   PageHeader,
   Reveal,
   Sparkline,
+  SubTabs,
   toneA,
   toneHex,
   useCountdown,
@@ -182,49 +183,68 @@ export default function CompliancePage() {
         ))}
       </div>
 
-      {/* ── notices table + escalation ladder ── */}
-      <NoticeDesk overrides={overrides} selected={selected} onSelect={setSelected} onAct={act} />
-
-      {/* ── scorecard + trend ── */}
-      <div className="grid grid-cols-1 gap-3 xl:grid-cols-[1.35fr_1fr]">
-        <Reveal delay={0.1}>
-          <Scorecard />
-        </Reveal>
-        <Reveal delay={0.15}>
-          <Card className="h-full pb-4">
-            <CardHeader
-              title="Who answers fast, who stalls"
-              tech="hours to first reply · daily average · last 21 days"
-              right={<Chip tone="ember" dot>72 h window</Chip>}
-            />
-            <div className="px-5 pt-2">
-              <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-                <span className="k-num text-[26px] text-text">71 h</span>
-                <span className="text-[12.5px] text-muted">Meridian today, up from 44 h</span>
-                <Delta value={61} good="down" />
+      <SubTabs
+        tabs={[
+          {
+            key: 'notices',
+            label: 'Notices on the clock',
+            icon: AlarmClock,
+            badge: breachedCount,
+            render: () => (
+              <div className="space-y-3">
+                <p className="text-[13.5px] text-muted">Pick a notice to see where it stands on the escalation ladder, and remind or escalate from there.</p>
+                    <NoticeDesk overrides={overrides} selected={selected} onSelect={setSelected} onAct={act} />
               </div>
-              <div className="mt-1 flex items-center gap-3 text-[12.5px] text-muted">
-                <span className="flex items-center gap-1.5"><span className="h-0.5 w-3 rounded bg-gold" />Meridian Digital Exchange</span>
-                <span className="flex items-center gap-1.5"><span className="h-0.5 w-3 rounded bg-moss" />Kestrel Exchange</span>
+            ),
+          },
+          {
+            key: 'exchanges',
+            label: 'How each exchange behaves',
+            icon: Landmark,
+            render: () => (
+              <div className="grid grid-cols-1 gap-3 xl:grid-cols-[1.35fr_1fr]">
+                <Reveal delay={0.1}>
+                  <Scorecard />
+                </Reveal>
+                <Reveal delay={0.15}>
+                  <Card className="h-full pb-4">
+                    <CardHeader
+                      title="Who answers fast, who stalls"
+                      tech="hours to first reply · daily average · last 21 days"
+                      right={<Chip tone="ember" dot>72 h window</Chip>}
+                    />
+                    <div className="px-5 pt-2">
+                      <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                        <span className="k-num text-[26px] text-text">71 h</span>
+                        <span className="text-[12.5px] text-muted">Meridian today, up from 44 h</span>
+                        <Delta value={61} good="down" />
+                      </div>
+                      <div className="mt-1 flex items-center gap-3 text-[12.5px] text-muted">
+                        <span className="flex items-center gap-1.5"><span className="h-0.5 w-3 rounded bg-gold" />Meridian Digital Exchange</span>
+                        <span className="flex items-center gap-1.5"><span className="h-0.5 w-3 rounded bg-moss" />Kestrel Exchange</span>
+                      </div>
+                      <CurveChart
+                        className="mt-3"
+                        height={196}
+                        labels={TREND_LABELS}
+                        series={[
+                          { name: 'Meridian', tone: 'gold', data: MERIDIAN_HRS },
+                          { name: 'Kestrel', tone: 'moss', data: KESTREL_HRS },
+                        ]}
+                        highlight={{ series: 0, index: 19, title: 'Sep 20, 2026' }}
+                        format={(v) => `${v} h`}
+                      />
+                      <p className="mt-3 text-[12.5px] leading-relaxed text-dim">
+                        Meridian is drifting towards the 72 h limit — ANVESHAK will shorten its reminder to 48 h if the trend holds for 7 more days.
+                      </p>
+                    </div>
+                  </Card>
+                </Reveal>
               </div>
-              <CurveChart
-                className="mt-3"
-                height={196}
-                labels={TREND_LABELS}
-                series={[
-                  { name: 'Meridian', tone: 'gold', data: MERIDIAN_HRS },
-                  { name: 'Kestrel', tone: 'moss', data: KESTREL_HRS },
-                ]}
-                highlight={{ series: 0, index: 19, title: 'Sep 20, 2026' }}
-                format={(v) => `${v} h`}
-              />
-              <p className="mt-3 text-[12.5px] leading-relaxed text-dim">
-                Meridian is drifting towards the 72 h limit — ANVESHAK will shorten its reminder to 48 h if the trend holds for 7 more days.
-              </p>
-            </div>
-          </Card>
-        </Reveal>
-      </div>
+            ),
+          },
+        ]}
+      />
     </div>
   )
 }

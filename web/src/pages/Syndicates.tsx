@@ -1,6 +1,6 @@
 import * as React from 'react'
 import { AnimatePresence, motion } from 'motion/react'
-import { Building2, Calendar, Info, Link2, MapPin, Network, Route, Sparkles, User, Wallet } from 'lucide-react'
+import { ArrowRight, Building2, Calendar, Info, Link2, MapPin, Network, Route, Scale, Sparkles, TrendingUp, User, Wallet } from 'lucide-react'
 import {
   Address,
   Card,
@@ -15,6 +15,7 @@ import {
   Reveal,
   Sparkline,
   Stat,
+  SubTabs,
   toneA,
   toneHex,
   useTick,
@@ -144,178 +145,200 @@ export default function SyndicatesPage() {
         })}
       </div>
 
-      {/* ── Impact strip ── */}
-      <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
-        {[
-          { k: `1 trace → ${syn.cases} cases resolved`, v: <Stat key={synId + 'c'} value={syn.cases} className="text-[26px] text-text" />, spark: g.timeline.total, tone: 'crimson' as const },
-          { k: 'Stolen value linked', v: <Stat key={synId + 'v'} value={syn.valueINR / 1e7} prefix="₹" suffix=" Cr" decimals={1} className="text-[26px] text-text" />, spark: g.timeline.total.map((x, i) => x * (1 + i * 0.05)), tone: 'gold' as const },
-          { k: 'States with victims', v: <Stat key={synId + 's'} value={syn.states} className="text-[26px] text-text" />, spark: g.timeline.total.map((x) => Math.min(syn.states, Math.ceil(x / 3))), tone: 'sky' as const },
-          { k: `First seen · ${daysSince(syn.firstSeen) ?? '—'} days active`, v: <span className="k-num text-[22px] leading-[1.3] text-text">{syn.firstSeen}</span>, spark: g.timeline.auto, tone: 'ember' as const },
-        ].map((t, i) => (
-          <Reveal key={t.k} delay={0.08 + i * 0.04}>
-            <Card variant="speckle" grain className="h-[112px] p-4">
-              <div className="relative text-[13px] text-muted">{t.k}</div>
-              <div className="relative mt-3 flex items-end justify-between gap-2">
-                {t.v}
-                <Sparkline key={synId} data={t.spark} tone={t.tone} width={78} height={34} className="hidden sm:block" />
-              </div>
-            </Card>
-          </Reveal>
-        ))}
-      </div>
-
-      {/* ── Graph + side panel ── */}
-      <Reveal delay={0.1}>
-        <Card className="pb-4">
-          <CardHeader
-            title="Who is connected to whom"
-            tech="victim cases → scam wallets → collection wallets → exchanges · click any card for details"
-            right={
-              <Chip tone={syn.tone} dot>
-                {linkedCases.length}/{g.cases.length} cases linked
-              </Chip>
-            }
-          />
-          <div className="grid grid-cols-1 gap-3 px-4 pt-3 xl:grid-cols-[1fr_300px]">
-            <div className="k-scroll overflow-x-auto">
-              <div className="min-w-[820px]">
-                <div className="mb-2 grid grid-cols-4 px-1 text-[12px] tracking-wide text-dim uppercase">
-                  <span>Victim cases</span>
-                  <span className="text-center">Scam wallets</span>
-                  <span className="text-center">Collection wallets</span>
-                  <span className="text-right">Exchanges</span>
-                </div>
-                <FlowGraph
-                  key={synId}
-                  nodes={nodes}
-                  edges={edges}
-                  height={520}
-                  nodeWidth={184}
-                  nodeHeight={50}
-                  selected={selected}
-                  onSelect={(id) => setSelected(id)}
-                  highlight={highlight}
-                />
-              </div>
-            </div>
-            <SidePanel g={g} selected={selected} scores={scores} on={on} />
-          </div>
-        </Card>
-      </Reveal>
-
-      {/* ── Evidence + timeline/feed ── */}
-      <div className="grid grid-cols-1 gap-3 xl:grid-cols-[1.1fr_1fr]">
-        <Reveal delay={0.1}>
-          <Card variant="glass" className="h-full pb-5">
-            <CardHeader
-              title="Why these cases are one syndicate"
-              tech="link evidence · switch a type off to see what still holds"
-              right={
-                <div className="text-right">
-                  <div className="k-num flex items-baseline justify-end text-[26px] leading-none text-text">
-                    <SlidingNumber number={Number(confidence.toFixed(2))} decimalPlaces={2} />
-                  </div>
-                  <div className="text-[11.5px] text-dim">linkage confidence</div>
-                </div>
-              }
-            />
-            <ul className="mt-4 space-y-1 px-3">
-              {EVIDENCE.map((e) => {
-                const count = g.evidenceCounts[e.key] ?? 0
-                const disabled = count === 0
-                return (
-                  <li
-                    key={e.key}
-                    className={cn('rounded-xl px-2 py-2.5 transition-opacity', !on[e.key] && 'opacity-45', disabled && 'opacity-30')}
-                  >
-                    <div className="flex items-center gap-3">
-                      <Switch
-                        checked={on[e.key] && !disabled}
-                        disabled={disabled}
-                        onCheckedChange={(v) => setOn((o) => ({ ...o, [e.key]: v }))}
-                        aria-label={`Use ${e.plain.toLowerCase()} as link evidence`}
-                        className="data-[state=checked]:bg-moss data-[state=unchecked]:bg-white/[0.1]"
-                      />
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-baseline justify-between gap-3">
-                          <span className="truncate text-[14px] text-text">{e.plain}</span>
-                          <span className="shrink-0 text-[12.5px] text-muted">
-                            <span className="k-num text-text">{count}</span> of {syn.cases} cases
-                          </span>
+      <SubTabs
+        tabs={[
+          {
+            key: 'graph',
+            label: 'Who is connected',
+            icon: Network,
+            badge: `${linkedCases.length}/${g.cases.length}`,
+            render: (go) => (
+              <div className="space-y-3">
+                <Card className="pb-4">
+                  <CardHeader
+                    title="Who is connected to whom"
+                    tech="victim cases → scam wallets → collection wallets → exchanges · click any card for details"
+                    right={
+                      <Chip tone={syn.tone} dot>
+                        {linkedCases.length}/{g.cases.length} cases linked
+                      </Chip>
+                    }
+                  />
+                  <div className="grid grid-cols-1 gap-3 px-4 pt-3 xl:grid-cols-[1fr_300px]">
+                    <div className="k-scroll overflow-x-auto">
+                      <div className="min-w-[820px]">
+                        <div className="mb-2 grid grid-cols-4 px-1 text-[12px] tracking-wide text-dim uppercase">
+                          <span>Victim cases</span>
+                          <span className="text-center">Scam wallets</span>
+                          <span className="text-center">Collection wallets</span>
+                          <span className="text-right">Exchanges</span>
                         </div>
-                        <div className="flex items-center gap-3">
-                          <span className="min-w-0 flex-1 truncate text-[12px] text-dim">{e.tech}</span>
-                          <span className="k-num shrink-0 text-[12px] text-dim">weight {e.w.toFixed(2)}</span>
-                        </div>
-                        <Meter key={synId} value={count / syn.cases} tone={e.tone} height={4} className="mt-1.5" />
+                        <FlowGraph
+                          key={synId}
+                          nodes={nodes}
+                          edges={edges}
+                          height={520}
+                          nodeWidth={184}
+                          nodeHeight={50}
+                          selected={selected}
+                          onSelect={(id) => setSelected(id)}
+                          highlight={highlight}
+                        />
                       </div>
                     </div>
-                  </li>
-                )
-              })}
-            </ul>
-            <div className="mx-5 mt-3 grid grid-cols-2 gap-3">
-              <div className="rounded-xl border border-line bg-white/[0.02] px-3 py-2.5">
-                <div className="k-num text-[20px] text-text">
-                  {linkedCases.length}
-                  <span className="text-[14.5px] text-dim">/{g.cases.length}</span>
-                </div>
-                <div className="text-[12px] text-dim">cases on the graph still linked</div>
+                    <SidePanel g={g} selected={selected} scores={scores} on={on} />
+                  </div>
+                </Card>
+                <button type="button" onClick={() => go('evidence')} className="flex items-center gap-1.5 px-1 text-[13.5px] text-text/90 hover:text-text">
+                  Why these cases are one syndicate <ArrowRight className="size-3.5" />
+                </button>
               </div>
-              <div className="rounded-xl border border-line bg-white/[0.02] px-3 py-2.5">
-                <div className="k-num text-[20px] text-text">
-                  ~{linkedTotal}
-                  <span className="text-[14.5px] text-dim">/{syn.cases}</span>
-                </div>
-                <div className="text-[12px] text-dim">estimated across the whole syndicate</div>
+            ),
+          },
+          {
+            key: 'evidence',
+            label: 'Why it is one syndicate',
+            icon: Scale,
+            render: (go) => (
+              <div className="max-w-[820px] space-y-3">
+                <p className="text-[13.5px] text-muted">Switch an evidence type off and the graph updates: cases that no longer reach the bar turn into ghosts.</p>
+                <Card variant="glass" className="pb-5">
+                  <CardHeader
+                    title="Why these cases are one syndicate"
+                    tech="link evidence · switch a type off to see what still holds"
+                    right={
+                      <div className="text-right">
+                        <div className="k-num flex items-baseline justify-end text-[26px] leading-none text-text">
+                          <SlidingNumber number={Number(confidence.toFixed(2))} decimalPlaces={2} />
+                        </div>
+                        <div className="text-[11.5px] text-dim">linkage confidence</div>
+                      </div>
+                    }
+                  />
+                  <ul className="mt-4 space-y-1 px-3">
+                    {EVIDENCE.map((e) => {
+                      const count = g.evidenceCounts[e.key] ?? 0
+                      const disabled = count === 0
+                      return (
+                        <li
+                          key={e.key}
+                          className={cn('rounded-xl px-2 py-2.5 transition-opacity', !on[e.key] && 'opacity-45', disabled && 'opacity-30')}
+                        >
+                          <div className="flex items-center gap-3">
+                            <Switch
+                              checked={on[e.key] && !disabled}
+                              disabled={disabled}
+                              onCheckedChange={(v) => setOn((o) => ({ ...o, [e.key]: v }))}
+                              aria-label={`Use ${e.plain.toLowerCase()} as link evidence`}
+                              className="data-[state=checked]:bg-moss data-[state=unchecked]:bg-white/[0.1]"
+                            />
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-baseline justify-between gap-3">
+                                <span className="truncate text-[14px] text-text">{e.plain}</span>
+                                <span className="shrink-0 text-[12.5px] text-muted">
+                                  <span className="k-num text-text">{count}</span> of {syn.cases} cases
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-3">
+                                <span className="min-w-0 flex-1 truncate text-[12px] text-dim">{e.tech}</span>
+                                <span className="k-num shrink-0 text-[12px] text-dim">weight {e.w.toFixed(2)}</span>
+                              </div>
+                              <Meter key={synId} value={count / syn.cases} tone={e.tone} height={4} className="mt-1.5" />
+                            </div>
+                          </div>
+                        </li>
+                      )
+                    })}
+                  </ul>
+                  <div className="mx-5 mt-3 grid grid-cols-2 gap-3">
+                    <div className="rounded-xl border border-line bg-white/[0.02] px-3 py-2.5">
+                      <div className="k-num text-[20px] text-text">
+                        {linkedCases.length}
+                        <span className="text-[14.5px] text-dim">/{g.cases.length}</span>
+                      </div>
+                      <div className="text-[12px] text-dim">cases on the graph still linked</div>
+                    </div>
+                    <div className="rounded-xl border border-line bg-white/[0.02] px-3 py-2.5">
+                      <div className="k-num text-[20px] text-text">
+                        ~{linkedTotal}
+                        <span className="text-[14.5px] text-dim">/{syn.cases}</span>
+                      </div>
+                      <div className="text-[12px] text-dim">estimated across the whole syndicate</div>
+                    </div>
+                  </div>
+                  <p className="mx-5 mt-3 flex gap-2 text-[12px] leading-relaxed text-dim">
+                    <Info className="mt-0.5 size-3 shrink-0" />
+                    A case stays linked while its combined evidence score is at least {LINK_THRESHOLD.toFixed(2)} (independent signals combined). Linkage is
+                    probabilistic — an officer confirms before any cases are merged.
+                  </p>
+                </Card>
+                <button type="button" onClick={() => go('graph')} className="flex items-center gap-1.5 px-1 text-[13.5px] text-text/90 hover:text-text">
+                  Who is connected to whom <ArrowRight className="size-3.5" />
+                </button>
               </div>
-            </div>
-            <p className="mx-5 mt-3 flex gap-2 text-[12px] leading-relaxed text-dim">
-              <Info className="mt-0.5 size-3 shrink-0" />
-              A case stays linked while its combined evidence score is at least {LINK_THRESHOLD.toFixed(2)} (independent signals combined). Linkage is
-              probabilistic — an officer confirms before any cases are merged.
-            </p>
-          </Card>
-        </Reveal>
-
-        <div className="grid grid-cols-1 gap-3">
-          <Reveal delay={0.15}>
-            <Card className="pb-4">
-              <CardHeader title="Cases linked over time" tech={`cumulative · ${syn.id} since ${syn.firstSeen}`} />
-              <div className="px-5 pt-2">
-                <div className="flex flex-wrap items-baseline gap-3">
-                  <Stat key={synId} value={syn.cases} className="text-[24px] text-text" />
-                  <span className="flex items-center gap-3 text-[12.5px] text-muted">
-                    <span className="flex items-center gap-1.5">
-                      <span className="h-0.5 w-3 rounded bg-crimson" />
-                      All linked
-                    </span>
-                    <span className="flex items-center gap-1.5">
-                      <span className="h-0.5 w-3 rounded bg-white" />
-                      Linked automatically
-                    </span>
-                  </span>
+            ),
+          },
+          {
+            key: 'scale',
+            label: 'How big it is',
+            icon: TrendingUp,
+            badge: syn.cases,
+            render: () => (
+              <div className="space-y-3">
+                <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
+                  {[
+                    { k: `1 trace → ${syn.cases} cases resolved`, v: <Stat key={synId + 'c'} value={syn.cases} className="text-[26px] text-text" />, spark: g.timeline.total, tone: 'crimson' as const },
+                    { k: 'Stolen value linked', v: <Stat key={synId + 'v'} value={syn.valueINR / 1e7} prefix="₹" suffix=" Cr" decimals={1} className="text-[26px] text-text" />, spark: g.timeline.total.map((x, i) => x * (1 + i * 0.05)), tone: 'gold' as const },
+                    { k: 'States with victims', v: <Stat key={synId + 's'} value={syn.states} className="text-[26px] text-text" />, spark: g.timeline.total.map((x) => Math.min(syn.states, Math.ceil(x / 3))), tone: 'sky' as const },
+                    { k: `First seen · ${daysSince(syn.firstSeen) ?? '—'} days active`, v: <span className="k-num text-[22px] leading-[1.3] text-text">{syn.firstSeen}</span>, spark: g.timeline.auto, tone: 'ember' as const },
+                  ].map((t) => (
+                    <Card key={t.k} variant="speckle" grain className="h-[112px] p-4">
+                      <div className="relative text-[13px] text-muted">{t.k}</div>
+                      <div className="relative mt-3 flex items-end justify-between gap-2">
+                        {t.v}
+                        <Sparkline key={synId} data={t.spark} tone={t.tone} width={78} height={34} className="hidden sm:block" />
+                      </div>
+                    </Card>
+                  ))}
                 </div>
-                <CurveChart
-                  key={synId}
-                  className="mt-2"
-                  height={140}
-                  labels={g.timeline.labels}
-                  series={[
-                    { name: 'All linked', tone: 'crimson', data: g.timeline.total },
-                    { name: 'Automatic', tone: 'white', data: g.timeline.auto },
-                  ]}
-                  highlight={{ series: 0, index: g.timeline.labels.length - 1, title: `${g.timeline.labels[g.timeline.labels.length - 1]} · today` }}
-                  format={(v) => `${v} cases`}
-                />
+                <div className="grid grid-cols-1 gap-3 xl:grid-cols-[1.2fr_1fr]">
+                  <Card className="pb-4">
+                    <CardHeader title="Cases linked over time" tech={`cumulative · ${syn.id} since ${syn.firstSeen}`} />
+                    <div className="px-5 pt-2">
+                      <div className="flex flex-wrap items-baseline gap-3">
+                        <Stat key={synId} value={syn.cases} className="text-[24px] text-text" />
+                        <span className="flex items-center gap-3 text-[12.5px] text-muted">
+                          <span className="flex items-center gap-1.5">
+                            <span className="h-0.5 w-3 rounded bg-crimson" />
+                            All linked
+                          </span>
+                          <span className="flex items-center gap-1.5">
+                            <span className="h-0.5 w-3 rounded bg-white" />
+                            Linked automatically
+                          </span>
+                        </span>
+                      </div>
+                      <CurveChart
+                        key={synId}
+                        className="mt-2"
+                        height={140}
+                        labels={g.timeline.labels}
+                        series={[
+                          { name: 'All linked', tone: 'crimson', data: g.timeline.total },
+                          { name: 'Automatic', tone: 'white', data: g.timeline.auto },
+                        ]}
+                        highlight={{ series: 0, index: g.timeline.labels.length - 1, title: `${g.timeline.labels[g.timeline.labels.length - 1]} · today` }}
+                        format={(v) => `${v} cases`}
+                      />
+                    </div>
+                  </Card>
+                  <AutoLinkFeed key={synId} g={g} />
+                </div>
               </div>
-            </Card>
-          </Reveal>
-          <Reveal delay={0.2}>
-            <AutoLinkFeed key={synId} g={g} />
-          </Reveal>
-        </div>
-      </div>
+            ),
+          },
+        ]}
+      />
     </div>
   )
 }

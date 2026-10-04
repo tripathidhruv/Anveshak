@@ -1,6 +1,7 @@
 import * as React from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import {
+  ArrowRight,
   Building2,
   Check,
   CheckCircle2,
@@ -30,6 +31,7 @@ import {
   KV,
   PageHeader,
   Reveal,
+  SubTabs,
   toneA,
   toneHex,
   useCountdown,
@@ -107,7 +109,7 @@ export default function CrossBorderPage() {
         />
       </Reveal>
 
-      {/* ── Jurisdiction selector ── */}
+      {/* ── Jurisdiction selector (drives every tab below) ── */}
       <Reveal delay={0.05}>
         <div>
           <div className="mb-2 flex flex-wrap items-baseline justify-between gap-2">
@@ -161,117 +163,149 @@ export default function CrossBorderPage() {
         </div>
       </Reveal>
 
-      {/* ── Route + decision path ── */}
-      <div className="grid grid-cols-1 gap-3 xl:grid-cols-[1.1fr_1fr]">
-        <Reveal delay={0.1}>
-          <RouteCard ex={ex} j={j} urgent={urgent} />
-        </Reveal>
-        <Reveal delay={0.15}>
-          <DecisionPath ex={ex} j={j} urgent={urgent} setUrgent={setUrgent} left={left} />
-        </Reveal>
-      </div>
-
-      {/* ── Channels ── */}
-      <Reveal delay={0.1}>
-        <div>
-          <div className="mb-2 flex flex-wrap items-baseline justify-between gap-2">
-            <div className="text-[14.5px] font-medium text-text/90">
-              The four cross-border channels <span className="text-[12.5px] font-normal text-dim">· what each can get you, how fast, and who signs</span>
-            </div>
-            {registered && (
-              <Chip tone="moss" dot>
-                {ex.name} is registered in India — these are fallbacks only
-              </Chip>
-            )}
-          </div>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
-            {FOREIGN_CHANNELS.map((k) => (
-              <ChannelCard key={k} k={k} j={j} urgent={urgent} />
-            ))}
-          </div>
-        </div>
-      </Reveal>
-
-      {/* ── ETA + preserve first ── */}
-      <div className="grid grid-cols-1 gap-3 xl:grid-cols-[1.35fr_1fr]">
-        <Reveal delay={0.1}>
-          <EtaCard ex={ex} j={j} />
-        </Reveal>
-        <Reveal delay={0.15}>
-          <PreserveCard ex={ex} j={j} urgent={urgent} left={left} state={sendState} onSend={sendPreservation} />
-        </Reveal>
-      </div>
-
-      {/* ── Checklist + draft ── */}
-      <div className="grid grid-cols-1 gap-3 xl:grid-cols-[1fr_1.35fr]">
-        <Reveal delay={0.1}>
-          <Card className="h-full pb-4">
-            <CardHeader
-              title="Document checklist"
-              tech={`what this route needs · ${ex.name}`}
-              icon={<FileText className="size-4" />}
-              right={
-                <Chip tone={done === items.length ? 'moss' : 'neutral'} dot>
-                  {done}/{items.length} ready
-                </Chip>
-              }
-            />
-            <div className="mt-3 px-5">
-              <div className="flex items-baseline justify-between">
-                <span className="k-num text-[26px] leading-none text-text">{Math.round((done / items.length) * 100)}%</span>
-                <span className="text-[12.5px] text-dim">{items.length - done === 0 ? 'ready to send for sign-off' : `${items.length - done} item${items.length - done > 1 ? 's' : ''} to go`}</span>
+      <SubTabs
+        tabs={[
+          {
+            key: 'route',
+            label: 'Recommended route',
+            icon: Globe2,
+            render: (go) => (
+              <div className="space-y-3">
+              <div className="grid grid-cols-1 gap-3 xl:grid-cols-[1.1fr_1fr]">
+                <Reveal delay={0.1}>
+                  <RouteCard ex={ex} j={j} urgent={urgent} />
+                </Reveal>
+                <Reveal delay={0.15}>
+                  <DecisionPath ex={ex} j={j} urgent={urgent} setUrgent={setUrgent} left={left} />
+                </Reveal>
               </div>
-              <Progress value={(done / items.length) * 100} className="mt-2 h-1.5 bg-white/[0.06]" />
-            </div>
-            <ul className="mt-3 space-y-1 px-3">
-              <AnimatePresence initial={false}>
-                {items.map((it) => {
-                  const on = isChecked(it.id)
-                  return (
-                    <motion.li
-                      key={`${exId}-${it.id}`}
-                      layout
-                      initial={{ opacity: 0, x: -8 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      exit={{ opacity: 0, x: 8 }}
-                      transition={{ duration: 0.22 }}
-                    >
-                      <button
-                        type="button"
-                        role="checkbox"
-                        aria-checked={on}
-                        onClick={() => toggle(it.id)}
-                        className="flex w-full items-start gap-3 rounded-xl px-2 py-2 text-left hover:bg-white/[0.03]"
-                      >
-                        <span
-                          className={cn('mt-0.5 grid size-[18px] shrink-0 place-items-center rounded-md border transition-colors', on ? 'border-moss bg-moss text-[#0b0b0c]' : 'border-line-2 bg-white/[0.02]')}
-                        >
-                          <AnimatePresence>
-                            {on && (
-                              <motion.span initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }} transition={{ type: 'spring', stiffness: 500, damping: 26 }}>
-                                <Check className="size-3" strokeWidth={3} />
-                              </motion.span>
-                            )}
+                <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-line bg-white/[0.02] px-4 py-3">
+                  <span className="text-[13.5px] text-muted">Next: preserve the funds, then draft the request for this route.</span>
+                  <Button size="sm" onClick={() => go('act')}>
+                    <Send /> Preserve & draft <ArrowRight />
+                  </Button>
+                </div>
+              </div>
+            ),
+          },
+          {
+            key: 'channels',
+            label: 'Channels & timing',
+            icon: Network,
+            render: () => (
+              <div className="space-y-3">
+              <Reveal delay={0.1}>
+                <div>
+                  <div className="mb-2 flex flex-wrap items-baseline justify-between gap-2">
+                    <div className="text-[14.5px] font-medium text-text/90">
+                      The four cross-border channels <span className="text-[12.5px] font-normal text-dim">· what each can get you, how fast, and who signs</span>
+                    </div>
+                    {registered && (
+                      <Chip tone="moss" dot>
+                        {ex.name} is registered in India — these are fallbacks only
+                      </Chip>
+                    )}
+                  </div>
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                    {FOREIGN_CHANNELS.map((k) => (
+                      <ChannelCard key={k} k={k} j={j} urgent={urgent} />
+                    ))}
+                  </div>
+                </div>
+              </Reveal>
+                <Reveal delay={0.15}>
+                  <EtaCard ex={ex} j={j} />
+                </Reveal>
+              </div>
+            ),
+          },
+          {
+            key: 'act',
+            label: 'Preserve & draft request',
+            icon: Send,
+            badge: `${done}/${items.length}`,
+            render: () => (
+              <div className="space-y-3">
+                <p className="text-[13.5px] text-muted">The lawful requests for this exchange: preserve the funds first, gather the documents, then review the drafted request.</p>
+                <div className="grid grid-cols-1 gap-3 xl:grid-cols-[1fr_1.35fr]">
+                  <div className="flex min-w-0 flex-col gap-3">
+                    <Reveal delay={0.05}>
+                      <PreserveCard ex={ex} j={j} urgent={urgent} left={left} state={sendState} onSend={sendPreservation} />
+                    </Reveal>
+                    <Reveal delay={0.1}>
+                      <Card className="pb-4">
+                        <CardHeader
+                          title="Document checklist"
+                          tech={`what this route needs · ${ex.name}`}
+                          icon={<FileText className="size-4" />}
+                          right={
+                            <Chip tone={done === items.length ? 'moss' : 'neutral'} dot>
+                              {done}/{items.length} ready
+                            </Chip>
+                          }
+                        />
+                        <div className="mt-3 px-5">
+                          <div className="flex items-baseline justify-between">
+                            <span className="k-num text-[26px] leading-none text-text">{Math.round((done / items.length) * 100)}%</span>
+                            <span className="text-[12.5px] text-dim">{items.length - done === 0 ? 'ready to send for sign-off' : `${items.length - done} item${items.length - done > 1 ? 's' : ''} to go`}</span>
+                          </div>
+                          <Progress value={(done / items.length) * 100} className="mt-2 h-1.5 bg-white/[0.06]" />
+                        </div>
+                        <ul className="mt-3 space-y-1 px-3">
+                          <AnimatePresence initial={false}>
+                            {items.map((it) => {
+                              const on = isChecked(it.id)
+                              return (
+                                <motion.li
+                                  key={`${exId}-${it.id}`}
+                                  layout
+                                  initial={{ opacity: 0, x: -8 }}
+                                  animate={{ opacity: 1, x: 0 }}
+                                  exit={{ opacity: 0, x: 8 }}
+                                  transition={{ duration: 0.22 }}
+                                >
+                                  <button
+                                    type="button"
+                                    role="checkbox"
+                                    aria-checked={on}
+                                    onClick={() => toggle(it.id)}
+                                    className="flex w-full items-start gap-3 rounded-xl px-2 py-2 text-left hover:bg-white/[0.03]"
+                                  >
+                                    <span
+                                      className={cn('mt-0.5 grid size-[18px] shrink-0 place-items-center rounded-md border transition-colors', on ? 'border-moss bg-moss text-[#0b0b0c]' : 'border-line-2 bg-white/[0.02]')}
+                                    >
+                                      <AnimatePresence>
+                                        {on && (
+                                          <motion.span initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }} transition={{ type: 'spring', stiffness: 500, damping: 26 }}>
+                                            <Check className="size-3" strokeWidth={3} />
+                                          </motion.span>
+                                        )}
+                                      </AnimatePresence>
+                                    </span>
+                                    <span className="min-w-0 flex-1">
+                                      <span className={cn('block text-[14px]', on ? 'text-muted line-through decoration-white/20' : 'text-text')}>{it.label}</span>
+                                      <span className="block text-[12px] text-dim">{it.tech}</span>
+                                    </span>
+                                    {it.auto && <Chip tone="teal" className="mt-0.5 text-[11.5px]">from evidence pack</Chip>}
+                                    {it.id === 'preserve' && sendState === 'queued' && <Chip tone="moss" className="mt-0.5 text-[11.5px]">queued</Chip>}
+                                  </button>
+                                </motion.li>
+                              )
+                            })}
                           </AnimatePresence>
-                        </span>
-                        <span className="min-w-0 flex-1">
-                          <span className={cn('block text-[14px]', on ? 'text-muted line-through decoration-white/20' : 'text-text')}>{it.label}</span>
-                          <span className="block text-[12px] text-dim">{it.tech}</span>
-                        </span>
-                        {it.auto && <Chip tone="teal" className="mt-0.5 text-[11.5px]">from evidence pack</Chip>}
-                        {it.id === 'preserve' && sendState === 'queued' && <Chip tone="moss" className="mt-0.5 text-[11.5px]">queued</Chip>}
-                      </button>
-                    </motion.li>
-                  )
-                })}
-              </AnimatePresence>
-            </ul>
-          </Card>
-        </Reveal>
-        <Reveal delay={0.15}>
-          <DraftCard ex={ex} j={j} urgent={urgent} />
-        </Reveal>
-      </div>
+                        </ul>
+                      </Card>
+                    </Reveal>
+                  </div>
+                  <Reveal delay={0.15}>
+                    <DraftCard ex={ex} j={j} urgent={urgent} />
+                  </Reveal>
+                </div>
+              </div>
+            ),
+          },
+        ]}
+      />
     </div>
   )
 }

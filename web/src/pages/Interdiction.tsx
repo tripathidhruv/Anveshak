@@ -2,11 +2,13 @@ import * as React from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import {
   AlertTriangle,
+  ArrowRight,
   BellRing,
   Building2,
   Check,
   Clock3,
   Eye,
+  History,
   Info,
   Loader2,
   Radio,
@@ -34,6 +36,7 @@ import {
   PageHeader,
   Reveal,
   Stat,
+  SubTabs,
   useTick,
   type FlowEdge,
   type FlowNode,
@@ -156,7 +159,7 @@ export default function InterdictionPage() {
         />
       </Reveal>
 
-      {/* ── Watched cases ── */}
+      {/* ── Watched cases (case picker — drives every tab below) ── */}
       <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
         {SCENARIOS.map((s, i) => (
           <Reveal key={s.caseId} delay={0.05 + i * 0.05}>
@@ -165,279 +168,311 @@ export default function InterdictionPage() {
         ))}
       </div>
 
-      {/* ── Prediction graph + ETA ── */}
-      <div className="grid grid-cols-1 gap-3 xl:grid-cols-[2.1fr_1fr]">
-        <Reveal delay={0.1}>
-          <Card className="h-full pb-4">
-            <CardHeader
-              title="Where the money goes next"
-              tech={`next-hop prediction · ${sc.syndicate} · ${sc.chain}`}
-              right={
-                <Chip tone={sc.confidence.tone} dot>
-                  {sc.confidence.label} confidence
-                </Chip>
-              }
-            />
-            <div className="k-scroll mt-2 overflow-x-auto px-4">
-              <div className="min-w-[760px]">
-                <PredictionGraph key={sc.caseId} sc={sc} held={held} />
-              </div>
-            </div>
-            <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1.5 px-5 text-[12.5px] text-muted">
-              <span className="flex items-center gap-1.5">
-                <span className="h-0.5 w-4 rounded bg-crimson" /> Confirmed on-chain movement
-              </span>
-              <span className="flex items-center gap-1.5">
-                <span className="h-0 w-4 border-t-2 border-dashed border-gold" /> Predicted next hop
-              </span>
-              <span className="flex items-center gap-1.5">
-                <span className="h-1 w-4 rounded bg-white/40" /> Thicker line = more likely
-              </span>
-            </div>
-          </Card>
-        </Reveal>
-
-        <Reveal delay={0.15}>
-          <Card className="h-full pb-5">
-            <CardHeader
-              title="Time until it reaches the exchange"
-              tech="arrival estimate · historical hop timing"
-              right={<Clock3 className="size-4 text-muted" />}
-            />
-            <div className="px-5 pt-3">
-              <AnimatePresence mode="wait">
-                <motion.div key={held ? 'held' : sc.caseId} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.3 }}>
-                  {held ? (
-                    <div className="k-num text-[44px] leading-none text-moss">Held</div>
-                  ) : (
-                    <div className={cn('k-num text-[44px] leading-none tabular-nums', left < 300 ? 'text-ember' : 'text-text')}>{left > 0 ? mmss(left) : '0m 00s'}</div>
-                  )}
-                  <div className="mt-1.5 text-[13.5px] text-muted">
-                    {held ? (
-                      <>
-                        Funds landed at <span className="text-text">{exName(top.exchangeId)}</span> and were held
-                      </>
-                    ) : left > 0 ? (
-                      <>
-                        expected to reach <span className="text-text">{top.sub}</span> ({Math.round(top.p * 100)}% likely)
-                      </>
-                    ) : (
-                      <>Predicted arrival window reached — check the exchange reply</>
-                    )}
-                  </div>
-                </motion.div>
-              </AnimatePresence>
-              <Progress
-                value={held ? 100 : Math.min(100, (elapsed / (sc.elapsedSec + sc.etaSec)) * 100)}
-                className={cn('mt-4 h-1.5 bg-white/[0.06]', held && '[&>div]:bg-moss')}
-              />
-              <div className="mt-1.5 flex justify-between text-[12px] text-dim">
-                <span>On current wallet for {mmss(elapsed)}</span>
-                <span>usual total ~{sc.medianMin} min</span>
-              </div>
-
-              <div className="mt-5 text-[13px] text-muted">How long this group usually waits before depositing</div>
-              <BarColumns
-                key={sc.caseId}
-                className="mt-7"
-                height={104}
-                tone="ember"
-                data={sc.hist.map((v, i) => {
-                  const bin = Math.min(HIST_BINS.length - 1, Math.floor(elapsed / 120))
-                  return { label: HIST_BINS[i], value: v, highlight: i === bin, sub: i === bin ? 'now' : undefined }
-                })}
-                format={(v) => `${v} past cases`}
-              />
-              <div className="mt-3 rounded-lg border border-line bg-white/[0.02] px-3 py-2 text-[12.5px] text-muted">
-                Based on <span className="text-text">{sc.priorTraces} prior traces</span>
-                {sc.syndicate.startsWith('SYN') ? ' of this syndicate' : ' of similar cases'} — route reuse{' '}
-                <span className="text-text">{Math.round(sc.routeReuse * 100)}%</span>. Minutes from the last pass-through wallet to the deposit.
-              </div>
-            </div>
-          </Card>
-        </Reveal>
-      </div>
-
-      {/* ── Why + action ── */}
-      <div className="grid grid-cols-1 gap-3 xl:grid-cols-[1fr_1.15fr]">
-        <Reveal delay={0.1}>
-          <Card className="h-full pb-5">
-            <CardHeader title="Why this prediction" tech={`contributing factors · top hop ${Math.round(top.p * 100)}% · weights sum to 100%`} />
-            <ul className="mt-3 space-y-3.5 px-5">
-              {sc.factors.map((f, i) => (
-                <motion.li key={sc.caseId + f.plain} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.06 }}>
-                  <div className="flex items-baseline justify-between gap-3">
-                    <span className="text-[14px] text-text">{f.plain}</span>
-                    <span className="k-num shrink-0 text-[13.5px] text-text">{Math.round(f.w * 100)}%</span>
-                  </div>
-                  <div className="mb-1.5 text-[12px] text-dim">{f.tech}</div>
-                  <Meter key={sc.caseId} value={f.w} max={0.4} tone={f.tone} height={5} />
-                </motion.li>
-              ))}
-            </ul>
-            <div className="mx-5 mt-5 flex gap-2.5 rounded-xl border border-dashed border-gold/30 bg-gold/[0.04] px-3 py-2.5 text-[13px] leading-relaxed text-muted">
-              <Info className="mt-0.5 size-3.5 shrink-0 text-gold" />
-              <span>
-                <span className="text-text">This is a prediction, not proof.</span> The alert asks the exchange to watch one address and hold a matching
-                deposit for a short window. It cannot freeze funds without a lawful order from the investigating officer.
-              </span>
-            </div>
-          </Card>
-        </Reveal>
-
-        <Reveal delay={0.15}>
-          <Card variant="glass" className="h-full pb-5">
-            <CardHeader
-              title="Warn the exchange before the money lands"
-              tech="pre-emptive watch-and-hold alert · secure VASP channel"
-              right={
-                step === 0 ? (
-                  <Chip tone="neutral">Not sent</Chip>
-                ) : held ? (
-                  <Chip tone="moss" dot>
-                    Held
-                  </Chip>
-                ) : (
-                  <Chip tone="ember" dot pulse>
-                    In progress
-                  </Chip>
-                )
-              }
-            />
-            <div className="grid grid-cols-1 gap-x-6 px-5 pt-2 md:grid-cols-2">
-              <div className="divide-y divide-line">
-                <KV k="Recipient" v={`${exName(top.exchangeId)} · compliance desk`} />
-                <KV k="Address to watch" v={top.addr ? <Address addr={top.addr} chain={sc.chain} className="py-0" tone="gold" /> : '—'} />
-                <KV k="Amount on the way" v={<span className="k-num">{inr(sc.movingINR)}</span>} />
-                <KV k="Crypto" v={<span className="k-mono text-[13px]">{sc.movingCrypto}</span>} />
-                <KV k="Case" v={`${sc.caseId} · ${meta.who}`} />
-              </div>
-              <div className="mt-4 md:mt-0">
-                {step === 0 ? (
-                  <div className="k-dashed flex h-full min-h-[170px] flex-col justify-between p-4">
-                    <div>
-                      <IconTile tone="ember">
-                        <BellRing />
-                      </IconTile>
-                      <p className="mt-3 text-[13.5px] leading-snug text-muted">
-                        One alert puts the address on watch. If the deposit arrives, the exchange holds it while you obtain a lawful order.
-                      </p>
-                    </div>
-                    <Button variant="ember" className="mt-4 w-full" onClick={() => setConfirmOpen(true)}>
-                      <Snowflake /> Send pre-emptive freeze alert
-                    </Button>
-                  </div>
-                ) : (
-                  <AlertTimeline step={step} times={alert!.times} exchange={exName(top.exchangeId)} addr={top.addr ?? ''} amt={sc.movingINR} />
-                )}
-              </div>
-            </div>
-            <AnimatePresence>
-              {held && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: 'auto' }}
-                  transition={{ type: 'spring', stiffness: 180, damping: 22 }}
-                  className="overflow-hidden"
-                >
-                  <div className="mx-5 mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-moss/30 bg-moss/[0.06] px-4 py-3">
-                    <div className="flex items-center gap-3">
-                      <IconTile tone="moss">
-                        <ShieldCheck />
-                      </IconTile>
-                      <div>
-                        <Stat value={sc.movingINR / 1e5} prefix="₹" suffix=" L" decimals={1} className="text-[26px] text-moss" />
-                        <div className="text-[12.5px] text-muted">held before cash-out · victim recovery now possible</div>
+      <SubTabs
+        tabs={[
+          {
+            key: 'next',
+            label: 'Where the money is heading',
+            icon: Waypoints,
+            render: (go) => (
+              <div className="space-y-3">
+              <div className="grid grid-cols-1 gap-3 xl:grid-cols-[2.1fr_1fr]">
+                <Reveal delay={0.1}>
+                  <Card className="h-full pb-4">
+                    <CardHeader
+                      title="Where the money goes next"
+                      tech={`next-hop prediction · ${sc.syndicate} · ${sc.chain}`}
+                      right={
+                        <Chip tone={sc.confidence.tone} dot>
+                          {sc.confidence.label} confidence
+                        </Chip>
+                      }
+                    />
+                    <div className="k-scroll mt-2 overflow-x-auto px-4">
+                      <div className="min-w-[760px]">
+                        <PredictionGraph key={sc.caseId} sc={sc} held={held} />
                       </div>
                     </div>
-                    <span className="text-[12.5px] text-dim">Next: attach lawful order within 24 h</span>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </Card>
-        </Reveal>
-      </div>
+                    <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1.5 px-5 text-[12.5px] text-muted">
+                      <span className="flex items-center gap-1.5">
+                        <span className="h-0.5 w-4 rounded bg-crimson" /> Confirmed on-chain movement
+                      </span>
+                      <span className="flex items-center gap-1.5">
+                        <span className="h-0 w-4 border-t-2 border-dashed border-gold" /> Predicted next hop
+                      </span>
+                      <span className="flex items-center gap-1.5">
+                        <span className="h-1 w-4 rounded bg-white/40" /> Thicker line = more likely
+                      </span>
+                    </div>
+                  </Card>
+                </Reveal>
 
-      {/* ── Ticker + success rate ── */}
-      <div className="grid grid-cols-1 gap-3 xl:grid-cols-[1.6fr_1fr]">
-        <Reveal delay={0.1}>
-          <Card className="h-full">
-            <CardHeader title="Recent pre-emptive alerts" tech="alert outcomes · last 7 days" right={<Chip tone="ember" dot pulse>Live</Chip>} />
-            <ul className="mt-2 divide-y divide-line px-3 pb-2">
-              <AnimatePresence initial={false}>
-                {ticker.slice(0, 7).map((a) => (
-                  <motion.li
-                    key={a.caseId + a.when}
-                    layout
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0 }}
-                    className={cn('flex flex-wrap items-center gap-3 rounded-lg px-2 py-2.5 hover:bg-white/[0.025]', a.live && 'bg-ember/[0.04]')}
-                  >
-                    <OutcomeIcon outcome={a.outcome} />
-                    <div className="min-w-[150px] flex-1">
-                      <div className="truncate text-[14px] text-text">
-                        {a.caseId} <span className="text-dim">→</span> {exName(a.exchangeId)}
+                <Reveal delay={0.15}>
+                  <Card className="h-full pb-5">
+                    <CardHeader
+                      title="Time until it reaches the exchange"
+                      tech="arrival estimate · historical hop timing"
+                      right={<Clock3 className="size-4 text-muted" />}
+                    />
+                    <div className="px-5 pt-3">
+                      <AnimatePresence mode="wait">
+                        <motion.div key={held ? 'held' : sc.caseId} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.3 }}>
+                          {held ? (
+                            <div className="k-num text-[44px] leading-none text-moss">Held</div>
+                          ) : (
+                            <div className={cn('k-num text-[44px] leading-none tabular-nums', left < 300 ? 'text-ember' : 'text-text')}>{left > 0 ? mmss(left) : '0m 00s'}</div>
+                          )}
+                          <div className="mt-1.5 text-[13.5px] text-muted">
+                            {held ? (
+                              <>
+                                Funds landed at <span className="text-text">{exName(top.exchangeId)}</span> and were held
+                              </>
+                            ) : left > 0 ? (
+                              <>
+                                expected to reach <span className="text-text">{top.sub}</span> ({Math.round(top.p * 100)}% likely)
+                              </>
+                            ) : (
+                              <>Predicted arrival window reached — check the exchange reply</>
+                            )}
+                          </div>
+                        </motion.div>
+                      </AnimatePresence>
+                      <Progress
+                        value={held ? 100 : Math.min(100, (elapsed / (sc.elapsedSec + sc.etaSec)) * 100)}
+                        className={cn('mt-4 h-1.5 bg-white/[0.06]', held && '[&>div]:bg-moss')}
+                      />
+                      <div className="mt-1.5 flex justify-between text-[12px] text-dim">
+                        <span>On current wallet for {mmss(elapsed)}</span>
+                        <span>usual total ~{sc.medianMin} min</span>
                       </div>
-                      <div className="truncate text-[12px] text-dim">
-                        {a.when} · {a.note}
+
+                      <div className="mt-5 text-[13px] text-muted">How long this group usually waits before depositing</div>
+                      <BarColumns
+                        key={sc.caseId}
+                        className="mt-7"
+                        height={104}
+                        tone="ember"
+                        data={sc.hist.map((v, i) => {
+                          const bin = Math.min(HIST_BINS.length - 1, Math.floor(elapsed / 120))
+                          return { label: HIST_BINS[i], value: v, highlight: i === bin, sub: i === bin ? 'now' : undefined }
+                        })}
+                        format={(v) => `${v} past cases`}
+                      />
+                      <div className="mt-3 rounded-lg border border-line bg-white/[0.02] px-3 py-2 text-[12.5px] text-muted">
+                        Based on <span className="text-text">{sc.priorTraces} prior traces</span>
+                        {sc.syndicate.startsWith('SYN') ? ' of this syndicate' : ' of similar cases'} — route reuse{' '}
+                        <span className="text-text">{Math.round(sc.routeReuse * 100)}%</span>. Minutes from the last pass-through wallet to the deposit.
                       </div>
                     </div>
-                    <div className="k-num w-[64px] text-right text-[14px] text-text">{inr(a.amt)}</div>
-                    <OutcomeChip outcome={a.outcome} />
-                  </motion.li>
-                ))}
-              </AnimatePresence>
-            </ul>
-          </Card>
-        </Reveal>
-        <Reveal delay={0.15}>
-          <Card className="h-full pb-5">
-            <CardHeader title="How often alerts work" tech={`${totalCount} pre-emptive alerts · last 30 days`} />
-            <div className="flex flex-wrap items-center justify-center gap-6 px-5 pt-4">
-              <Donut
-                size={150}
-                stroke={15}
-                parts={[
-                  { value: totals.held, tone: 'moss' },
-                  { value: totals.missed, tone: 'crimson' },
-                  { value: totals.pending, tone: 'neutral' },
-                ]}
-                center={
-                  <div>
-                    <div className="k-num text-[28px] leading-none text-text">{heldPct}%</div>
-                    <div className="mt-1 text-[11.5px] text-muted">held in time</div>
-                  </div>
-                }
-              />
-              <div className="min-w-[150px] space-y-2.5">
-                {(
-                  [
-                    { k: 'Held before cash-out', v: totals.held, tone: 'moss' },
-                    { k: 'Missed (arrived first)', v: totals.missed, tone: 'crimson' },
-                    { k: 'Waiting on exchange', v: totals.pending, tone: 'neutral' },
-                  ] as { k: string; v: number; tone: Tone }[]
-                ).map((r) => (
-                  <div key={r.k} className="flex items-center justify-between gap-4 text-[13.5px]">
-                    <span className="flex items-center gap-2 text-muted">
-                      <span className="size-2 rounded-full" style={{ background: toneHex(r.tone) }} />
-                      {r.k}
-                    </span>
-                    <span className="k-num text-text">{r.v}</span>
-                  </div>
-                ))}
-                <div className="border-t border-line pt-2.5 text-[12.5px] text-dim">
-                  Median warning given: <span className="text-text">6m 40s</span> before deposit
+                  </Card>
+                </Reveal>
+              </div>
+                <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-line bg-white/[0.02] px-4 py-3">
+                  <span className="text-[13.5px] text-muted">
+                    {held ? 'The deposit was held at the exchange.' : 'Act before the timer runs out: warn the likely exchange to watch and hold the deposit.'}
+                  </span>
+                  <Button size="sm" onClick={() => go('warn')}>
+                    <Snowflake /> {step === 0 ? 'Warn the exchange' : 'See alert status'} <ArrowRight />
+                  </Button>
                 </div>
               </div>
+            ),
+          },
+          {
+            key: 'warn',
+            label: 'Why & warn the exchange',
+            icon: BellRing,
+            badge: step === 0 ? undefined : held ? 'held' : 'sent',
+            render: () => (
+            <div className="grid grid-cols-1 gap-3 xl:grid-cols-[1fr_1.15fr]">
+              <Reveal delay={0.1}>
+                <Card className="h-full pb-5">
+                  <CardHeader title="Why this prediction" tech={`contributing factors · top hop ${Math.round(top.p * 100)}% · weights sum to 100%`} />
+                  <ul className="mt-3 space-y-3.5 px-5">
+                    {sc.factors.map((f, i) => (
+                      <motion.li key={sc.caseId + f.plain} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.06 }}>
+                        <div className="flex items-baseline justify-between gap-3">
+                          <span className="text-[14px] text-text">{f.plain}</span>
+                          <span className="k-num shrink-0 text-[13.5px] text-text">{Math.round(f.w * 100)}%</span>
+                        </div>
+                        <div className="mb-1.5 text-[12px] text-dim">{f.tech}</div>
+                        <Meter key={sc.caseId} value={f.w} max={0.4} tone={f.tone} height={5} />
+                      </motion.li>
+                    ))}
+                  </ul>
+                  <div className="mx-5 mt-5 flex gap-2.5 rounded-xl border border-dashed border-gold/30 bg-gold/[0.04] px-3 py-2.5 text-[13px] leading-relaxed text-muted">
+                    <Info className="mt-0.5 size-3.5 shrink-0 text-gold" />
+                    <span>
+                      <span className="text-text">This is a prediction, not proof.</span> The alert asks the exchange to watch one address and hold a matching
+                      deposit for a short window. It cannot freeze funds without a lawful order from the investigating officer.
+                    </span>
+                  </div>
+                </Card>
+              </Reveal>
+
+              <Reveal delay={0.15}>
+                <Card variant="glass" className="h-full pb-5">
+                  <CardHeader
+                    title="Warn the exchange before the money lands"
+                    tech="pre-emptive watch-and-hold alert · secure VASP channel"
+                    right={
+                      step === 0 ? (
+                        <Chip tone="neutral">Not sent</Chip>
+                      ) : held ? (
+                        <Chip tone="moss" dot>
+                          Held
+                        </Chip>
+                      ) : (
+                        <Chip tone="ember" dot pulse>
+                          In progress
+                        </Chip>
+                      )
+                    }
+                  />
+                  <div className="grid grid-cols-1 gap-x-6 px-5 pt-2 md:grid-cols-2">
+                    <div className="divide-y divide-line">
+                      <KV k="Recipient" v={`${exName(top.exchangeId)} · compliance desk`} />
+                      <KV k="Address to watch" v={top.addr ? <Address addr={top.addr} chain={sc.chain} className="py-0" tone="gold" /> : '—'} />
+                      <KV k="Amount on the way" v={<span className="k-num">{inr(sc.movingINR)}</span>} />
+                      <KV k="Crypto" v={<span className="k-mono text-[13px]">{sc.movingCrypto}</span>} />
+                      <KV k="Case" v={`${sc.caseId} · ${meta.who}`} />
+                    </div>
+                    <div className="mt-4 md:mt-0">
+                      {step === 0 ? (
+                        <div className="k-dashed flex h-full min-h-[170px] flex-col justify-between p-4">
+                          <div>
+                            <IconTile tone="ember">
+                              <BellRing />
+                            </IconTile>
+                            <p className="mt-3 text-[13.5px] leading-snug text-muted">
+                              One alert puts the address on watch. If the deposit arrives, the exchange holds it while you obtain a lawful order.
+                            </p>
+                          </div>
+                          <Button variant="ember" className="mt-4 w-full" onClick={() => setConfirmOpen(true)}>
+                            <Snowflake /> Send pre-emptive freeze alert
+                          </Button>
+                        </div>
+                      ) : (
+                        <AlertTimeline step={step} times={alert!.times} exchange={exName(top.exchangeId)} addr={top.addr ?? ''} amt={sc.movingINR} />
+                      )}
+                    </div>
+                  </div>
+                  <AnimatePresence>
+                    {held && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        transition={{ type: 'spring', stiffness: 180, damping: 22 }}
+                        className="overflow-hidden"
+                      >
+                        <div className="mx-5 mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-moss/30 bg-moss/[0.06] px-4 py-3">
+                          <div className="flex items-center gap-3">
+                            <IconTile tone="moss">
+                              <ShieldCheck />
+                            </IconTile>
+                            <div>
+                              <Stat value={sc.movingINR / 1e5} prefix="₹" suffix=" L" decimals={1} className="text-[26px] text-moss" />
+                              <div className="text-[12.5px] text-muted">held before cash-out · victim recovery now possible</div>
+                            </div>
+                          </div>
+                          <span className="text-[12.5px] text-dim">Next: attach lawful order within 24 h</span>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </Card>
+              </Reveal>
             </div>
-            <p className="mx-5 mt-4 text-[12px] leading-relaxed text-dim">
-              Misses are mostly hops faster than the alert channel (under 2 min). Figures are illustrative demo data.
-            </p>
-          </Card>
-        </Reveal>
-      </div>
+            ),
+          },
+          {
+            key: 'record',
+            label: 'Track record',
+            icon: History,
+            badge: totalCount,
+            render: () => (
+            <div className="grid grid-cols-1 gap-3 xl:grid-cols-[1.6fr_1fr]">
+              <Reveal delay={0.1}>
+                <Card className="h-full">
+                  <CardHeader title="Recent pre-emptive alerts" tech="alert outcomes · last 7 days" right={<Chip tone="ember" dot pulse>Live</Chip>} />
+                  <ul className="mt-2 divide-y divide-line px-3 pb-2">
+                    <AnimatePresence initial={false}>
+                      {ticker.slice(0, 7).map((a) => (
+                        <motion.li
+                          key={a.caseId + a.when}
+                          layout
+                          initial={{ opacity: 0, y: -10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0 }}
+                          className={cn('flex flex-wrap items-center gap-3 rounded-lg px-2 py-2.5 hover:bg-white/[0.025]', a.live && 'bg-ember/[0.04]')}
+                        >
+                          <OutcomeIcon outcome={a.outcome} />
+                          <div className="min-w-[150px] flex-1">
+                            <div className="truncate text-[14px] text-text">
+                              {a.caseId} <span className="text-dim">→</span> {exName(a.exchangeId)}
+                            </div>
+                            <div className="truncate text-[12px] text-dim">
+                              {a.when} · {a.note}
+                            </div>
+                          </div>
+                          <div className="k-num w-[64px] text-right text-[14px] text-text">{inr(a.amt)}</div>
+                          <OutcomeChip outcome={a.outcome} />
+                        </motion.li>
+                      ))}
+                    </AnimatePresence>
+                  </ul>
+                </Card>
+              </Reveal>
+              <Reveal delay={0.15}>
+                <Card className="h-full pb-5">
+                  <CardHeader title="How often alerts work" tech={`${totalCount} pre-emptive alerts · last 30 days`} />
+                  <div className="flex flex-wrap items-center justify-center gap-6 px-5 pt-4">
+                    <Donut
+                      size={150}
+                      stroke={15}
+                      parts={[
+                        { value: totals.held, tone: 'moss' },
+                        { value: totals.missed, tone: 'crimson' },
+                        { value: totals.pending, tone: 'neutral' },
+                      ]}
+                      center={
+                        <div>
+                          <div className="k-num text-[28px] leading-none text-text">{heldPct}%</div>
+                          <div className="mt-1 text-[11.5px] text-muted">held in time</div>
+                        </div>
+                      }
+                    />
+                    <div className="min-w-[150px] space-y-2.5">
+                      {(
+                        [
+                          { k: 'Held before cash-out', v: totals.held, tone: 'moss' },
+                          { k: 'Missed (arrived first)', v: totals.missed, tone: 'crimson' },
+                          { k: 'Waiting on exchange', v: totals.pending, tone: 'neutral' },
+                        ] as { k: string; v: number; tone: Tone }[]
+                      ).map((r) => (
+                        <div key={r.k} className="flex items-center justify-between gap-4 text-[13.5px]">
+                          <span className="flex items-center gap-2 text-muted">
+                            <span className="size-2 rounded-full" style={{ background: toneHex(r.tone) }} />
+                            {r.k}
+                          </span>
+                          <span className="k-num text-text">{r.v}</span>
+                        </div>
+                      ))}
+                      <div className="border-t border-line pt-2.5 text-[12.5px] text-dim">
+                        Median warning given: <span className="text-text">6m 40s</span> before deposit
+                      </div>
+                    </div>
+                  </div>
+                  <p className="mx-5 mt-4 text-[12px] leading-relaxed text-dim">
+                    Misses are mostly hops faster than the alert channel (under 2 min). Figures are illustrative demo data.
+                  </p>
+                </Card>
+              </Reveal>
+            </div>
+            ),
+          },
+        ]}
+      />
 
       {/* ── Confirm dialog ── */}
       <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>

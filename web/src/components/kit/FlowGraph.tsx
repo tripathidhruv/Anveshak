@@ -227,7 +227,8 @@ export function FlowGraph({
                 className="absolute inset-y-2.5 left-0 w-[3px] rounded-r-full"
                 style={{ background: toneHex(n.tone), boxShadow: `0 0 10px ${toneHex(n.tone)}` }}
               />
-              {n.icon && (
+              {/* narrow cards (the graph shrank to fit) give the icon's room to the label */}
+              {n.icon && p.w >= 150 && (
                 <span
                   className="ml-1 grid size-8 shrink-0 place-items-center rounded-lg [&_svg]:size-4"
                   style={{ background: toneA(n.tone, 0.12), color: toneHex(n.tone) }}
@@ -235,7 +236,7 @@ export function FlowGraph({
                   {n.icon}
                 </span>
               )}
-              <span className={cn('min-w-0 flex-1', !n.icon && 'ml-1.5')}>
+              <span className={cn('min-w-0 flex-1', (!n.icon || p.w < 150) && 'ml-1.5')} title={typeof n.title === 'string' ? n.title : undefined}>
                 <span className="block truncate text-[13.5px] font-medium text-text">{n.title}</span>
                 {n.sub && <span className="block truncate text-[11.5px] text-muted">{n.sub}</span>}
               </span>

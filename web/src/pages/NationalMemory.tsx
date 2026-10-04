@@ -1,11 +1,12 @@
 import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { animate, useInView } from 'motion/react'
-import { ArrowUpRight, Clock3, Copy, Database, Eye, FileLock2, Gauge, KeyRound, Network, ScrollText, ShieldCheck, Timer, UserX } from 'lucide-react'
-import { BarColumns, Card, CardHeader, Chip, CurveChart, DemoChip, HeatGrid, Meter, PageHeader, Reveal, toneHex, type Tone } from '@/components/kit'
+import { ArrowUpRight, Clock3, Copy, Database, Eye, FileLock2, Gauge, KeyRound, Network, ScrollText, Search, ShieldCheck, Timer, TrendingUp, UserX, Users } from 'lucide-react'
+import { BarColumns, Card, CardHeader, Chip, CurveChart, DemoChip, HeatGrid, Meter, PageHeader, Reveal, SubTabs, toneHex, type Tone } from '@/components/kit'
 import { cn } from '@/lib/utils'
 import { AUDIT_LINES, GROWTH_RESOLVED, GROWTH_WALLETS, HIT_RATE, MEMORY, MONTHS, REUSE, REUSED_BY, STATE_HEAT, STATE_ROWS } from './nationalmemory/data'
 import { MemoryLookup } from './nationalmemory/Lookup'
+import { useMemoryLookup } from './nationalmemory/useMemoryLookup'
 
 /** Animated count with Indian digit grouping (2,41,860). */
 function IndianCount({ value, className, decimals = 0 }: { value: number; className?: string; decimals?: number }) {
@@ -31,6 +32,7 @@ function IndianCount({ value, className, decimals = 0 }: { value: number; classN
 }
 
 export default function NationalMemoryPage() {
+  const lookup = useMemoryLookup()
   return (
     <div className="space-y-4">
       <Reveal>
@@ -88,76 +90,85 @@ export default function NationalMemoryPage() {
         </div>
       </Reveal>
 
-      {/* ── Growth + hit rate ── */}
-      <div className="grid grid-cols-1 gap-3 xl:grid-cols-[1.7fr_1fr]">
-        <Reveal delay={0.1}>
-          <Card className="h-full pb-4">
-            <CardHeader title="The national memory keeps growing" tech="wallets known vs wallets resolved to an exchange · thousands · Oct 2025 – Sep 2026" right={<span className="k-btn-ghost inline-flex h-7 items-center rounded-lg px-2.5 text-[12.5px]">12 months</span>} />
-            <div className="px-5 pt-2">
-              <div className="flex flex-wrap items-baseline gap-3">
-                <span className="k-num text-[26px] text-text">6.4×</span>
-                <span className="text-[12.5px] text-muted">growth in a year</span>
-                <span className="flex items-center gap-3 text-[12.5px] text-muted">
-                  <span className="flex items-center gap-1.5"><span className="h-0.5 w-3 rounded bg-white" />Wallets known</span>
-                  <span className="flex items-center gap-1.5"><span className="h-0.5 w-3 rounded bg-gold" />Resolved to exchange</span>
-                </span>
+      <SubTabs
+        tabs={[
+          {
+            key: 'lookup',
+            label: 'Check a wallet',
+            icon: Search,
+            render: () => <MemoryLookup lookup={lookup} />,
+          },
+          {
+            key: 'growth',
+            label: 'How it grows',
+            icon: TrendingUp,
+            render: () => (
+              <div className="grid grid-cols-1 gap-3 xl:grid-cols-[1.7fr_1fr]">
+                <Card className="h-full pb-4">
+                  <CardHeader title="The national memory keeps growing" tech="wallets known vs wallets resolved to an exchange · thousands · Oct 2025 – Sep 2026" right={<span className="k-btn-ghost inline-flex h-7 items-center rounded-lg px-2.5 text-[12.5px]">12 months</span>} />
+                  <div className="px-5 pt-2">
+                    <div className="flex flex-wrap items-baseline gap-3">
+                      <span className="k-num text-[26px] text-text">6.4×</span>
+                      <span className="text-[12.5px] text-muted">growth in a year</span>
+                      <span className="flex items-center gap-3 text-[12.5px] text-muted">
+                        <span className="flex items-center gap-1.5"><span className="h-0.5 w-3 rounded bg-white" />Wallets known</span>
+                        <span className="flex items-center gap-1.5"><span className="h-0.5 w-3 rounded bg-gold" />Resolved to exchange</span>
+                      </span>
+                    </div>
+                    <CurveChart
+                      className="mt-3"
+                      height={210}
+                      labels={MONTHS}
+                      series={[
+                        { name: 'Wallets known', tone: 'white', data: GROWTH_WALLETS },
+                        { name: 'Resolved', tone: 'gold', data: GROWTH_RESOLVED },
+                      ]}
+                      highlight={{ series: 0, index: 5, title: 'Mar 2026 · Kochi submits the SYN-07 hub' }}
+                      format={(v) => `${v}k`}
+                    />
+                  </div>
+                </Card>
+                <Card variant="glass" className="h-full pb-5">
+                  <CardHeader title="The bigger it gets, the more often it already knows" tech="% of new submissions touching a known wallet · per month" />
+                  <div className="px-5 pt-2">
+                    <span className="k-num text-[26px] text-text">9% → 38%</span>
+                    <span className="ml-2 text-[12.5px] text-muted">network effect</span>
+                    <BarColumns
+                      className="mt-6"
+                      height={170}
+                      tone="ember"
+                      data={HIT_RATE.map((v, i) => ({ label: MONTHS[i].slice(0, 1), value: v, highlight: i === HIT_RATE.length - 1 }))}
+                      format={(v) => `${v}% hits`}
+                    />
+                  </div>
+                </Card>
               </div>
-              <CurveChart
-                className="mt-3"
-                height={210}
-                labels={MONTHS}
-                series={[
-                  { name: 'Wallets known', tone: 'white', data: GROWTH_WALLETS },
-                  { name: 'Resolved', tone: 'gold', data: GROWTH_RESOLVED },
-                ]}
-                highlight={{ series: 0, index: 5, title: 'Mar 2026 · Kochi submits the SYN-07 hub' }}
-                format={(v) => `${v}k`}
-              />
-            </div>
-          </Card>
-        </Reveal>
-        <Reveal delay={0.15}>
-          <Card variant="glass" className="h-full pb-5">
-            <CardHeader title="The bigger it gets, the more often it already knows" tech="% of new submissions touching a known wallet · per month" />
-            <div className="px-5 pt-2">
-              <span className="k-num text-[26px] text-text">9% → 38%</span>
-              <span className="ml-2 text-[12.5px] text-muted">network effect</span>
-              <BarColumns
-                className="mt-6"
-                height={170}
-                tone="ember"
-                data={HIT_RATE.map((v, i) => ({ label: MONTHS[i].slice(0, 1), value: v, highlight: i === HIT_RATE.length - 1 }))}
-                format={(v) => `${v}% hits`}
-              />
-            </div>
-          </Card>
-        </Reveal>
-      </div>
-
-      {/* ── THE interactive moment ── */}
-      <Reveal delay={0.1}>
-        <MemoryLookup />
-      </Reveal>
-
-      {/* ── Knowledge reused + state contribution ── */}
-      <div className="grid grid-cols-1 gap-3 xl:grid-cols-[1fr_1.35fr]">
-        <Reveal delay={0.1}>
-          <KnowledgeReused />
-        </Reveal>
-        <Reveal delay={0.15}>
-          <StateContribution />
-        </Reveal>
-      </div>
-
-      {/* ── Moat + governance ── */}
-      <div className="grid grid-cols-1 gap-3 xl:grid-cols-[1fr_1.3fr]">
-        <Reveal delay={0.1}>
-          <PlatformOnly />
-        </Reveal>
-        <Reveal delay={0.15}>
-          <Governance />
-        </Reveal>
-      </div>
+            ),
+          },
+          {
+            key: 'reuse',
+            label: 'Who it helps',
+            icon: Users,
+            render: () => (
+              <div className="grid grid-cols-1 gap-3 xl:grid-cols-[1fr_1.35fr]">
+                <KnowledgeReused />
+                <StateContribution />
+              </div>
+            ),
+          },
+          {
+            key: 'safeguards',
+            label: 'Reach & safeguards',
+            icon: ShieldCheck,
+            render: () => (
+              <div className="grid grid-cols-1 gap-3 xl:grid-cols-[1fr_1.3fr]">
+                <PlatformOnly />
+                <Governance />
+              </div>
+            ),
+          },
+        ]}
+      />
     </div>
   )
 }

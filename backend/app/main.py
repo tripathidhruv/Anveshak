@@ -6,7 +6,7 @@ from app.config import settings
 from app.db import Base, SessionLocal, engine
 from app.api.v1 import (
     cases, traces, campaigns, vasp_feed, freeze, sanctions, evidence, audit, legal, risk,
-    operator_fingerprint, narrative, me, deposit_index, intake, memory,
+    operator_fingerprint, narrative, me, deposit_index, intake, memory, typology,
 )
 
 Base.metadata.create_all(bind=engine)
@@ -58,6 +58,7 @@ app.include_router(me.router)
 app.include_router(deposit_index.router)
 app.include_router(intake.router)
 app.include_router(memory.router)
+app.include_router(typology.router)
 
 @app.get("/health")
 def health() -> dict:

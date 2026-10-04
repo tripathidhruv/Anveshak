@@ -14,8 +14,8 @@ const STAGES = [
   'Scoring pairs and checking account reuse',
 ]
 
-export function MatchEngine() {
-  const [sel, setSel] = React.useState('r1')
+/** `sel` is owned by the page so the picked pair survives a sub-tab switch. */
+export function MatchEngine({ sel, onSel: setSel }: { sel: string; onSel: (id: string) => void }) {
   const [run, setRun] = React.useState<{ running: boolean; pct: number; stage: number; at: string; gen: number }>({
     running: false,
     pct: 100,

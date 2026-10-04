@@ -7,6 +7,7 @@ import {
   Clock3,
   Fingerprint as FingerprintIcon,
   Link2,
+  ListChecks,
   Network,
   ShieldAlert,
   Split,
@@ -29,6 +30,7 @@ import {
   PageHeader,
   Reveal,
   Stat,
+  SubTabs,
   toneA,
   toneHex,
 } from '@/components/kit'
@@ -179,298 +181,321 @@ export default function FingerprintPage() {
         </Reveal>
       </div>
 
-      {/* ── Radar + ranking ── */}
-      <div className="grid grid-cols-1 gap-3 xl:grid-cols-[1.3fr_1fr]">
-        <Reveal delay={0.1}>
-          <Card variant="glass" className="h-full pb-5">
-            <CardHeader
-              title="Habit profile — this case vs closest operator"
-              tech="8 behavioural features, each scaled 0–1 · hover an axis to inspect it"
-              right={
-                <span className="flex items-center gap-3 text-[12.5px] text-muted">
-                  <span className="flex items-center gap-1.5"><span className="h-0.5 w-3 rounded bg-sky" />This case</span>
-                  <span className="flex items-center gap-1.5"><span className="h-0.5 w-3 rounded" style={{ background: toneHex(sel.tone) }} />{sel.id}</span>
-                </span>
-              }
-            />
-            <div className="grid grid-cols-1 items-center gap-2 px-5 pt-3 md:grid-cols-[1.2fr_1fr]">
-              <div className="relative">
-                <Radar
-                  labels={AXES.map((a) => a.short)}
-                  activeAxis={axis}
-                  onAxisHover={setAxis}
-                  series={[
-                    { name: sel.id, tone: sel.tone, values: sel.values },
-                    { name: 'This case', tone: 'sky', values: CURRENT.values },
-                  ]}
-                />
-                <div className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-center">
-                  <AnimatePresence mode="popLayout">
+      <SubTabs
+        tabs={[
+          {
+            key: 'match',
+            label: 'Closest match',
+            icon: FingerprintIcon,
+            badge: sel.sim.toFixed(2),
+            render: (go) => (
+              <div className="grid grid-cols-1 gap-3 xl:grid-cols-[1.3fr_1fr]">
+                <Card variant="glass" className="h-full pb-5">
+                  <CardHeader
+                    title="Habit profile — this case vs closest operator"
+                    tech="8 behavioural features, each scaled 0–1 · hover an axis to inspect it"
+                    right={
+                      <span className="flex items-center gap-3 text-[12.5px] text-muted">
+                        <span className="flex items-center gap-1.5"><span className="h-0.5 w-3 rounded bg-sky" />This case</span>
+                        <span className="flex items-center gap-1.5"><span className="h-0.5 w-3 rounded" style={{ background: toneHex(sel.tone) }} />{sel.id}</span>
+                      </span>
+                    }
+                  />
+                  <div className="grid grid-cols-1 items-center gap-2 px-5 pt-3 md:grid-cols-[1.2fr_1fr]">
+                    <div className="relative">
+                      <Radar
+                        labels={AXES.map((a) => a.short)}
+                        activeAxis={axis}
+                        onAxisHover={setAxis}
+                        series={[
+                          { name: sel.id, tone: sel.tone, values: sel.values },
+                          { name: 'This case', tone: 'sky', values: CURRENT.values },
+                        ]}
+                      />
+                      <div className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-center">
+                        <AnimatePresence mode="popLayout">
+                          <motion.div
+                            key={sel.id}
+                            initial={{ opacity: 0, scale: 0.8 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.8 }}
+                            className="rounded-xl bg-[#141415]/80 px-2 py-1 backdrop-blur"
+                          >
+                            <div className="k-num text-[20px] leading-none" style={{ color: toneHex(simTone) }}>{sel.sim.toFixed(2)}</div>
+                            <div className="text-[11px] text-dim">similarity</div>
+                          </motion.div>
+                        </AnimatePresence>
+                      </div>
+                    </div>
+                    <ul className="space-y-0.5">
+                      {AXES.map((a, i) => (
+                        <li
+                          key={a.key}
+                          onMouseEnter={() => setAxis(i)}
+                          onMouseLeave={() => setAxis(null)}
+                          className={cn('flex items-start gap-2.5 rounded-lg px-2 py-1.5 transition-colors', axis === i ? 'bg-white/[0.05]' : 'hover:bg-white/[0.025]')}
+                        >
+                          <span className="k-mono mt-0.5 w-3 shrink-0 text-[11.5px] text-dim">{i + 1}</span>
+                          <div className="min-w-0 flex-1">
+                            <div className="text-[13.5px] leading-snug text-text/90">{a.plain}</div>
+                            <div className="text-[11.5px] text-dim">{a.tech}</div>
+                          </div>
+                          <span className="k-num shrink-0 pt-0.5 text-[12px] text-muted">{Math.round(a.w * 100)}%</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </Card>
+
+                <Card className="h-full">
+                  <CardHeader title="Most similar operators" tech="ranked by weighted habit similarity · select one to compare" right={<Chip tone="neutral">5 of 412</Chip>} />
+                  <ul className="mt-3 space-y-1.5 px-3 pb-3">
+                    {RANKED.map((o, idx) => {
+                      const active = o.id === selId
+                      const tone = o.sim >= 0.85 ? 'crimson' : o.sim >= 0.7 ? 'gold' : 'neutral'
+                      return (
+                        <li key={o.id}>
+                          <button
+                            type="button"
+                            onClick={() => setSelId(o.id)}
+                            aria-pressed={active}
+                            className={cn(
+                              'relative w-full rounded-xl border px-3 py-2.5 text-left transition-colors',
+                              active ? 'border-line-2 bg-white/[0.045]' : 'border-line bg-white/[0.012] hover:border-line-2 hover:bg-white/[0.03]',
+                            )}
+                          >
+                            {active && (
+                              <motion.span
+                                layoutId="fp-sel"
+                                className="absolute inset-y-2 left-0 w-[3px] rounded-full"
+                                style={{ background: toneHex(o.tone), boxShadow: `0 0 10px ${toneA(o.tone, 0.8)}` }}
+                              />
+                            )}
+                            <div className="flex items-center gap-3">
+                              <span className="k-num grid size-9 shrink-0 place-items-center rounded-lg border border-line-2 text-[12.5px]" style={{ color: toneHex(o.tone) }}>
+                                #{idx + 1}
+                              </span>
+                              <div className="min-w-0 flex-1">
+                                <div className="flex flex-wrap items-center gap-x-2 text-[14px] text-text">
+                                  Operator {o.id}
+                                  <span className="text-[12px] text-dim">· linked to {o.syndicate}</span>
+                                  {linked[o.id] && <Chip tone="moss" className="py-0 text-[11px]">lead</Chip>}
+                                </div>
+                                <div className="truncate text-[12px] text-dim">
+                                  {o.syndicateName} · {o.cases} cases · last active {o.lastSeen}
+                                  {o.sharedWallets.length > 0 && <span className="text-moss"> · {o.sharedWallets.length} shared wallet{o.sharedWallets.length > 1 ? 's' : ''}</span>}
+                                </div>
+                              </div>
+                              <div className="k-num shrink-0 text-[17px]" style={{ color: toneHex(tone) }}>{o.sim.toFixed(2)}</div>
+                            </div>
+                            <Meter value={o.sim} tone={tone} height={4} className="mt-2.5" />
+                          </button>
+                        </li>
+                      )
+                    })}
+                  </ul>
+                  <p className="px-5 pb-4 text-[12px] leading-relaxed text-dim">
+                    Similarity = Σ weight × (1 − gap) over the 8 habits. Above 0.85 is a strong lead, 0.70–0.85 worth a look, below that is noise.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => go('habits')}
+                    className="mx-5 mb-4 flex items-center gap-1.5 text-[13.5px] text-text/90 hover:text-text"
+                  >
+                    See what matches with {sel.id} <ArrowRight className="size-3.5" />
+                  </button>
+                </Card>
+              </div>
+            ),
+          },
+          {
+            key: 'habits',
+            label: 'Habit by habit',
+            icon: ListChecks,
+            badge: `${matches.length}/8`,
+            render: () => (
+              <div className="grid grid-cols-1 gap-3 xl:grid-cols-[1.15fr_1fr]">
+                <Card className="h-full pb-4">
+                  <CardHeader
+                    title={`What matches, what differs — ${sel.id}`}
+                    tech="per-habit gap · contribution = weight × agreement"
+                    right={<Chip tone={simTone} dot>{matches.length} of 8 habits agree</Chip>}
+                  />
+                  <AnimatePresence mode="wait">
                     <motion.div
                       key={sel.id}
-                      initial={{ opacity: 0, scale: 0.8 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0, scale: 0.8 }}
-                      className="rounded-xl bg-[#141415]/80 px-2 py-1 backdrop-blur"
+                      initial={{ opacity: 0, y: 6 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -6 }}
+                      transition={{ duration: 0.25 }}
+                      className="grid grid-cols-1 gap-4 px-5 pt-3 md:grid-cols-2"
                     >
-                      <div className="k-num text-[20px] leading-none" style={{ color: toneHex(simTone) }}>{sel.sim.toFixed(2)}</div>
-                      <div className="text-[11px] text-dim">similarity</div>
+                      <BreakdownList title="What matches" icon={<Check className="size-3.5 text-moss" />} rows={matches} sel={sel} tone="moss" empty="No habits close enough to count as a match." />
+                      <BreakdownList title="What differs" icon={<X className="size-3.5 text-gold" />} rows={differs} sel={sel} tone="gold" empty="Every habit is within tolerance." />
                     </motion.div>
                   </AnimatePresence>
-                </div>
-              </div>
-              <ul className="space-y-0.5">
-                {AXES.map((a, i) => (
-                  <li
-                    key={a.key}
-                    onMouseEnter={() => setAxis(i)}
-                    onMouseLeave={() => setAxis(null)}
-                    className={cn('flex items-start gap-2.5 rounded-lg px-2 py-1.5 transition-colors', axis === i ? 'bg-white/[0.05]' : 'hover:bg-white/[0.025]')}
-                  >
-                    <span className="k-mono mt-0.5 w-3 shrink-0 text-[11.5px] text-dim">{i + 1}</span>
-                    <div className="min-w-0 flex-1">
-                      <div className="text-[13.5px] leading-snug text-text/90">{a.plain}</div>
-                      <div className="text-[11.5px] text-dim">{a.tech}</div>
+                </Card>
+
+                <Card className="h-full pb-5">
+                  <CardHeader
+                    title="When they work"
+                    tech="transfers · day × 2-hour block (IST) · cosine overlap of the two grids"
+                    right={<Chip tone={overlap > 0.85 ? 'crimson' : 'neutral'} dot>{Math.round(overlap * 100)}% overlap</Chip>}
+                  />
+                  <div className="flex flex-wrap justify-center gap-x-6 gap-y-4 px-5 pt-4">
+                    <div>
+                      <div className="mb-2 flex items-center gap-1.5 text-[12.5px] text-muted">
+                        <span className="size-1.5 rounded-full bg-sky" /> This case <span className="text-dim">· wallet cluster, 30 days</span>
+                      </div>
+                      <HeatGrid data={CURRENT_HEAT} tone="sky" cell={12} gap={3} rowLabels={DAYS} colLabels={COLS} title={(r, c, v) => `${DAYS[r]} ${c * 2}:00–${c * 2 + 2}:00 · ${Math.round(v * 12)} transfers`} />
                     </div>
-                    <span className="k-num shrink-0 pt-0.5 text-[12px] text-muted">{Math.round(a.w * 100)}%</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </Card>
-        </Reveal>
-
-        <Reveal delay={0.15}>
-          <Card className="h-full">
-            <CardHeader title="Most similar operators" tech="ranked by weighted habit similarity · select one to compare" right={<Chip tone="neutral">5 of 412</Chip>} />
-            <ul className="mt-3 space-y-1.5 px-3 pb-3">
-              {RANKED.map((o, idx) => {
-                const active = o.id === selId
-                const tone = o.sim >= 0.85 ? 'crimson' : o.sim >= 0.7 ? 'gold' : 'neutral'
-                return (
-                  <li key={o.id}>
-                    <button
-                      type="button"
-                      onClick={() => setSelId(o.id)}
-                      aria-pressed={active}
-                      className={cn(
-                        'relative w-full rounded-xl border px-3 py-2.5 text-left transition-colors',
-                        active ? 'border-line-2 bg-white/[0.045]' : 'border-line bg-white/[0.012] hover:border-line-2 hover:bg-white/[0.03]',
-                      )}
-                    >
-                      {active && (
-                        <motion.span
-                          layoutId="fp-sel"
-                          className="absolute inset-y-2 left-0 w-[3px] rounded-full"
-                          style={{ background: toneHex(o.tone), boxShadow: `0 0 10px ${toneA(o.tone, 0.8)}` }}
-                        />
-                      )}
-                      <div className="flex items-center gap-3">
-                        <span className="k-num grid size-9 shrink-0 place-items-center rounded-lg border border-line-2 text-[12.5px]" style={{ color: toneHex(o.tone) }}>
-                          #{idx + 1}
-                        </span>
-                        <div className="min-w-0 flex-1">
-                          <div className="flex flex-wrap items-center gap-x-2 text-[14px] text-text">
-                            Operator {o.id}
-                            <span className="text-[12px] text-dim">· linked to {o.syndicate}</span>
-                            {linked[o.id] && <Chip tone="moss" className="py-0 text-[11px]">lead</Chip>}
-                          </div>
-                          <div className="truncate text-[12px] text-dim">
-                            {o.syndicateName} · {o.cases} cases · last active {o.lastSeen}
-                            {o.sharedWallets.length > 0 && <span className="text-moss"> · {o.sharedWallets.length} shared wallet{o.sharedWallets.length > 1 ? 's' : ''}</span>}
-                          </div>
-                        </div>
-                        <div className="k-num shrink-0 text-[17px]" style={{ color: toneHex(tone) }}>{o.sim.toFixed(2)}</div>
+                    <div>
+                      <div className="mb-2 flex items-center gap-1.5 text-[12.5px] text-muted">
+                        <span className="size-1.5 rounded-full" style={{ background: toneHex(sel.tone) }} /> {sel.id} <span className="text-dim">· {sel.cases} cases</span>
                       </div>
-                      <Meter value={o.sim} tone={tone} height={4} className="mt-2.5" />
-                    </button>
-                  </li>
-                )
-              })}
-            </ul>
-            <p className="px-5 pb-4 text-[12px] leading-relaxed text-dim">
-              Similarity = Σ weight × (1 − gap) over the 8 habits. Above 0.85 is a strong lead, 0.70–0.85 worth a look, below that is noise.
-            </p>
-          </Card>
-        </Reveal>
-      </div>
-
-      {/* ── Breakdown + active hours ── */}
-      <div className="grid grid-cols-1 gap-3 xl:grid-cols-[1.15fr_1fr]">
-        <Reveal delay={0.1}>
-          <Card className="h-full pb-4">
-            <CardHeader
-              title={`What matches, what differs — ${sel.id}`}
-              tech="per-habit gap · contribution = weight × agreement"
-              right={<Chip tone={simTone} dot>{matches.length} of 8 habits agree</Chip>}
-            />
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={sel.id}
-                initial={{ opacity: 0, y: 6 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -6 }}
-                transition={{ duration: 0.25 }}
-                className="grid grid-cols-1 gap-4 px-5 pt-3 md:grid-cols-2"
-              >
-                <BreakdownList title="What matches" icon={<Check className="size-3.5 text-moss" />} rows={matches} sel={sel} tone="moss" empty="No habits close enough to count as a match." />
-                <BreakdownList title="What differs" icon={<X className="size-3.5 text-gold" />} rows={differs} sel={sel} tone="gold" empty="Every habit is within tolerance." />
-              </motion.div>
-            </AnimatePresence>
-          </Card>
-        </Reveal>
-
-        <Reveal delay={0.15}>
-          <Card className="h-full pb-5">
-            <CardHeader
-              title="When they work"
-              tech="transfers · day × 2-hour block (IST) · cosine overlap of the two grids"
-              right={<Chip tone={overlap > 0.85 ? 'crimson' : 'neutral'} dot>{Math.round(overlap * 100)}% overlap</Chip>}
-            />
-            <div className="flex flex-wrap justify-center gap-x-6 gap-y-4 px-5 pt-4">
-              <div>
-                <div className="mb-2 flex items-center gap-1.5 text-[12.5px] text-muted">
-                  <span className="size-1.5 rounded-full bg-sky" /> This case <span className="text-dim">· wallet cluster, 30 days</span>
-                </div>
-                <HeatGrid data={CURRENT_HEAT} tone="sky" cell={12} gap={3} rowLabels={DAYS} colLabels={COLS} title={(r, c, v) => `${DAYS[r]} ${c * 2}:00–${c * 2 + 2}:00 · ${Math.round(v * 12)} transfers`} />
+                      <motion.div key={sel.id} initial={{ opacity: 0.3 }} animate={{ opacity: 1 }} transition={{ duration: 0.4 }}>
+                        <HeatGrid data={opHeat} tone={sel.tone} cell={12} gap={3} rowLabels={DAYS} colLabels={COLS} title={(r, c, v) => `${DAYS[r]} ${c * 2}:00–${c * 2 + 2}:00 · ${Math.round(v * 40)} transfers`} />
+                      </motion.div>
+                    </div>
+                  </div>
+                  <p className="mt-4 px-5 text-[12.5px] leading-relaxed text-muted">
+                    {overlap > 0.85
+                      ? 'Both are busiest between 8 pm and midnight on weekdays — a shift pattern typical of a staffed scam desk.'
+                      : 'Working hours only partly line up — this operator keeps a different schedule.'}
+                  </p>
+                </Card>
               </div>
-              <div>
-                <div className="mb-2 flex items-center gap-1.5 text-[12.5px] text-muted">
-                  <span className="size-1.5 rounded-full" style={{ background: toneHex(sel.tone) }} /> {sel.id} <span className="text-dim">· {sel.cases} cases</span>
-                </div>
-                <motion.div key={sel.id} initial={{ opacity: 0.3 }} animate={{ opacity: 1 }} transition={{ duration: 0.4 }}>
-                  <HeatGrid data={opHeat} tone={sel.tone} cell={12} gap={3} rowLabels={DAYS} colLabels={COLS} title={(r, c, v) => `${DAYS[r]} ${c * 2}:00–${c * 2 + 2}:00 · ${Math.round(v * 40)} transfers`} />
-                </motion.div>
-              </div>
-            </div>
-            <p className="mt-4 px-5 text-[12.5px] leading-relaxed text-muted">
-              {overlap > 0.85
-                ? 'Both are busiest between 8 pm and midnight on weekdays — a shift pattern typical of a staffed scam desk.'
-                : 'Working hours only partly line up — this operator keeps a different schedule.'}
-            </p>
-          </Card>
-        </Reveal>
-      </div>
-
-      {/* ── Amount splitting + disclaimer ── */}
-      <div className="grid grid-cols-1 gap-3 xl:grid-cols-[1.4fr_1fr]">
-        <Reveal delay={0.1}>
-          <Card className="h-full pb-5">
-            <CardHeader
-              title="How they split the money"
-              tech="outgoing transfer sizes (USDT) · this case vs operator history"
-              right={<Chip tone="ember" dot>4,950 USDT ladder</Chip>}
-            />
-            <div className="grid grid-cols-1 gap-5 px-5 pt-3 md:grid-cols-[0.9fr_1.3fr]">
-              <div>
-                <div className="text-[12.5px] text-muted">This case: {CASE.amountCrypto.toLocaleString('en-IN')} USDT left the scammer's wallet as</div>
-                <div className="mt-3 space-y-2">
-                  {[0, 1, 2].map((i) => (
-                    <motion.div
-                      key={i}
-                      initial={{ opacity: 0, x: -10 }}
-                      whileInView={{ opacity: 1, x: 0 }}
-                      viewport={{ once: true }}
-                      transition={{ delay: 0.15 + i * 0.12 }}
-                      className="flex items-center gap-2.5"
-                    >
-                      <span className="k-mono w-12 text-[11.5px] text-dim">19:42:{11 + i * 14}</span>
-                      <div className="relative h-7 flex-1 overflow-hidden rounded-lg border border-ember/30 bg-ember/10">
-                        <motion.div
-                          className="absolute inset-y-0 left-0 bg-ember/25"
-                          initial={{ width: 0 }}
-                          whileInView={{ width: '99%' }}
-                          viewport={{ once: true }}
-                          transition={{ duration: 0.8, delay: 0.2 + i * 0.12 }}
-                        />
-                        <span className="k-num relative flex h-full items-center px-2.5 text-[14px] text-text">4,950 USDT</span>
-                      </div>
-                    </motion.div>
-                  ))}
-                </div>
-                <p className="mt-3 text-[12.5px] leading-relaxed text-muted">
-                  Three identical chunks, 14 seconds apart. Staying just under 5,000 may be meant to avoid an exchange's extra checks — that motive is our guess, the pattern is fact.
-                </p>
-              </div>
-              <div>
-                <div className="flex items-center justify-between text-[12.5px]">
-                  <span className="text-muted">{sel.id} · all transfers by size</span>
-                  <span className="k-num text-text">{sel.splits.reduce((a, b) => a + b, 0)} transfers</span>
-                </div>
-                <BarColumns
-                  key={sel.id}
-                  className="mt-7"
-                  height={130}
-                  tone={sel.tone}
-                  data={SPLIT_BUCKETS.map((l, i) => ({ label: l, value: sel.splits[i], highlight: sel.splits[i] === Math.max(...sel.splits) }))}
-                  format={(v) => `${v} transfers`}
+            ),
+          },
+          {
+            key: 'money',
+            label: 'How they split money',
+            icon: Split,
+            render: () => (
+              <Card className="pb-5">
+                <CardHeader
+                  title="How they split the money"
+                  tech="outgoing transfer sizes (USDT) · this case vs operator history"
+                  right={<Chip tone="ember" dot>4,950 USDT ladder</Chip>}
                 />
-                <div className="mt-3 flex items-start gap-2 rounded-lg border border-line bg-white/[0.02] px-3 py-2 text-[12.5px] leading-relaxed text-muted">
-                  <Split className="mt-0.5 size-3.5 shrink-0 text-dim" />
-                  <span>
-                    {sel.splitNote} <span className="text-dim">This case: {CURRENT_SPLITS[5]} of {CURRENT_SPLITS.reduce((a, b) => a + b, 0)} transfers at 4,950.</span>
-                  </span>
+                <div className="grid grid-cols-1 gap-5 px-5 pt-3 md:grid-cols-[0.9fr_1.3fr]">
+                  <div>
+                    <div className="text-[12.5px] text-muted">This case: {CASE.amountCrypto.toLocaleString('en-IN')} USDT left the scammer's wallet as</div>
+                    <div className="mt-3 space-y-2">
+                      {[0, 1, 2].map((i) => (
+                        <motion.div
+                          key={i}
+                          initial={{ opacity: 0, x: -10 }}
+                          whileInView={{ opacity: 1, x: 0 }}
+                          viewport={{ once: true }}
+                          transition={{ delay: 0.15 + i * 0.12 }}
+                          className="flex items-center gap-2.5"
+                        >
+                          <span className="k-mono w-12 text-[11.5px] text-dim">19:42:{11 + i * 14}</span>
+                          <div className="relative h-7 flex-1 overflow-hidden rounded-lg border border-ember/30 bg-ember/10">
+                            <motion.div
+                              className="absolute inset-y-0 left-0 bg-ember/25"
+                              initial={{ width: 0 }}
+                              whileInView={{ width: '99%' }}
+                              viewport={{ once: true }}
+                              transition={{ duration: 0.8, delay: 0.2 + i * 0.12 }}
+                            />
+                            <span className="k-num relative flex h-full items-center px-2.5 text-[14px] text-text">4,950 USDT</span>
+                          </div>
+                        </motion.div>
+                      ))}
+                    </div>
+                    <p className="mt-3 text-[12.5px] leading-relaxed text-muted">
+                      Three identical chunks, 14 seconds apart. Staying just under 5,000 may be meant to avoid an exchange's extra checks — that motive is our guess, the pattern is fact.
+                    </p>
+                  </div>
+                  <div>
+                    <div className="flex items-center justify-between text-[12.5px]">
+                      <span className="text-muted">{sel.id} · all transfers by size</span>
+                      <span className="k-num text-text">{sel.splits.reduce((a, b) => a + b, 0)} transfers</span>
+                    </div>
+                    <BarColumns
+                      key={sel.id}
+                      className="mt-7"
+                      height={130}
+                      tone={sel.tone}
+                      data={SPLIT_BUCKETS.map((l, i) => ({ label: l, value: sel.splits[i], highlight: sel.splits[i] === Math.max(...sel.splits) }))}
+                      format={(v) => `${v} transfers`}
+                    />
+                    <div className="mt-3 flex items-start gap-2 rounded-lg border border-line bg-white/[0.02] px-3 py-2 text-[12.5px] leading-relaxed text-muted">
+                      <Split className="mt-0.5 size-3.5 shrink-0 text-dim" />
+                      <span>
+                        {sel.splitNote} <span className="text-dim">This case: {CURRENT_SPLITS[5]} of {CURRENT_SPLITS.reduce((a, b) => a + b, 0)} transfers at 4,950.</span>
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </Card>
+            ),
+          },
+          {
+            key: 'act',
+            label: 'Before you act',
+            icon: ShieldAlert,
+            render: () => (
+              <div className="grid grid-cols-1 gap-3 xl:grid-cols-[1fr_1fr]">
+                <Card variant="glass" className="h-full pb-5">
+                  <CardHeader title="Read this before acting" tech="how to use a behavioural match" icon={<ShieldAlert className="size-4 text-gold" />} />
+                  <div className="space-y-3 px-5 pt-3">
+                    <div className="flex items-start gap-2.5 rounded-xl border border-gold/25 bg-gold/[0.06] px-3 py-2.5">
+                      <TriangleAlert className="mt-0.5 size-4 shrink-0 text-gold" />
+                      <p className="text-[13.5px] leading-relaxed text-text/90">
+                        Similarity is an <span className="text-gold">investigative lead, not evidence of identity</span>. Two operators can share habits by coincidence or by using the same scam software.
+                      </p>
+                    </div>
+                    <div>
+                      <div className="text-[13px] text-muted">Combine it with hard links from the syndicate graph:</div>
+                      <ul className="mt-2 space-y-1.5">
+                        {sel.sharedWallets.length > 0 ? (
+                          sel.sharedWallets.map((w) => (
+                            <li key={w} className="flex items-center justify-between gap-2 rounded-lg border border-line bg-white/[0.015] px-2.5 py-1.5">
+                              <span className="flex items-center gap-1.5 text-[12.5px] text-muted">
+                                <Link2 className="size-3.5 text-moss" /> Shared wallet
+                              </span>
+                              <Address addr={w} chain="TRON" className="text-[12.5px]" />
+                            </li>
+                          ))
+                        ) : (
+                          <li className="k-dashed px-3 py-2.5 text-[12.5px] text-muted">No shared wallets with {sel.id} yet — treat this match as weak until one appears.</li>
+                        )}
+                      </ul>
+                    </div>
+                    <div className="flex items-center justify-between rounded-lg bg-white/[0.03] px-3 py-2 text-[13px]">
+                      <span className="text-muted">Combined lead strength</span>
+                      <Chip tone={sel.sharedWallets.length > 0 && sel.sim >= 0.85 ? 'crimson' : sel.sharedWallets.length > 0 ? 'gold' : 'neutral'} dot>
+                        {sel.sharedWallets.length > 0 && sel.sim >= 0.85 ? 'Strong — habits + shared wallets' : sel.sharedWallets.length > 0 ? 'Moderate' : 'Habits only — weak'}
+                      </Chip>
+                    </div>
+                    <Link to="/syndicates" className="flex items-center justify-between rounded-lg px-1 py-1 text-[13.5px] text-text/90 hover:text-text">
+                      See the hard links in the syndicate graph <ArrowRight className="size-3.5" />
+                    </Link>
+                  </div>
+                </Card>
+
+                <div className="space-y-3">
+                  <p className="text-[13.5px] text-muted">The six kinds of habit the match is built from:</p>
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    {HABITS.map((h) => (
+                      <div key={h.plain} className="flex items-center gap-2.5 rounded-2xl border border-line bg-white/[0.015] px-3 py-2.5">
+                        <IconTile size={30}>{h.icon}</IconTile>
+                        <div className="min-w-0">
+                          <div className="truncate text-[13px] text-text/90">{h.plain}</div>
+                          <div className="truncate text-[11.5px] text-dim">{h.tech}</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
-            </div>
-          </Card>
-        </Reveal>
-
-        <Reveal delay={0.15}>
-          <Card variant="glass" className="h-full pb-5">
-            <CardHeader title="Read this before acting" tech="how to use a behavioural match" icon={<ShieldAlert className="size-4 text-gold" />} />
-            <div className="space-y-3 px-5 pt-3">
-              <div className="flex items-start gap-2.5 rounded-xl border border-gold/25 bg-gold/[0.06] px-3 py-2.5">
-                <TriangleAlert className="mt-0.5 size-4 shrink-0 text-gold" />
-                <p className="text-[13.5px] leading-relaxed text-text/90">
-                  Similarity is an <span className="text-gold">investigative lead, not evidence of identity</span>. Two operators can share habits by coincidence or by using the same scam software.
-                </p>
-              </div>
-              <div>
-                <div className="text-[13px] text-muted">Combine it with hard links from the syndicate graph:</div>
-                <ul className="mt-2 space-y-1.5">
-                  {sel.sharedWallets.length > 0 ? (
-                    sel.sharedWallets.map((w) => (
-                      <li key={w} className="flex items-center justify-between gap-2 rounded-lg border border-line bg-white/[0.015] px-2.5 py-1.5">
-                        <span className="flex items-center gap-1.5 text-[12.5px] text-muted">
-                          <Link2 className="size-3.5 text-moss" /> Shared wallet
-                        </span>
-                        <Address addr={w} chain="TRON" className="text-[12.5px]" />
-                      </li>
-                    ))
-                  ) : (
-                    <li className="k-dashed px-3 py-2.5 text-[12.5px] text-muted">No shared wallets with {sel.id} yet — treat this match as weak until one appears.</li>
-                  )}
-                </ul>
-              </div>
-              <div className="flex items-center justify-between rounded-lg bg-white/[0.03] px-3 py-2 text-[13px]">
-                <span className="text-muted">Combined lead strength</span>
-                <Chip tone={sel.sharedWallets.length > 0 && sel.sim >= 0.85 ? 'crimson' : sel.sharedWallets.length > 0 ? 'gold' : 'neutral'} dot>
-                  {sel.sharedWallets.length > 0 && sel.sim >= 0.85 ? 'Strong — habits + shared wallets' : sel.sharedWallets.length > 0 ? 'Moderate' : 'Habits only — weak'}
-                </Chip>
-              </div>
-              <Link to="/syndicates" className="flex items-center justify-between rounded-lg px-1 py-1 text-[13.5px] text-text/90 hover:text-text">
-                See the hard links in the syndicate graph <ArrowRight className="size-3.5" />
-              </Link>
-            </div>
-          </Card>
-        </Reveal>
-      </div>
-
-      {/* ── Habit glossary strip ── */}
-      <Reveal delay={0.1}>
-        <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
-          {HABITS.map((h) => (
-            <div key={h.plain} className="flex items-center gap-2.5 rounded-2xl border border-line bg-white/[0.015] px-3 py-2.5">
-              <IconTile size={30}>{h.icon}</IconTile>
-              <div className="min-w-0">
-                <div className="truncate text-[13px] text-text/90">{h.plain}</div>
-                <div className="truncate text-[11.5px] text-dim">{h.tech}</div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </Reveal>
+            ),
+          },
+        ]}
+      />
     </div>
   )
 }

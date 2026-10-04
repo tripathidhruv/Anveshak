@@ -1,6 +1,7 @@
 import * as React from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import {
+  ArrowRight,
   Check,
   CheckCircle2,
   Copy,
@@ -8,10 +9,12 @@ import {
   FileJson,
   FileSpreadsheet,
   FileText,
+  Gavel,
   Image as ImageIcon,
   Link2,
   Loader2,
   Lock,
+  Package,
   RotateCcw,
   Scale,
   Send,
@@ -32,6 +35,7 @@ import {
   KV,
   PageHeader,
   Reveal,
+  SubTabs,
   toneA,
   toneHex,
 } from '@/components/kit'
@@ -70,8 +74,21 @@ function HashTag({ hash, head = 8, tail = 6, className }: { hash: string; head?:
   )
 }
 
+function NextStep({ text, actions }: { text: string; actions: React.ReactNode }) {
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-line bg-white/[0.02] px-4 py-3">
+      <span className="text-[13.5px] text-muted">{text}</span>
+      <div className="flex flex-wrap items-center gap-2">{actions}</div>
+    </div>
+  )
+}
+
 export default function EvidencePage() {
   const [toast, setToast] = React.useState(false)
+  // lifted so the verify run and the notice workflow survive switching sub-tabs
+  const chain = useHashChain()
+  const desk = useNoticeDesk()
+  const sentCount = NOTICES.filter((n) => desk.steps[n.key] >= 3).length
   React.useEffect(() => {
     if (!toast) return
     const t = setTimeout(() => setToast(false), 4200)
@@ -100,81 +117,131 @@ export default function EvidencePage() {
         />
       </Reveal>
 
-      {/* ── Pack contents + seal summary ── */}
-      <div className="grid grid-cols-1 gap-3 xl:grid-cols-[1.45fr_1fr]">
-        <Reveal delay={0.05}>
-          <Card className="h-full pb-3">
-            <CardHeader
-              title="What's in the evidence pack"
-              tech="6 artefacts · each fingerprinted with SHA-256 · click a hash to copy it"
-              right={<Chip tone="moss" dot>Sealed</Chip>}
-            />
-            <ul className="mt-2 divide-y divide-line px-3">
-              {ARTEFACTS.map((a, i) => (
-                <motion.li
-                  key={a.id}
-                  initial={{ opacity: 0, x: -8 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.1 + i * 0.05 }}
-                  className="flex flex-wrap items-center gap-3 rounded-lg px-2 py-2.5 hover:bg-white/[0.025]"
-                >
-                  <IconTile tone={a.tone} size={34}>{FORMAT_ICON[a.format]}</IconTile>
-                  <div className="min-w-[150px] flex-1">
-                    <div className="flex items-center gap-2 text-[14px] text-text">
-                      {a.name}
-                      <span className="k-mono rounded bg-white/[0.06] px-1 text-[11px] text-muted">{a.format}</span>
-                    </div>
-                    <div className="truncate text-[12px] text-dim">{a.plain}</div>
+      <SubTabs
+        tabs={[
+          {
+            key: 'pack',
+            label: 'Evidence pack',
+            icon: Package,
+            badge: ARTEFACTS.length,
+            render: (go) => (
+              <div className="space-y-3">
+            <div className="grid grid-cols-1 gap-3 xl:grid-cols-[1.45fr_1fr]">
+              <Reveal delay={0.05}>
+                <Card className="h-full pb-3">
+                  <CardHeader
+                    title="What's in the evidence pack"
+                    tech="6 artefacts · each fingerprinted with SHA-256 · click a hash to copy it"
+                    right={<Chip tone="moss" dot>Sealed</Chip>}
+                  />
+                  <ul className="mt-2 divide-y divide-line px-3">
+                    {ARTEFACTS.map((a, i) => (
+                      <motion.li
+                        key={a.id}
+                        initial={{ opacity: 0, x: -8 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.1 + i * 0.05 }}
+                        className="flex flex-wrap items-center gap-3 rounded-lg px-2 py-2.5 hover:bg-white/[0.025]"
+                      >
+                        <IconTile tone={a.tone} size={34}>{FORMAT_ICON[a.format]}</IconTile>
+                        <div className="min-w-[150px] flex-1">
+                          <div className="flex items-center gap-2 text-[14px] text-text">
+                            {a.name}
+                            <span className="k-mono rounded bg-white/[0.06] px-1 text-[11px] text-muted">{a.format}</span>
+                          </div>
+                          <div className="truncate text-[12px] text-dim">{a.plain}</div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <HashTag hash={a.sha256} />
+                          <span className="k-num w-14 text-right text-[13.5px] text-muted">{a.size}</span>
+                        </div>
+                      </motion.li>
+                    ))}
+                  </ul>
+                </Card>
+              </Reveal>
+              <Reveal delay={0.1}>
+                <Card variant="speckle" grain className="h-full pb-4">
+                  <CardHeader title="Pack seal" tech="who sealed it, when, and how it is protected" icon={<Lock className="size-4" />} />
+                  <div className="relative px-5 pt-2">
+                    <KV k="Sealed" v={<span className="k-num">04 Sep 2026 · 11:47 IST</span>} />
+                    <KV k="Sealed by" v={`${CASE.officer}, Cyber PS Jaipur`} />
+                    <KV k="Method" v="SHA-256, hash-chained" />
+                    <KV k="Root hash" v={<HashTag hash={ROOT} head={6} tail={4} className="-mr-1" />} />
+                    <KV k="Total size" v={<span className="k-num">4.7 MB · 23 pages</span>} />
+                    <div className="mt-3 text-[12px] uppercase tracking-[0.08em] text-dim">Chain of custody</div>
+                    <ol className="relative mt-2 space-y-2.5 pl-4">
+                      <span className="absolute bottom-1 left-[3px] top-1 w-px bg-line-2" />
+                      {CUSTODY.map((c, i) => (
+                        <li key={c.at} className="relative">
+                          <span
+                            className="absolute -left-4 top-1.5 size-[7px] rounded-full"
+                            style={{ background: i === CUSTODY.length - 1 ? toneHex('moss') : 'rgba(255,255,255,0.3)', boxShadow: i === CUSTODY.length - 1 ? `0 0 8px ${toneA('moss', 0.8)}` : undefined }}
+                          />
+                          <div className="flex items-baseline gap-2 text-[13px]">
+                            <span className="k-mono text-[12px] text-dim">{c.at}</span>
+                            <span className="text-text/90">{c.what}</span>
+                          </div>
+                          <div className="pl-[42px] text-[11.5px] text-dim">{c.who}</div>
+                        </li>
+                      ))}
+                    </ol>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <HashTag hash={a.sha256} />
-                    <span className="k-num w-14 text-right text-[13.5px] text-muted">{a.size}</span>
-                  </div>
-                </motion.li>
-              ))}
-            </ul>
-          </Card>
-        </Reveal>
-        <Reveal delay={0.1}>
-          <Card variant="speckle" grain className="h-full pb-4">
-            <CardHeader title="Pack seal" tech="who sealed it, when, and how it is protected" icon={<Lock className="size-4" />} />
-            <div className="relative px-5 pt-2">
-              <KV k="Sealed" v={<span className="k-num">04 Sep 2026 · 11:47 IST</span>} />
-              <KV k="Sealed by" v={`${CASE.officer}, Cyber PS Jaipur`} />
-              <KV k="Method" v="SHA-256, hash-chained" />
-              <KV k="Root hash" v={<HashTag hash={ROOT} head={6} tail={4} className="-mr-1" />} />
-              <KV k="Total size" v={<span className="k-num">4.7 MB · 23 pages</span>} />
-              <div className="mt-3 text-[12px] uppercase tracking-[0.08em] text-dim">Chain of custody</div>
-              <ol className="relative mt-2 space-y-2.5 pl-4">
-                <span className="absolute bottom-1 left-[3px] top-1 w-px bg-line-2" />
-                {CUSTODY.map((c, i) => (
-                  <li key={c.at} className="relative">
-                    <span
-                      className="absolute -left-4 top-1.5 size-[7px] rounded-full"
-                      style={{ background: i === CUSTODY.length - 1 ? toneHex('moss') : 'rgba(255,255,255,0.3)', boxShadow: i === CUSTODY.length - 1 ? `0 0 8px ${toneA('moss', 0.8)}` : undefined }}
-                    />
-                    <div className="flex items-baseline gap-2 text-[13px]">
-                      <span className="k-mono text-[12px] text-dim">{c.at}</span>
-                      <span className="text-text/90">{c.what}</span>
-                    </div>
-                    <div className="pl-[42px] text-[11.5px] text-dim">{c.who}</div>
-                  </li>
-                ))}
-              </ol>
+                </Card>
+              </Reveal>
             </div>
-          </Card>
-        </Reveal>
-      </div>
-
-      {/* ── Hash chain ── */}
-      <Reveal delay={0.1}>
-        <HashChain />
-      </Reveal>
-
-      {/* ── Notice drafting + approval ── */}
-      <Reveal delay={0.1}>
-        <NoticeDesk />
-      </Reveal>
+                <NextStep
+                  text="Pack sealed. Next: prove nothing was changed, then draft the notices for the exchange."
+                  actions={
+                    <>
+                      <Button size="sm" variant="quiet" onClick={() => go('integrity')}>
+                        <ShieldCheck /> Check integrity
+                      </Button>
+                      <Button size="sm" onClick={() => go('lawful')}>
+                        <Gavel /> Go to lawful actions <ArrowRight />
+                      </Button>
+                    </>
+                  }
+                />
+              </div>
+            ),
+          },
+          {
+            key: 'integrity',
+            label: 'Integrity check',
+            icon: ShieldCheck,
+            badge: chain.phase === 'done' ? 'verified' : chain.phase === 'failed' ? 'mismatch' : undefined,
+            render: (go) => (
+              <div className="space-y-3">
+                <p className="text-[13.5px] text-muted">Proves to a court that no file in the pack was changed after it was sealed.</p>
+                <HashChain s={chain} />
+                <NextStep
+                  text="Next: send the notices — each one carries this pack's root hash."
+                  actions={
+                    <Button size="sm" onClick={() => go('lawful')}>
+                      <Gavel /> Go to lawful actions <ArrowRight />
+                    </Button>
+                  }
+                />
+              </div>
+            ),
+          },
+          {
+            key: 'lawful',
+            label: 'Lawful actions',
+            icon: Gavel,
+            badge: `${sentCount}/${NOTICES.length} sent`,
+            render: () => (
+              <div className="space-y-3">
+                <p className="text-[13.5px] text-muted">
+                  Pre-filled notices for the exchange and the approval chain that sends them. Every notice is a draft for the officer to review.
+                </p>
+                <NoticeDesk s={desk} />
+              </div>
+            ),
+          },
+        ]}
+      />
 
       {/* ── Toast ── */}
       <AnimatePresence>
@@ -207,7 +274,7 @@ export default function EvidencePage() {
 type Phase = 'idle' | 'running' | 'done' | 'failed'
 const TAMPER_AT = 3
 
-function HashChain() {
+function useHashChain() {
   const [phase, setPhase] = React.useState<Phase>('idle')
   const [cursor, setCursor] = React.useState(-1)
   const [tamper, setTamper] = React.useState(false)
@@ -247,6 +314,11 @@ function HashChain() {
     return 'idle'
   }
 
+  return { phase, cursor, tamper, setTamper, start, reset, statusOf }
+}
+
+function HashChain({ s: chain }: { s: ReturnType<typeof useHashChain> }) {
+  const { phase, cursor, tamper, setTamper, start, reset, statusOf } = chain
   return (
     <Card variant="glass" className="pb-5">
       <CardHeader
@@ -389,13 +461,11 @@ const STEP_LOG = [
 const NOTICE_TYPE: Record<NoticeKey, string> = { n94: 'BNSS_94_DATA_FREEZE', n106: 'BNSS_106_SEIZURE', n63: 'BSA_63_CERTIFICATE' }
 const ACK_ID: Record<NoticeKey, string> = { n94: 'SHY/ACK/2026/0904/118734', n106: 'SHY/ACK/2026/0904/118741', n63: 'SHY/ACK/2026/0904/118752' }
 
-function NoticeDesk() {
+function useNoticeDesk() {
   const [tab, setTab] = React.useState<NoticeKey>('n94')
   const [steps, setSteps] = React.useState<Record<NoticeKey, number>>({ n94: 0, n106: 0, n63: 0 })
   const [sending, setSending] = React.useState<NoticeKey | null>(null)
   const [progress, setProgress] = React.useState(0)
-  const step = steps[tab]
-  const notice = NOTICES.find((n) => n.key === tab)!
 
   const advance = (k: NoticeKey) => setSteps((s) => ({ ...s, [k]: Math.min(4, s[k] + 1) }))
 
@@ -417,6 +487,13 @@ function NoticeDesk() {
     }
   }, [sending])
 
+  return { tab, setTab, steps, setSteps, sending, setSending, progress, advance }
+}
+
+function NoticeDesk({ s: desk }: { s: ReturnType<typeof useNoticeDesk> }) {
+  const { tab, setTab, steps, setSteps, sending, setSending, progress, advance } = desk
+  const step = steps[tab]
+  const notice = NOTICES.find((n) => n.key === tab)!
   const hub = ROUTE_A.trail[ROUTE_A.trail.length - 1]
   const payload = {
     portal: 'SAHYOG',

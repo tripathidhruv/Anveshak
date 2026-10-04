@@ -168,3 +168,10 @@ export type CaseListItemWire = {
   recoverabilityState: 'at_rest' | 'at_exchange' | 'moving' | 'unknown'
   recoverabilityDeadlineMinutes: number | null
 }
+
+/* ───────── typology (backend/app/api/v1/typology.py) ───────── */
+export type TypologyBand = 'strong' | 'present' | 'not_indicated'
+export type TypologyIndicator = { id: string; plain: string; tech: string; weight: number; value: number; contribution: number }
+export type TypologyClassOut = { id: string; name: string; score: number; band: TypologyBand; indicators: TypologyIndicator[] }
+/** Crime typology from on-chain behaviour: score = Σ weight × signal, every term returned. */
+export type TypologyOut = { primary: string; classes: TypologyClassOut[]; disclaimer: string; signalsUsed: number }

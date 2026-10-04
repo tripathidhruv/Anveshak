@@ -6,6 +6,7 @@
 import { CASES } from '@/data/demo'
 import { SAMPLE_COMPLAINT, SAMPLE_TX } from '@/data/intakeSamples'
 import type { AnveshakApi } from './index'
+import { scoreTypology } from './mockTypology'
 import type { CaseSummary, EntityType, IntakeEntity, IntakeField, IntakeParseOut, MemoryLookup } from './types'
 
 const wait = (ms: number, signal?: AbortSignal) =>
@@ -183,6 +184,10 @@ export const mockApi: AnveshakApi = {
   },
   async memoryStats() {
     return { wallets: 214806, cases: 18342, events: 402117, states: 28, syndicates: 41 }
+  },
+  async caseTypology(_caseId, signal) {
+    await wait(350, signal)
+    return scoreTypology()
   },
   async listCases() {
     await wait(250)

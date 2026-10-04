@@ -1,6 +1,6 @@
 import * as React from 'react'
 import { AnimatePresence, motion } from 'motion/react'
-import { Check, Eye, Filter, Info, Orbit, RotateCcw, ScanSearch, ShieldAlert, ShieldCheck, Sparkles, Waypoints } from 'lucide-react'
+import { ArrowRight, Check, Eye, Filter, Info, Orbit, RotateCcw, ScanSearch, ShieldAlert, ShieldCheck, Sparkles, Waypoints } from 'lucide-react'
 import {
   Address,
   Button,
@@ -11,6 +11,7 @@ import {
   IconTile,
   PageHeader,
   Reveal,
+  SubTabs,
   toneA,
   toneHex,
 } from '@/components/kit'
@@ -200,288 +201,329 @@ export default function RiskDiffusionPage() {
         </Reveal>
       </div>
 
-      {/* ── Graph + controls + worked example ── */}
-      <div className="grid grid-cols-1 gap-3 xl:grid-cols-[1.5fr_1fr]">
-        <Reveal delay={0.1}>
-          <Card variant="glass" className="h-full pb-4">
-            <CardHeader
-              title="Risk ripple from listed addresses"
-              tech="ring = hops away · node glow = diffused risk · line width = share of value that flowed · click any wallet"
-              icon={<Orbit className="size-4" />}
-              right={
-                running ? (
-                  <Chip tone="crimson" dot pulse>
-                    Spreading · hop {Math.max(0, stage)}
-                  </Chip>
-                ) : (
-                  <Chip tone="moss" dot>
-                    Diffusion complete
-                  </Chip>
-                )
-              }
-            />
-            <div className="px-2 pt-2 sm:px-5">
-              <DiffusionGraph params={params} result={result} selected={selected} onSelect={setSelected} runId={runId} stage={stage} />
-            </div>
-            <div className="mx-5 mt-2 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[12.5px] text-muted">
-              <Legend swatch={<span className="size-2.5 rounded-full" style={{ background: toneHex('crimson'), boxShadow: `0 0 8px ${toneA('crimson', 0.7)}` }} />} label="Listed address" />
-              <Legend swatch={<span className="size-2.5 rounded-full border" style={{ borderColor: toneHex('teal') }} />} label="Wallet on this case's trail" />
-              <Legend swatch={<span className="size-2.5 rounded-full border" style={{ borderColor: toneHex('gold') }} />} label="Exchange wallet" />
-              <Legend swatch={<span className="h-px w-4 border-t border-dashed border-white/40" />} label="Dust transfer (< 1%)" />
-              <span className="ml-auto text-dim">numbers = diffused risk, 0–1</span>
-            </div>
-          </Card>
-        </Reveal>
-
-        <div className="flex min-w-0 flex-col gap-3">
-          <Reveal delay={0.15}>
-            <Card className="pb-4">
-              <CardHeader
-                title="Tune the diffusion"
-                tech="every change recomputes the graph and the table"
-                icon={<Filter className="size-4" />}
-                right={
-                  changed ? (
-                    <button type="button" onClick={reset} className="k-btn-ghost inline-flex h-7 items-center gap-1 rounded-lg px-2.5 text-[12.5px]">
-                      <RotateCcw className="size-3" /> Defaults
-                    </button>
-                  ) : (
-                    <Chip tone="neutral">Defaults</Chip>
-                  )
-                }
-              />
-              <div className="mt-3 space-y-4 px-5">
-                <div>
-                  <div className="flex items-baseline justify-between">
-                    <label htmlFor="rd-decay" className="text-[14px] text-text">
-                      How fast risk fades per hop <span className="text-[12px] text-dim">· decay</span>
-                    </label>
-                    <span className="k-num text-[18px] text-text">{decay.toFixed(2)}</span>
-                  </div>
-                  <input
-                    id="rd-decay"
-                    type="range"
-                    min={0.2}
-                    max={0.8}
-                    step={0.05}
-                    value={decay}
-                    onChange={(e) => setDecay(Number(e.target.value))}
-                    className="mt-1.5 w-full accent-[var(--k-ember)]"
-                  />
-                  <div className="flex justify-between text-[12px] text-dim">
-                    <span>0.2 · fades fast</span>
-                    <span>0.8 · travels far</span>
-                  </div>
-                </div>
-
-                <div>
-                  <div className="mb-1.5 flex items-baseline justify-between">
-                    <span className="text-[14px] text-text">
-                      How far to look <span className="text-[12px] text-dim">· max hops</span>
-                    </span>
-                    <span className="text-[12px] text-dim">beyond this, risk is ignored</span>
-                  </div>
-                  <Tabs value={String(maxHops)} onValueChange={(v) => setMaxHops(Number(v))}>
-                    <TabsList className="h-8 w-full border border-line bg-white/[0.04]" aria-label="Maximum hops">
-                      {[1, 2, 3, 4].map((h) => (
-                        <TabsTrigger key={h} value={String(h)} className="h-full text-[13.5px] text-muted data-[state=active]:text-text">
-                          {h} hop{h > 1 ? 's' : ''}
-                        </TabsTrigger>
-                      ))}
-                    </TabsList>
-                  </Tabs>
-                </div>
-
-                <label className="flex cursor-pointer items-start justify-between gap-3">
-                  <span>
-                    <span className="block text-[14px] text-text">
-                      Ignore dust below 1% <span className="text-[12px] text-dim">· minimum value-share</span>
-                    </span>
-                    <span className="mt-0.5 block text-[12.5px] leading-snug text-dim">
-                      {ignoreDust
-                        ? `${dustEdges} tiny transfers ignored — they can't taint a wallet.`
-                        : `${dustEdges} tiny transfers counted — "dusting" can taint innocent wallets.`}
-                    </span>
-                  </span>
-                  <Switch
-                    checked={ignoreDust}
-                    onCheckedChange={setIgnoreDust}
-                    aria-label="Ignore dust transfers below 1%"
-                    className="mt-0.5 data-[state=checked]:bg-ember data-[state=unchecked]:bg-white/10"
-                  />
-                </label>
-
-                <div>
-                  <div className="mb-1.5 flex items-baseline justify-between">
-                    <span className="text-[14px] text-text">
-                      Spread from these lists <span className="text-[12px] text-dim">· list types</span>
-                    </span>
-                    <span className="text-[12px] text-dim">entries are synthetic</span>
-                  </div>
-                  <div className="flex flex-wrap gap-1.5">
-                    {LISTS.map((l) => {
-                      const on = lists.has(l.key)
-                      return (
-                        <button
-                          key={l.key}
-                          type="button"
-                          aria-pressed={on}
-                          onClick={() => toggleList(l.key)}
-                          title={l.tech}
-                          className={cn(
-                            'inline-flex h-7 items-center gap-1.5 rounded-full border px-2.5 text-[13px] transition-colors',
-                            on ? 'border-crimson/40 bg-crimson/[0.12] text-text' : 'border-line-2 bg-white/[0.02] text-dim hover:text-muted',
-                          )}
-                        >
-                          <span className={cn('grid size-3.5 place-items-center rounded-full', on ? 'bg-crimson text-white' : 'border border-line-2')}>
-                            {on && <Check className="size-2.5" strokeWidth={3} />}
-                          </span>
-                          {l.label}
-                        </button>
+      <SubTabs
+        tabs={[
+          {
+            key: 'ripple',
+            label: 'Risk ripple',
+            icon: Orbit,
+            render: (go) => (
+              <div className="grid grid-cols-1 gap-3 xl:grid-cols-[1.5fr_1fr]">
+              <Reveal delay={0.1}>
+                <Card variant="glass" className="h-full pb-4">
+                  <CardHeader
+                    title="Risk ripple from listed addresses"
+                    tech="ring = hops away · node glow = diffused risk · line width = share of value that flowed · click any wallet"
+                    icon={<Orbit className="size-4" />}
+                    right={
+                      running ? (
+                        <Chip tone="crimson" dot pulse>
+                          Spreading · hop {Math.max(0, stage)}
+                        </Chip>
+                      ) : (
+                        <Chip tone="moss" dot>
+                          Diffusion complete
+                        </Chip>
                       )
-                    })}
+                    }
+                  />
+                  <div className="px-2 pt-2 sm:px-5">
+                    <DiffusionGraph params={params} result={result} selected={selected} onSelect={setSelected} runId={runId} stage={stage} />
+                  </div>
+                  <div className="mx-5 mt-2 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[12.5px] text-muted">
+                    <Legend swatch={<span className="size-2.5 rounded-full" style={{ background: toneHex('crimson'), boxShadow: `0 0 8px ${toneA('crimson', 0.7)}` }} />} label="Listed address" />
+                    <Legend swatch={<span className="size-2.5 rounded-full border" style={{ borderColor: toneHex('teal') }} />} label="Wallet on this case's trail" />
+                    <Legend swatch={<span className="size-2.5 rounded-full border" style={{ borderColor: toneHex('gold') }} />} label="Exchange wallet" />
+                    <Legend swatch={<span className="h-px w-4 border-t border-dashed border-white/40" />} label="Dust transfer (< 1%)" />
+                    <span className="ml-auto text-dim">numbers = diffused risk, 0–1</span>
+                  </div>
+                </Card>
+              </Reveal>
+
+                <div className="flex min-w-0 flex-col gap-3">
+                <Reveal delay={0.15}>
+                  <Card className="pb-4">
+                    <CardHeader
+                      title="Tune the diffusion"
+                      tech="every change recomputes the graph and the table"
+                      icon={<Filter className="size-4" />}
+                      right={
+                        changed ? (
+                          <button type="button" onClick={reset} className="k-btn-ghost inline-flex h-7 items-center gap-1 rounded-lg px-2.5 text-[12.5px]">
+                            <RotateCcw className="size-3" /> Defaults
+                          </button>
+                        ) : (
+                          <Chip tone="neutral">Defaults</Chip>
+                        )
+                      }
+                    />
+                    <div className="mt-3 space-y-4 px-5">
+                      <div>
+                        <div className="flex items-baseline justify-between">
+                          <label htmlFor="rd-decay" className="text-[14px] text-text">
+                            How fast risk fades per hop <span className="text-[12px] text-dim">· decay</span>
+                          </label>
+                          <span className="k-num text-[18px] text-text">{decay.toFixed(2)}</span>
+                        </div>
+                        <input
+                          id="rd-decay"
+                          type="range"
+                          min={0.2}
+                          max={0.8}
+                          step={0.05}
+                          value={decay}
+                          onChange={(e) => setDecay(Number(e.target.value))}
+                          className="mt-1.5 w-full accent-[var(--k-ember)]"
+                        />
+                        <div className="flex justify-between text-[12px] text-dim">
+                          <span>0.2 · fades fast</span>
+                          <span>0.8 · travels far</span>
+                        </div>
+                      </div>
+
+                      <div>
+                        <div className="mb-1.5 flex items-baseline justify-between">
+                          <span className="text-[14px] text-text">
+                            How far to look <span className="text-[12px] text-dim">· max hops</span>
+                          </span>
+                          <span className="text-[12px] text-dim">beyond this, risk is ignored</span>
+                        </div>
+                        <Tabs value={String(maxHops)} onValueChange={(v) => setMaxHops(Number(v))}>
+                          <TabsList className="h-8 w-full border border-line bg-white/[0.04]" aria-label="Maximum hops">
+                            {[1, 2, 3, 4].map((h) => (
+                              <TabsTrigger key={h} value={String(h)} className="h-full text-[13.5px] text-muted data-[state=active]:text-text">
+                                {h} hop{h > 1 ? 's' : ''}
+                              </TabsTrigger>
+                            ))}
+                          </TabsList>
+                        </Tabs>
+                      </div>
+
+                      <label className="flex cursor-pointer items-start justify-between gap-3">
+                        <span>
+                          <span className="block text-[14px] text-text">
+                            Ignore dust below 1% <span className="text-[12px] text-dim">· minimum value-share</span>
+                          </span>
+                          <span className="mt-0.5 block text-[12.5px] leading-snug text-dim">
+                            {ignoreDust
+                              ? `${dustEdges} tiny transfers ignored — they can't taint a wallet.`
+                              : `${dustEdges} tiny transfers counted — "dusting" can taint innocent wallets.`}
+                          </span>
+                        </span>
+                        <Switch
+                          checked={ignoreDust}
+                          onCheckedChange={setIgnoreDust}
+                          aria-label="Ignore dust transfers below 1%"
+                          className="mt-0.5 data-[state=checked]:bg-ember data-[state=unchecked]:bg-white/10"
+                        />
+                      </label>
+
+                      <div>
+                        <div className="mb-1.5 flex items-baseline justify-between">
+                          <span className="text-[14px] text-text">
+                            Spread from these lists <span className="text-[12px] text-dim">· list types</span>
+                          </span>
+                          <span className="text-[12px] text-dim">entries are synthetic</span>
+                        </div>
+                        <div className="flex flex-wrap gap-1.5">
+                          {LISTS.map((l) => {
+                            const on = lists.has(l.key)
+                            return (
+                              <button
+                                key={l.key}
+                                type="button"
+                                aria-pressed={on}
+                                onClick={() => toggleList(l.key)}
+                                title={l.tech}
+                                className={cn(
+                                  'inline-flex h-7 items-center gap-1.5 rounded-full border px-2.5 text-[13px] transition-colors',
+                                  on ? 'border-crimson/40 bg-crimson/[0.12] text-text' : 'border-line-2 bg-white/[0.02] text-dim hover:text-muted',
+                                )}
+                              >
+                                <span className={cn('grid size-3.5 place-items-center rounded-full', on ? 'bg-crimson text-white' : 'border border-line-2')}>
+                                  {on && <Check className="size-2.5" strokeWidth={3} />}
+                                </span>
+                                {l.label}
+                              </button>
+                            )
+                          })}
+                        </div>
+                      </div>
+                    </div>
+                  </Card>
+                </Reveal>
+                  <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-line bg-white/[0.02] px-4 py-3">
+                    <span className="min-w-0 text-[13.5px] text-muted">
+                      Selected: <span className="text-text">{NODE[selected].hop ? `${NODE[selected].hop} · ` : ''}{NODE[selected].label}</span>
+                    </span>
+                    <Button size="sm" onClick={() => go('why')}>
+                      <Sparkles /> See its arithmetic <ArrowRight />
+                    </Button>
                   </div>
                 </div>
               </div>
-            </Card>
-          </Reveal>
-
-          <Reveal delay={0.2} className="flex-1">
-            <WorkedExample node={NODE[selected]} decay={decay} result={result} listed={NODE[selected].kind === 'listed' && !!NODE[selected].list && lists.has(NODE[selected].list!)} />
-          </Reveal>
-        </div>
-      </div>
-
-      {/* ── Comparison table ── */}
-      <Reveal delay={0.1}>
-        <Card className="pb-3">
-          <CardHeader
-            title="Exact-match screening vs diffusion"
-            tech="same wallets, two methods · red rows are wallets only diffusion catches · click a row to see its arithmetic"
-            right={
-              <Chip tone="crimson" dot pulse={caught > 0}>
-                Caught only by diffusion: {caught}
-              </Chip>
-            }
-          />
-          <div className="k-scroll overflow-x-auto px-3 pt-3">
-            <table className="w-full min-w-[820px] text-left">
-              <thead>
-                <tr className="text-[11.5px] uppercase tracking-[0.08em] text-dim">
-                  <th className="px-2 pb-2 font-normal">Wallet</th>
-                  <th className="px-2 pb-2 font-normal">Exact-match result</th>
-                  <th className="px-2 pb-2 font-normal">Diffused risk</th>
-                  <th className="px-2 pb-2 font-normal">Hops to a list</th>
-                  <th className="px-2 pb-2 font-normal">Strongest path</th>
-                  <th className="px-2 pb-2 text-right font-normal">Verdict</th>
-                </tr>
-              </thead>
-              <tbody>
-                {rows.map((r) => {
-                  const onlyDiff = !r.listed && r.v.key === 'flag'
-                  const sel = selected === r.n.id
-                  return (
-                    <motion.tr
-                      layout
-                      transition={{ type: 'spring', stiffness: 400, damping: 36 }}
-                      key={r.n.id}
-                      onClick={() => setSelected(r.n.id)}
-                      className={cn(
-                        'cursor-pointer border-t border-line text-[13.5px] transition-colors',
-                        onlyDiff ? 'bg-crimson/[0.07] hover:bg-crimson/[0.1]' : 'hover:bg-white/[0.025]',
-                        sel && 'outline outline-1 -outline-offset-1 outline-white/25',
-                      )}
-                    >
-                      <td className="px-2 py-2">
-                        <div className="flex items-center gap-2">
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation()
+            ),
+          },
+          {
+            key: 'compare',
+            label: 'Exact match vs diffusion',
+            icon: ScanSearch,
+            badge: caught,
+            render: (go) => (
+            <Reveal delay={0.1}>
+              <Card className="pb-3">
+                <CardHeader
+                  title="Exact-match screening vs diffusion"
+                  tech="same wallets, two methods · red rows are wallets only diffusion catches · click a row to see its arithmetic"
+                  right={
+                    <Chip tone="crimson" dot pulse={caught > 0}>
+                      Caught only by diffusion: {caught}
+                    </Chip>
+                  }
+                />
+                <div className="k-scroll overflow-x-auto px-3 pt-3">
+                  <table className="w-full min-w-[820px] text-left">
+                    <thead>
+                      <tr className="text-[11.5px] uppercase tracking-[0.08em] text-dim">
+                        <th className="px-2 pb-2 font-normal">Wallet</th>
+                        <th className="px-2 pb-2 font-normal">Exact-match result</th>
+                        <th className="px-2 pb-2 font-normal">Diffused risk</th>
+                        <th className="px-2 pb-2 font-normal">Hops to a list</th>
+                        <th className="px-2 pb-2 font-normal">Strongest path</th>
+                        <th className="px-2 pb-2 text-right font-normal">Verdict</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {rows.map((r) => {
+                        const onlyDiff = !r.listed && r.v.key === 'flag'
+                        const sel = selected === r.n.id
+                        return (
+                          <motion.tr
+                            layout
+                            transition={{ type: 'spring', stiffness: 400, damping: 36 }}
+                            key={r.n.id}
+                            onClick={() => {
                               setSelected(r.n.id)
+                              go('why')
                             }}
-                            className="min-w-0 text-left"
-                            aria-label={`Show arithmetic for ${r.n.label}`}
+                            className={cn(
+                              'cursor-pointer border-t border-line text-[13.5px] transition-colors',
+                              onlyDiff ? 'bg-crimson/[0.07] hover:bg-crimson/[0.1]' : 'hover:bg-white/[0.025]',
+                              sel && 'outline outline-1 -outline-offset-1 outline-white/25',
+                            )}
                           >
-                            <div className="flex items-center gap-1.5 text-[13.5px] text-text">
-                              {r.n.hop && (
-                                <span className="k-mono rounded px-1 text-[11.5px]" style={{ color: toneHex('teal'), background: toneA('teal', 0.1) }}>
-                                  {r.n.hop}
-                                </span>
+                            <td className="px-2 py-2">
+                              <div className="flex items-center gap-2">
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    setSelected(r.n.id)
+                                    go('why')
+                                  }}
+                                  className="min-w-0 text-left"
+                                  aria-label={`Show arithmetic for ${r.n.label}`}
+                                >
+                                  <div className="flex items-center gap-1.5 text-[13.5px] text-text">
+                                    {r.n.hop && (
+                                      <span className="k-mono rounded px-1 text-[11.5px]" style={{ color: toneHex('teal'), background: toneA('teal', 0.1) }}>
+                                        {r.n.hop}
+                                      </span>
+                                    )}
+                                    {r.n.label}
+                                    {r.n.kind === 'listed' && <span className="text-[11.5px] text-dim">· {listLabel(r.n.list)}</span>}
+                                  </div>
+                                </button>
+                              </div>
+                              <Address addr={r.n.addr} chain={r.n.chain} className="text-[12.5px]" />
+                            </td>
+                            <td className="px-2 py-2">
+                              {r.listed ? (
+                                <Chip tone="crimson" solid>
+                                  Match
+                                </Chip>
+                              ) : (
+                                <Chip tone="moss" dot>
+                                  Clear
+                                </Chip>
                               )}
-                              {r.n.label}
-                              {r.n.kind === 'listed' && <span className="text-[11.5px] text-dim">· {listLabel(r.n.list)}</span>}
-                            </div>
-                          </button>
-                        </div>
-                        <Address addr={r.n.addr} chain={r.n.chain} className="text-[12.5px]" />
-                      </td>
-                      <td className="px-2 py-2">
-                        {r.listed ? (
-                          <Chip tone="crimson" solid>
-                            Match
-                          </Chip>
-                        ) : (
-                          <Chip tone="moss" dot>
-                            Clear
-                          </Chip>
-                        )}
-                      </td>
-                      <td className="px-2 py-2">
-                        <div className="flex items-center gap-2">
-                          <div className="relative h-1.5 w-20 overflow-hidden rounded-full bg-white/[0.06]">
-                            <motion.div
-                              className="absolute inset-y-0 left-0 rounded-full"
-                              initial={false}
-                              animate={{ width: `${r.risk * 100}%` }}
-                              transition={{ type: 'spring', stiffness: 200, damping: 26 }}
-                              style={{ background: toneHex(r.risk >= FLAG_AT ? 'crimson' : r.risk >= WATCH_AT ? 'ember' : 'neutral') }}
-                            />
-                          </div>
-                          <span className={cn('k-num w-9 text-[14px]', r.risk >= FLAG_AT ? 'text-crimson' : r.risk >= WATCH_AT ? 'text-ember' : 'text-muted')}>{r.risk.toFixed(2)}</span>
-                        </div>
-                      </td>
-                      <td className="px-2 py-2 text-[13.5px]">
-                        {r.listed ? <span className="text-dim">on list</span> : r.hops === null ? <span className="text-dim">—</span> : <span className="k-num text-text">{r.hops}</span>}
-                      </td>
-                      <td className="px-2 py-2 text-[12.5px] text-muted">
-                        {r.listed ? (
-                          <span className="text-dim">seed · {listLabel(r.n.list)}</span>
-                        ) : r.best ? (
-                          <span className="k-mono">{r.best.nodes.map(shortName).join(' → ')}</span>
-                        ) : (
-                          <span className="text-dim">no path within {maxHops} hop{maxHops > 1 ? 's' : ''}</span>
-                        )}
-                      </td>
-                      <td className="px-2 py-2 text-right">
-                        <Chip tone={r.v.tone} dot={r.v.key !== 'none'} solid={r.v.key === 'listed'}>
-                          {r.v.label}
-                        </Chip>
-                      </td>
-                    </motion.tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 px-5 pt-3 text-[12px] text-dim">
-            <span>Flag for review ≥ {FLAG_AT.toFixed(2)}</span>
-            <span>· Watch ≥ {WATCH_AT.toFixed(2)}</span>
-            <span>· thresholds tuned on synthetic data — illustrative</span>
-            <span>· exact-match = literal address on a selected list</span>
-          </div>
-        </Card>
-      </Reveal>
-
-      {/* ── Formula + honesty ── */}
-      <div className="grid grid-cols-1 gap-3 xl:grid-cols-[1.3fr_1fr]">
-        <Reveal delay={0.1}>
-          <FormulaCard decay={decay} maxHops={maxHops} />
-        </Reveal>
-        <Reveal delay={0.15}>
-          <HonestyCard params={params} />
-        </Reveal>
-      </div>
+                            </td>
+                            <td className="px-2 py-2">
+                              <div className="flex items-center gap-2">
+                                <div className="relative h-1.5 w-20 overflow-hidden rounded-full bg-white/[0.06]">
+                                  <motion.div
+                                    className="absolute inset-y-0 left-0 rounded-full"
+                                    initial={false}
+                                    animate={{ width: `${r.risk * 100}%` }}
+                                    transition={{ type: 'spring', stiffness: 200, damping: 26 }}
+                                    style={{ background: toneHex(r.risk >= FLAG_AT ? 'crimson' : r.risk >= WATCH_AT ? 'ember' : 'neutral') }}
+                                  />
+                                </div>
+                                <span className={cn('k-num w-9 text-[14px]', r.risk >= FLAG_AT ? 'text-crimson' : r.risk >= WATCH_AT ? 'text-ember' : 'text-muted')}>{r.risk.toFixed(2)}</span>
+                              </div>
+                            </td>
+                            <td className="px-2 py-2 text-[13.5px]">
+                              {r.listed ? <span className="text-dim">on list</span> : r.hops === null ? <span className="text-dim">—</span> : <span className="k-num text-text">{r.hops}</span>}
+                            </td>
+                            <td className="px-2 py-2 text-[12.5px] text-muted">
+                              {r.listed ? (
+                                <span className="text-dim">seed · {listLabel(r.n.list)}</span>
+                              ) : r.best ? (
+                                <span className="k-mono">{r.best.nodes.map(shortName).join(' → ')}</span>
+                              ) : (
+                                <span className="text-dim">no path within {maxHops} hop{maxHops > 1 ? 's' : ''}</span>
+                              )}
+                            </td>
+                            <td className="px-2 py-2 text-right">
+                              <Chip tone={r.v.tone} dot={r.v.key !== 'none'} solid={r.v.key === 'listed'}>
+                                {r.v.label}
+                              </Chip>
+                            </td>
+                          </motion.tr>
+                        )
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 px-5 pt-3 text-[12px] text-dim">
+                  <span>Flag for review ≥ {FLAG_AT.toFixed(2)}</span>
+                  <span>· Watch ≥ {WATCH_AT.toFixed(2)}</span>
+                  <span>· thresholds tuned on synthetic data — illustrative</span>
+                  <span>· exact-match = literal address on a selected list</span>
+                </div>
+              </Card>
+            </Reveal>
+            ),
+          },
+          {
+            key: 'why',
+            label: 'Why a wallet scores',
+            icon: Sparkles,
+            render: () => (
+              <div className="grid grid-cols-1 gap-3 xl:grid-cols-[1fr_1.3fr]">
+                <Reveal delay={0.2}>
+                  <WorkedExample node={NODE[selected]} decay={decay} result={result} listed={NODE[selected].kind === 'listed' && !!NODE[selected].list && lists.has(NODE[selected].list!)} />
+                </Reveal>
+                <Reveal delay={0.15}>
+                  <FormulaCard decay={decay} maxHops={maxHops} />
+                </Reveal>
+              </div>
+            ),
+          },
+          {
+            key: 'limits',
+            label: 'Honest limits',
+            icon: ShieldCheck,
+            render: () => (
+              <div className="max-w-[860px]">
+                <Reveal delay={0.1}>
+                  <HonestyCard params={params} />
+                </Reveal>
+              </div>
+            ),
+          },
+        ]}
+      />
     </div>
   )
 }

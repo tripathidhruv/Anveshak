@@ -30,5 +30,6 @@ export const httpApi: AnveshakApi = {
   createCaseFromIntake: (body) => request('/api/v1/intake/cases', { method: 'POST', body }),
   lookupWallet: (address, signal) => request(`/api/v1/memory/wallets/${encodeURIComponent(address)}`, { signal }),
   memoryStats: () => request('/api/v1/memory/stats'),
+  caseTypology: (caseId, signal) => request(`/api/v1/typology/cases/${encodeURIComponent(caseId)}`, { signal }),
   listCases: async () => (await request<CaseListItemWire[]>('/api/v1/cases')).map(toSummary),
 }

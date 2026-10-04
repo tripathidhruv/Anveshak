@@ -10,9 +10,11 @@ import {
   Play,
   Repeat,
   RotateCcw,
+  Scale,
   Shuffle,
   Sparkle,
   Split,
+  Target,
   Timer,
   Unlink,
 } from 'lucide-react'
@@ -29,6 +31,7 @@ import {
   Reveal,
   ScoreRing,
   Stat,
+  SubTabs,
   smoothPath,
   toneA,
   toneHex,
@@ -63,7 +66,35 @@ const SCN_ICON: Record<Scenario['icon'], React.ReactNode> = {
 
 const trust = TRUST_PARTS.reduce((a, p) => a + p.value * p.w, 0)
 
+/** Stress-test run state lives on the page so a running test survives switching tabs. */
+function useStressTest() {
+  const [phase, setPhase] = React.useState<'idle' | 'running' | 'done'>('idle')
+  const [done, setDone] = React.useState(0)
+  const timers = React.useRef<number[]>([])
+
+  React.useEffect(() => () => timers.current.forEach((t) => window.clearTimeout(t)), [])
+
+  const run = React.useCallback(() => {
+    timers.current.forEach((t) => window.clearTimeout(t))
+    timers.current = []
+    setDone(0)
+    setPhase('running')
+    SCENARIOS.forEach((_, i) => {
+      timers.current.push(
+        window.setTimeout(() => {
+          setDone(i + 1)
+          if (i === SCENARIOS.length - 1) setPhase('done')
+        }, 900 + i * 850),
+      )
+    })
+  }, [])
+
+  return { phase, done, run }
+}
+type StressTest = ReturnType<typeof useStressTest>
+
 export default function AssurancePage() {
+  const stress = useStressTest()
   return (
     <div className="space-y-4">
       <Reveal>
@@ -84,143 +115,173 @@ export default function AssurancePage() {
         />
       </Reveal>
 
-      {/* ── backtest band ── */}
-      <Reveal delay={0.05}>
-        <Card variant="glass" className="pb-5">
-          <div className="grid grid-cols-1 gap-6 px-5 pt-5 xl:grid-cols-[minmax(0,330px)_1fr]">
-            <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-start xl:border-r xl:border-line xl:pr-6">
-              <ScoreRing value={trust} tone="moss" size={124} label={trust.toFixed(2)} sub="model trust" />
-              <div className="w-full flex-1">
-                <div className="text-[14px] text-text">How the trust score is built</div>
-                <div className="text-[12px] text-dim">weighted blend · nothing hidden</div>
-                <ul className="mt-2.5 space-y-1.5">
-                  {TRUST_PARTS.map((p) => (
-                    <li key={p.label} className="grid grid-cols-[1fr_auto] items-center gap-x-2 text-[12.5px]">
-                      <span className="truncate text-muted">{p.label}</span>
-                      <span className="k-mono text-[12px] text-dim">
-                        {Math.round(p.w * 100)}% × <span className="text-text">{p.value.toFixed(2)}</span>
-                      </span>
-                      <Meter value={p.value} tone={p.tone} height={3} className="col-span-2 mt-0.5" />
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-            <div>
-              <div className="flex flex-wrap items-center gap-2">
-                <div className="text-[14.5px] text-text">
-                  Replayed <span className="k-num">{BACKTEST.cases}</span> closed cases with known outcomes
-                </div>
-                <Chip tone="neutral">synthetic replay · illustrative until run on live casework</Chip>
-              </div>
-              <div className="mt-0.5 text-[12.5px] text-dim">backtest · engine v14 · cases closed Jan–Aug 2026 with confirmed exchange and court outcome</div>
-              <div className="mt-4 grid grid-cols-2 gap-2.5 md:grid-cols-3 2xl:grid-cols-5">
-                {[
-                  { k: 'Precision', v: BACKTEST.precision, d: 2, plain: 'When ANVESHAK says “scam wallet”, it is right 94 times in 100' },
-                  { k: 'Recall', v: BACKTEST.recall, d: 2, plain: 'Of all real scam wallets, it catches 89 in 100' },
-                  { k: 'F1 score', v: BACKTEST.f1, d: 2, plain: 'Balance of the two above' },
-                  { k: 'Right exchange, first pick', v: BACKTEST.top1, d: 2, plain: '168 of 183 cases named the correct exchange first' },
-                  { k: 'Median trace time', v: BACKTEST.medianTraceSec, d: 0, suf: ' s', plain: 'From wallet address to exchange name' },
-                ].map((m, i) => (
-                  <motion.div
-                    key={m.k}
-                    initial={{ opacity: 0, y: 8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.15 + i * 0.06 }}
-                    className={cn('rounded-xl border border-line bg-white/[0.02] p-3', i === 4 && 'col-span-2 md:col-span-1')}
-                  >
-                    <div className="text-[12.5px] text-muted">{m.k}</div>
-                    <Stat value={m.v} decimals={m.d} suffix={m.suf} className="mt-1 text-[24px] leading-none text-text" />
-                    <div className="mt-1.5 text-[12px] leading-snug text-dim">{m.plain}</div>
-                  </motion.div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </Card>
-      </Reveal>
-
-      {/* ── reliability + confusion ── */}
-      <div className="grid grid-cols-1 gap-3 xl:grid-cols-2">
-        <Reveal delay={0.1}>
-          <Card className="h-full pb-4">
-            <CardHeader
-              title="Does “90% sure” really mean 90%?"
-              tech="reliability diagram · predicted risk vs observed scam rate · 10 bins"
-              right={<Chip tone="moss" dot>ECE {BACKTEST.ece.toFixed(3)}</Chip>}
-            />
-            <div className="px-5 pt-3">
-              <Reliability />
-              <p className="mt-2 text-[12.5px] leading-relaxed text-dim">
-                Dots near the dashed line mean the confidence is honest. Bigger dots hold more cases. Average gap between promise and reality: 3 points.
-              </p>
-            </div>
-          </Card>
-        </Reveal>
-        <Reveal delay={0.15}>
-          <ConfusionCard />
-        </Reveal>
-      </div>
-
-      {/* ── red team ── */}
-      <Reveal delay={0.1}>
-        <RedTeam />
-      </Reveal>
-
-      {/* ── blind spots + by type ── */}
-      <div className="grid grid-cols-1 gap-3 xl:grid-cols-[1.25fr_1fr]">
-        <Reveal delay={0.1}>
-          <Card className="h-full pb-4">
-            <CardHeader title="What ANVESHAK cannot see" tech="honest blind spots · shown to judges and to court" right={<Chip tone="crimson" dot>3 known limits</Chip>} />
-            <ul className="mt-3 space-y-2 px-3">
-              {[
-                { icon: <EyeOff />, t: 'Can’t see through a mixer — by design, we stop and flag', s: 'The trail ends at the mixer. We record where it went in and watch the exits, but never guess which coins came out.' },
-                { icon: <Unlink />, t: 'Cross-chain links are timing and amount correlation, not proof', s: 'Every bridge hop carries its confidence (e.g. 82%) and is labelled “probable” in the evidence pack.' },
-                { icon: <FlaskConical />, t: 'The ML model is trained on disclosed synthetic data', s: 'Rule-based signals (sweep, consolidation) need no training data. The ML layer only adjusts them, and its training set is documented.' },
-              ].map((b, i) => (
-                <motion.li
-                  key={b.t}
-                  initial={{ opacity: 0, x: -8 }}
-                  whileInView={{ opacity: 1, x: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: i * 0.08 }}
-                  className="flex items-start gap-3 rounded-xl border border-line bg-white/[0.015] p-3"
-                >
-                  <IconTile tone="crimson" size={32} className="[&_svg]:size-3.5">
-                    {b.icon}
-                  </IconTile>
-                  <div>
-                    <div className="text-[14px] text-text">{b.t}</div>
-                    <div className="mt-0.5 text-[12.5px] leading-relaxed text-muted">{b.s}</div>
+      <SubTabs
+        tabs={[
+          {
+            key: 'accuracy',
+            label: 'How accurate it is',
+            icon: Target,
+            render: () => (
+              <Reveal delay={0.05}>
+                <Card variant="glass" className="pb-5">
+                  <div className="grid grid-cols-1 gap-6 px-5 pt-5 xl:grid-cols-[minmax(0,330px)_1fr]">
+                    <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-start xl:border-r xl:border-line xl:pr-6">
+                      <ScoreRing value={trust} tone="moss" size={124} label={trust.toFixed(2)} sub="model trust" />
+                      <div className="w-full flex-1">
+                        <div className="text-[14px] text-text">How the trust score is built</div>
+                        <div className="text-[12px] text-dim">weighted blend · nothing hidden</div>
+                        <ul className="mt-2.5 space-y-1.5">
+                          {TRUST_PARTS.map((p) => (
+                            <li key={p.label} className="grid grid-cols-[1fr_auto] items-center gap-x-2 text-[12.5px]">
+                              <span className="truncate text-muted">{p.label}</span>
+                              <span className="k-mono text-[12px] text-dim">
+                                {Math.round(p.w * 100)}% × <span className="text-text">{p.value.toFixed(2)}</span>
+                              </span>
+                              <Meter value={p.value} tone={p.tone} height={3} className="col-span-2 mt-0.5" />
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    </div>
+                    <div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <div className="text-[14.5px] text-text">
+                          Replayed <span className="k-num">{BACKTEST.cases}</span> closed cases with known outcomes
+                        </div>
+                        <Chip tone="neutral">synthetic replay · illustrative until run on live casework</Chip>
+                      </div>
+                      <div className="mt-0.5 text-[12.5px] text-dim">backtest · engine v14 · cases closed Jan–Aug 2026 with confirmed exchange and court outcome</div>
+                      <div className="mt-4 grid grid-cols-2 gap-2.5 md:grid-cols-3 2xl:grid-cols-5">
+                        {[
+                          { k: 'Precision', v: BACKTEST.precision, d: 2, plain: 'When ANVESHAK says “scam wallet”, it is right 94 times in 100' },
+                          { k: 'Recall', v: BACKTEST.recall, d: 2, plain: 'Of all real scam wallets, it catches 89 in 100' },
+                          { k: 'F1 score', v: BACKTEST.f1, d: 2, plain: 'Balance of the two above' },
+                          { k: 'Right exchange, first pick', v: BACKTEST.top1, d: 2, plain: '168 of 183 cases named the correct exchange first' },
+                          { k: 'Median trace time', v: BACKTEST.medianTraceSec, d: 0, suf: ' s', plain: 'From wallet address to exchange name' },
+                        ].map((m, i) => (
+                          <motion.div
+                            key={m.k}
+                            initial={{ opacity: 0, y: 8 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.15 + i * 0.06 }}
+                            className={cn('rounded-xl border border-line bg-white/[0.02] p-3', i === 4 && 'col-span-2 md:col-span-1')}
+                          >
+                            <div className="text-[12.5px] text-muted">{m.k}</div>
+                            <Stat value={m.v} decimals={m.d} suffix={m.suf} className="mt-1 text-[24px] leading-none text-text" />
+                            <div className="mt-1.5 text-[12px] leading-snug text-dim">{m.plain}</div>
+                          </motion.div>
+                        ))}
+                      </div>
+                    </div>
                   </div>
-                </motion.li>
-              ))}
-            </ul>
-          </Card>
-        </Reveal>
-        <Reveal delay={0.15}>
-          <Card className="h-full pb-4">
-            <CardHeader title="Where it is strongest and weakest" tech="right-exchange rate by fraud type · same 214 cases" />
-            <ul className="mt-4 space-y-3.5 px-5">
-              {BY_FRAUD_TYPE.map((t) => (
-                <li key={t.type}>
-                  <div className="flex items-baseline justify-between text-[13.5px]">
-                    <span className="text-text/90">{t.type}</span>
-                    <span>
-                      <span className="k-num text-text">{Math.round(t.acc * 100)}%</span>
-                      <span className="ml-1 text-[11.5px] text-dim">n={t.n}</span>
-                    </span>
-                  </div>
-                  <Meter value={t.acc} tone={t.acc >= 0.9 ? 'moss' : t.acc >= 0.85 ? 'gold' : 'ember'} height={5} className="mt-1.5" />
-                </li>
-              ))}
-            </ul>
-            <p className="mx-5 mt-4 text-[12.5px] leading-relaxed text-dim">
-              Loan-app extortion is weakest: payments are smaller and spread over weeks, so the sweep signature is faint. Collecting more closed cases here is our next priority.
-            </p>
-          </Card>
-        </Reveal>
-      </div>
+                </Card>
+              </Reveal>
+            ),
+          },
+          {
+            key: 'honesty',
+            label: 'Are the numbers honest?',
+            icon: Scale,
+            render: () => (
+              <div className="grid grid-cols-1 gap-3 xl:grid-cols-2">
+                <Reveal delay={0.1}>
+                  <Card className="h-full pb-4">
+                    <CardHeader
+                      title="Does “90% sure” really mean 90%?"
+                      tech="reliability diagram · predicted risk vs observed scam rate · 10 bins"
+                      right={<Chip tone="moss" dot>ECE {BACKTEST.ece.toFixed(3)}</Chip>}
+                    />
+                    <div className="px-5 pt-3">
+                      <Reliability />
+                      <p className="mt-2 text-[12.5px] leading-relaxed text-dim">
+                        Dots near the dashed line mean the confidence is honest. Bigger dots hold more cases. Average gap between promise and reality: 3 points.
+                      </p>
+                    </div>
+                  </Card>
+                </Reveal>
+                <Reveal delay={0.15}>
+                  <ConfusionCard />
+                </Reveal>
+              </div>
+            ),
+          },
+          {
+            key: 'redteam',
+            label: 'Attack test',
+            icon: FlaskConical,
+            badge: stress.phase === 'running' ? 'running' : stress.phase === 'done' ? `${stress.done}/${SCENARIOS.length}` : undefined,
+            render: () => (
+              <div className="space-y-3">
+                <p className="text-[13.5px] text-muted">We replay the tricks scammers use to hide money and count how many our engine still catches.</p>
+                <Reveal delay={0.05}>
+                  <RedTeam {...stress} />
+                </Reveal>
+              </div>
+            ),
+          },
+          {
+            key: 'limits',
+            label: 'Where it falls short',
+            icon: EyeOff,
+            badge: 3,
+            render: () => (
+              <div className="grid grid-cols-1 gap-3 xl:grid-cols-[1.25fr_1fr]">
+                <Reveal delay={0.1}>
+                  <Card className="h-full pb-4">
+                    <CardHeader title="What ANVESHAK cannot see" tech="honest blind spots · shown to judges and to court" right={<Chip tone="crimson" dot>3 known limits</Chip>} />
+                    <ul className="mt-3 space-y-2 px-3">
+                      {[
+                        { icon: <EyeOff />, t: 'Can’t see through a mixer — by design, we stop and flag', s: 'The trail ends at the mixer. We record where it went in and watch the exits, but never guess which coins came out.' },
+                        { icon: <Unlink />, t: 'Cross-chain links are timing and amount correlation, not proof', s: 'Every bridge hop carries its confidence (e.g. 82%) and is labelled “probable” in the evidence pack.' },
+                        { icon: <FlaskConical />, t: 'The ML model is trained on disclosed synthetic data', s: 'Rule-based signals (sweep, consolidation) need no training data. The ML layer only adjusts them, and its training set is documented.' },
+                      ].map((b, i) => (
+                        <motion.li
+                          key={b.t}
+                          initial={{ opacity: 0, x: -8 }}
+                          whileInView={{ opacity: 1, x: 0 }}
+                          viewport={{ once: true }}
+                          transition={{ delay: i * 0.08 }}
+                          className="flex items-start gap-3 rounded-xl border border-line bg-white/[0.015] p-3"
+                        >
+                          <IconTile tone="crimson" size={32} className="[&_svg]:size-3.5">
+                            {b.icon}
+                          </IconTile>
+                          <div>
+                            <div className="text-[14px] text-text">{b.t}</div>
+                            <div className="mt-0.5 text-[12.5px] leading-relaxed text-muted">{b.s}</div>
+                          </div>
+                        </motion.li>
+                      ))}
+                    </ul>
+                  </Card>
+                </Reveal>
+                <Reveal delay={0.15}>
+                  <Card className="h-full pb-4">
+                    <CardHeader title="Where it is strongest and weakest" tech="right-exchange rate by fraud type · same 214 cases" />
+                    <ul className="mt-4 space-y-3.5 px-5">
+                      {BY_FRAUD_TYPE.map((t) => (
+                        <li key={t.type}>
+                          <div className="flex items-baseline justify-between text-[13.5px]">
+                            <span className="text-text/90">{t.type}</span>
+                            <span>
+                              <span className="k-num text-text">{Math.round(t.acc * 100)}%</span>
+                              <span className="ml-1 text-[11.5px] text-dim">n={t.n}</span>
+                            </span>
+                          </div>
+                          <Meter value={t.acc} tone={t.acc >= 0.9 ? 'moss' : t.acc >= 0.85 ? 'gold' : 'ember'} height={5} className="mt-1.5" />
+                        </li>
+                      ))}
+                    </ul>
+                    <p className="mx-5 mt-4 text-[12.5px] leading-relaxed text-dim">
+                      Loan-app extortion is weakest: payments are smaller and spread over weeks, so the sweep signature is faint. Collecting more closed cases here is our next priority.
+                    </p>
+                  </Card>
+                </Reveal>
+              </div>
+            ),
+          },
+        ]}
+      />
     </div>
   )
 }
@@ -438,28 +499,7 @@ function Cell({ n, label, tone, strong }: { n: number; label: string; tone: Tone
 
 /* ───────── red team (the interactive moment) ───────── */
 
-function RedTeam() {
-  const [phase, setPhase] = React.useState<'idle' | 'running' | 'done'>('idle')
-  const [done, setDone] = React.useState(0)
-  const timers = React.useRef<number[]>([])
-
-  React.useEffect(() => () => timers.current.forEach((t) => window.clearTimeout(t)), [])
-
-  const run = () => {
-    timers.current.forEach((t) => window.clearTimeout(t))
-    timers.current = []
-    setDone(0)
-    setPhase('running')
-    SCENARIOS.forEach((_, i) => {
-      timers.current.push(
-        window.setTimeout(() => {
-          setDone(i + 1)
-          if (i === SCENARIOS.length - 1) setPhase('done')
-        }, 900 + i * 850),
-      )
-    })
-  }
-
+function RedTeam({ phase, done, run }: StressTest) {
   const revealed = SCENARIOS.slice(0, done)
   const counts = {
     pass: revealed.filter((s) => s.outcome === 'pass').length,

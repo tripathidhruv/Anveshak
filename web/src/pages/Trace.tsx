@@ -1,7 +1,9 @@
 import * as React from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
+import { useLenis } from 'lenis/react'
 import { AnimatePresence, motion } from 'motion/react'
 import {
+  ArrowLeft,
   ArrowRight,
   ArrowRightLeft,
   Blend,
@@ -26,10 +28,13 @@ import {
   Card,
   CardHeader,
   Chip,
+  DemoChip,
   FlowGraph,
   KV,
   Meter,
-  Reveal,
+  ScoreRing,
+  StageFrame,
+  StageRail,
   type FlowEdge,
   type FlowNode,
   type Tone,
@@ -37,7 +42,11 @@ import {
   toneHex,
 } from '@/components/kit'
 import { Tabs, TabsList, TabsTrigger } from '@/components/animate-ui/components/radix/tabs'
-import { CASE, EXCHANGE, ROUTE_A, ROUTE_B } from '@/data/demo'
+import { CASE, EXCHANGE, RISK, ROUTE_A, ROUTE_B } from '@/data/demo'
+import type { TypologyOut } from '@/api'
+import { ATTRIBUTION_P, INNOCENCE, INNOCENCE_SCORE } from './attribution/model'
+import { TYPOLOGY_TONE, TypologyCard, TypologyRing, useTypology } from './attribution/typology'
+import { StageFooter } from './intake/parts'
 import { inr, mmss, num } from '@/lib/format'
 import { cn } from '@/lib/utils'
 
@@ -145,12 +154,45 @@ const CANDIDATES = [
   { addr: '0x3c90e1f6a82db47c03', score: 0.22, out: 398, after: '6h 51m', parts: [['Withdrawal timing rhythm', 0.12], ['Amount (minus pool fee)', 0.64], ['Fee / gas setting', 0.1], ['Next-hop shape (fan-out 1)', 0.15]] as [string, number][] },
 ]
 
+const FLOW = [
+  { key: 'run', label: 'Run trace', tech: 'fetch · follow · seal' },
+  { key: 'trail', label: 'Money trail', tech: 'every hop, in time order' },
+  { key: 'how', label: 'How it moved', tech: 'sweep · consolidation' },
+  { key: 'hard', label: 'Bridge & mixer', tech: 'cross-chain · cold trail' },
+  { key: 'verdict', label: 'Verdict', tech: 'exchange · risk · crime type' },
+  { key: 'act', label: 'Act', tech: 'lawful actions · evidence' },
+] as const
+
 export default function TracePage() {
+  const [params, setParams] = useSearchParams()
   const [run, setRun] = React.useState(0)
   const [stage, setStage] = React.useState(0)
   const [selected, setSelected] = React.useState<string>('hub')
   const [view, setView] = React.useState<'all' | 'a' | 'b' | 'cold'>('all')
   const [cand, setCand] = React.useState(0)
+  const [dir, setDir] = React.useState(1)
+  const lenis = useLenis()
+  const typology = useTypology(CASE.id)
+
+  const done = stage >= STAGES.length
+  const urlStep = FLOW.findIndex((f) => f.key === params.get('step'))
+  // the trace has to finish before its results can be opened; deep links land once it has
+  const step = done ? Math.max(1, urlStep) : 0
+
+  const goStep = React.useCallback(
+    (to: number) => {
+      setDir(to >= step ? 1 : -1)
+      setParams(
+        (p) => {
+          const n = new URLSearchParams(p)
+          n.set('step', FLOW[to].key)
+          return n
+        },
+        { replace: true },
+      )
+    },
+    [step, setParams],
+  )
 
   React.useEffect(() => {
     setStage(0)
@@ -163,9 +205,29 @@ export default function TracePage() {
     return () => clearInterval(t)
   }, [run])
 
-  const done = stage >= STAGES.length
-  const highlight = view === 'a' ? ROUTE_A_IDS : view === 'b' ? ROUTE_B_IDS : view === 'cold' ? COLD_IDS : null
+  // when the pipeline finishes on the Run stage, move on to the trail by itself
+  React.useEffect(() => {
+    if (!done || urlStep > 0) return
+    const t = setTimeout(() => goStep(1), 900)
+    return () => clearTimeout(t)
+  }, [done, urlStep, goStep])
 
+  React.useEffect(() => {
+    if (lenis) lenis.scrollTo(0, { duration: 0.6 })
+    else window.scrollTo({ top: 0, behavior: 'smooth' })
+  }, [step, lenis])
+
+  const rerun = () => {
+    setDir(-1)
+    setParams((p) => {
+      const n = new URLSearchParams(p)
+      n.delete('step')
+      return n
+    }, { replace: true })
+    setRun((r) => r + 1)
+  }
+
+  const highlight = view === 'a' ? ROUTE_A_IDS : view === 'b' ? ROUTE_B_IDS : view === 'cold' ? COLD_IDS : null
   const nodes: FlowNode[] = Object.entries(POS).map(([id, p]) => {
     const info = INFO[id]
     const isReacq = id === 'reacq'
@@ -181,321 +243,448 @@ export default function TracePage() {
       live: id === 'hub' && done,
     }
   })
-
   const sel = INFO[selected]
+  const top = typology.data?.classes[0]
 
   return (
     <div className="space-y-4">
       {/* ── header ── */}
-      <Reveal>
-        <div className="flex flex-wrap items-end justify-between gap-4 pt-2">
-          <div className="min-w-0">
-            <div className="k-eyebrow mb-1.5 flex flex-wrap items-center gap-2">
-              <span>{CASE.id}</span>
-              <span className="text-dim">·</span>
-              <span>{CASE.complainant}, {CASE.location}</span>
-              <span className="text-dim">·</span>
-              <span>{CASE.fraudType}</span>
-            </div>
-            <h1 className="k-num text-[28px] leading-tight md:text-[32px]">Follow the money</h1>
-            <div className="mt-2 flex flex-wrap items-center gap-2">
-              <AnimatePresence mode="wait">
-                {done ? (
-                  <motion.span key="done" initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} className="flex flex-wrap items-center gap-2">
-                    <Chip tone="moss" dot>Traced in {CASE.traceSeconds} s</Chip>
-                    <Chip tone="neutral">6 hops · 2 routes · 2 chains</Chip>
-                    <Chip tone="gold">Ends at {EXCHANGE.name}</Chip>
-                  </motion.span>
-                ) : (
-                  <motion.span key="run" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-                    <Chip tone="ember" dot pulse>Tracing… {STAGES[Math.min(stage, STAGES.length - 1)].label}</Chip>
-                  </motion.span>
-                )}
-              </AnimatePresence>
-            </div>
+      <div className="flex flex-wrap items-end justify-between gap-4 pt-2">
+        <div className="min-w-0">
+          <div className="k-eyebrow mb-1.5 flex flex-wrap items-center gap-2">
+            <DemoChip />
+            <span>{CASE.id}</span>
+            <span className="text-dim">·</span>
+            <span>{CASE.complainant}, {CASE.location}</span>
           </div>
-          <div className="flex w-full flex-wrap items-center gap-2 md:w-auto">
-            <div
-              className="flex h-10 min-w-0 flex-1 items-center gap-2 rounded-xl border border-line-2 px-3 md:w-[380px] md:flex-none"
-              style={{ background: 'linear-gradient(180deg,#1d1d20,#151517)' }}
-            >
-              <Wallet className="size-4 shrink-0 text-muted" />
-              <span className="k-mono truncate text-[14px] text-text">{CASE.suspectWallet}</span>
-              <Chip tone="crimson" className="ml-auto">TRON</Chip>
-            </div>
-            <Button variant="ember" onClick={() => setRun((r) => r + 1)}>
-              <RotateCcw /> Re-run trace
-            </Button>
+          <h1 className="k-num text-[28px] leading-tight md:text-[32px]">Follow the money</h1>
+          <div className="mt-2 flex flex-wrap items-center gap-2">
+            <AnimatePresence mode="wait">
+              {done ? (
+                <motion.span key="done" initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} className="flex flex-wrap items-center gap-2">
+                  <Chip tone="moss" dot>Traced in {CASE.traceSeconds} s</Chip>
+                  <Chip tone="neutral">6 hops · 2 routes · 2 chains</Chip>
+                  <Chip tone="gold">Ends at {EXCHANGE.name}</Chip>
+                  {top && <Chip tone={TYPOLOGY_TONE[top.id] ?? 'crimson'} dot>{top.name}</Chip>}
+                </motion.span>
+              ) : (
+                <motion.span key="run" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                  <Chip tone="ember" dot pulse>Tracing… {STAGES[Math.min(stage, STAGES.length - 1)].label}</Chip>
+                </motion.span>
+              )}
+            </AnimatePresence>
           </div>
         </div>
-      </Reveal>
-
-      {/* ── pipeline ── */}
-      <Reveal delay={0.05}>
-        <Card className="px-4 py-3.5">
-          <div className="k-scroll flex items-stretch gap-2 overflow-x-auto">
-            {STAGES.map((s, i) => {
-              const state = i < stage ? 'done' : i === stage ? 'run' : 'wait'
-              return (
-                <div
-                  key={s.label}
-                  className={cn(
-                    'relative flex min-w-[150px] flex-1 items-center gap-2.5 rounded-xl border px-3 py-2 transition-colors',
-                    state === 'done' && 'border-line-2 bg-white/[0.03]',
-                    state === 'run' && 'border-ember/40 bg-ember/[0.06]',
-                    state === 'wait' && 'border-line opacity-50',
-                  )}
-                >
-                  <span
-                    className={cn(
-                      'grid size-6 shrink-0 place-items-center rounded-full text-[11.5px]',
-                      state === 'done' ? 'bg-moss/15 text-moss' : state === 'run' ? 'bg-ember/20 text-ember' : 'bg-white/5 text-dim',
-                    )}
-                  >
-                    {state === 'done' ? <Check className="size-3.5" /> : state === 'run' ? <Loader2 className="size-3.5 animate-spin" /> : i + 1}
-                  </span>
-                  <div className="min-w-0">
-                    <div className="truncate text-[13px] text-text">{s.label}</div>
-                    <div className="truncate text-[11.5px] text-dim">{state === 'done' ? `${(s.ms / 1000).toFixed(1)} s · ${s.tech}` : s.tech}</div>
-                  </div>
-                </div>
-              )
-            })}
+        <div className="flex w-full flex-wrap items-center gap-2 md:w-auto">
+          <div className="flex h-10 min-w-0 flex-1 items-center gap-2 rounded-xl border border-line-2 px-3 md:w-[400px] md:flex-none" style={{ background: 'linear-gradient(180deg,#1d1d20,#151517)' }}>
+            <Wallet className="size-4 shrink-0 text-muted" />
+            <span className="k-mono truncate text-[14px] text-text">{CASE.suspectWallet}</span>
+            <Chip tone="crimson" className="ml-auto">TRON</Chip>
           </div>
-        </Card>
-      </Reveal>
+          <Button onClick={rerun} disabled={!done}>
+            <RotateCcw /> Re-run
+          </Button>
+        </div>
+      </div>
 
-      {/* ── money trail ── */}
-        <Reveal delay={0.1}>
-          <Card variant="glass" className="h-full pb-3">
-            <CardHeader
-              title="Money trail"
-              tech="every arrow is a real transfer, in time order · click any wallet"
-              right={
-                <Tabs value={view} onValueChange={(v) => setView(v as typeof view)}>
-                  <TabsList className="h-8 border border-line bg-white/[0.04]">
-                    <TabsTrigger value="all" className="px-2.5 text-[12.5px]">Everything</TabsTrigger>
-                    <TabsTrigger value="a" className="px-2.5 text-[12.5px]">Route A</TabsTrigger>
-                    <TabsTrigger value="b" className="px-2.5 text-[12.5px]">Route B · bridge</TabsTrigger>
-                    <TabsTrigger value="cold" className="px-2.5 text-[12.5px]">Cold trail</TabsTrigger>
-                  </TabsList>
-                </Tabs>
-              }
-            />
-            <div className="k-scroll overflow-x-auto px-4 pt-3">
-              <div className="min-w-[1180px]">
-                <FlowGraph key={run} nodes={nodes} edges={EDGES} height={420} nodeWidth={172} nodeHeight={58} selected={selected} onSelect={setSelected} highlight={highlight} />
+      <StageRail stages={FLOW} current={step} reachable={() => done} done={(i) => (i === 0 ? done : done && i < step)} onJump={goStep} layoutId="trace-step-glow" />
+
+      <StageFrame stageKey={FLOW[step].key} dir={dir} label={FLOW[step].label}>
+        {step === 0 && <RunStage stage={stage} />}
+
+        {step === 1 && (
+          <div className="grid grid-cols-1 gap-3 2xl:grid-cols-[1fr_360px]">
+            <Card variant="glass" className="pb-3">
+              <CardHeader
+                title="Money trail"
+                tech="every arrow is a real transfer, in time order · click any wallet"
+                right={
+                  <Tabs value={view} onValueChange={(v) => setView(v as typeof view)}>
+                    <TabsList className="h-8 border border-line bg-white/[0.04]">
+                      <TabsTrigger value="all" className="px-2.5 text-[12.5px]">Everything</TabsTrigger>
+                      <TabsTrigger value="a" className="px-2.5 text-[12.5px]">Route A</TabsTrigger>
+                      <TabsTrigger value="b" className="px-2.5 text-[12.5px]">Route B · bridge</TabsTrigger>
+                      <TabsTrigger value="cold" className="px-2.5 text-[12.5px]">Cold trail</TabsTrigger>
+                    </TabsList>
+                  </Tabs>
+                }
+              />
+              <div className="k-scroll overflow-x-auto px-4 pt-3">
+                <div className="min-w-[1060px]">
+                  <FlowGraph key={run} nodes={nodes} edges={EDGES} height={420} nodeWidth={162} nodeHeight={58} selected={selected} onSelect={setSelected} highlight={highlight} />
+                </div>
               </div>
-            </div>
-            <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 px-5 pt-2 text-[12px] text-muted">
-              {([
-                ['sky', 'Victims'],
-                ['crimson', 'Criminal wallets'],
-                ['teal', 'Pass-through hop'],
-                ['violet', 'Bridge (cross-chain)'],
-                ['gold', 'Exchange'],
-                ['ember', 'Re-acquired lead'],
-              ] as [Tone, string][]).map(([t, l]) => (
-                <span key={l} className="flex items-center gap-1.5">
-                  <span className="size-2 rounded-full" style={{ background: toneHex(t), boxShadow: `0 0 6px ${toneHex(t)}` }} />
-                  {l}
-                </span>
-              ))}
-              <span className="ml-auto flex items-center gap-1.5 text-dim">
-                <span className="h-px w-5 border-t border-dashed border-muted" /> dashed = inferred, verify before acting
-              </span>
-            </div>
-          </Card>
-        </Reveal>
-
-      {/* ── selected wallet · sweep · consolidation ── */}
-      <div className="grid grid-cols-1 gap-3 lg:grid-cols-2 xl:grid-cols-3">
-        <Reveal delay={0.15}>
-          <Card className="h-full">
-            <AnimatePresence mode="wait">
-              <motion.div key={selected} initial={{ opacity: 0, x: 8 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -8 }} transition={{ duration: 0.22 }} className="p-5">
-                <div className="flex items-center gap-3">
-                  <span className="grid size-10 place-items-center rounded-xl [&_svg]:size-4.5" style={{ background: toneA(sel.tone, 0.14), color: toneHex(sel.tone) }}>
-                    {ICON[selected]}
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 px-5 pt-2 text-[12px] text-muted">
+                {([
+                  ['sky', 'Victims'],
+                  ['crimson', 'Criminal wallets'],
+                  ['teal', 'Pass-through hop'],
+                  ['violet', 'Bridge (cross-chain)'],
+                  ['gold', 'Exchange'],
+                  ['ember', 'Re-acquired lead'],
+                ] as [Tone, string][]).map(([t, l]) => (
+                  <span key={l} className="flex items-center gap-1.5">
+                    <span className="size-2 rounded-full" style={{ background: toneHex(t), boxShadow: `0 0 6px ${toneHex(t)}` }} />
+                    {l}
                   </span>
-                  <div className="min-w-0">
-                    <div className="truncate text-[15.5px] font-medium">{selected === 'reacq' ? 'Re-acquired wallet' : sel.title}</div>
-                    <div className="text-[12.5px] text-dim">{sel.role}</div>
-                  </div>
-                </div>
-                {sel.flags && (
-                  <div className="mt-3 flex flex-wrap gap-1.5">
-                    {sel.flags.map((f) => (
-                      <Chip key={f.label} tone={f.tone} dot>
-                        {f.label}
-                      </Chip>
-                    ))}
-                  </div>
-                )}
-                <p className="mt-4 text-[14px] leading-relaxed text-text/85">{sel.plain}</p>
-                <div className="mt-4 divide-y divide-line rounded-xl border border-line px-3">
-                  {(selected === 'reacq' ? CANDIDATES[cand].addr : sel.addr) && (
-                    <KV k="Wallet" v={<Address addr={selected === 'reacq' ? CANDIDATES[cand].addr : sel.addr!} chain={sel.chain} />} />
-                  )}
-                  {sel.chain && <KV k="Blockchain" v={sel.chain} />}
-                  {sel.amt !== undefined && (
-                    <KV k="Amount" v={<span className="k-num">{num(selected === 'reacq' ? CANDIDATES[cand].out : sel.amt)} USDT <span className="text-dim">≈ {inr((selected === 'reacq' ? CANDIDATES[cand].out : sel.amt) * USDT_INR)}</span></span>} />
-                  )}
-                  {sel.at && <KV k="Time (IST)" v={<span className="k-mono">02 Sep · {sel.at}</span>} />}
-                  {selected === 'exchange' && (
-                    <>
-                      <KV k="Jurisdiction" v={EXCHANGE.jurisdiction} />
-                      <KV k="Indian users" v={EXCHANGE.indianUsers} />
-                    </>
-                  )}
-                </div>
-                <div className="mt-4 flex flex-wrap gap-2">
-                  {selected === 'exchange' || selected === 'depA' ? (
-                    <>
-                      <Link to="/attribution"><Button size="sm"><Gavel /> Why Meridian?</Button></Link>
-                      <Link to="/evidence"><Button size="sm" variant="ember"><FileSignature /> Draft notice</Button></Link>
-                    </>
-                  ) : selected === 'hub' || selected === 'others' ? (
-                    <Link to="/syndicates"><Button size="sm"><Users /> Open syndicate SYN-07</Button></Link>
-                  ) : (
-                    <Link to="/watchlists"><Button size="sm"><ShieldAlert /> Flag to exchanges</Button></Link>
-                  )}
-                </div>
-              </motion.div>
-            </AnimatePresence>
-          </Card>
-        </Reveal>
-        <Reveal delay={0.1}>
-          <SweepCard />
-        </Reveal>
-        <Reveal delay={0.15}>
-          <ConsolidationCard />
-        </Reveal>
-      </div>
-
-      {/* ── cold trail · hop table ── */}
-      <div className="grid grid-cols-1 gap-3 xl:grid-cols-[1fr_1.6fr]">
-        <Reveal delay={0.2}>
-          <Card variant="glass" className="h-full pb-4">
-            <CardHeader
-              title="Trail went cold? We pick it up again"
-              tech="cold-trail re-acquisition · behavioural matching past a mixer"
-              right={<Chip tone="ember">New</Chip>}
-            />
-            <p className="px-5 pt-2 text-[13px] leading-relaxed text-muted">
-              400 USDT entered a mixer, which hides who withdraws what. Instead of stopping, ANVESHAK compares every withdrawal that followed against this operator's habits.
-            </p>
-            <div className="mt-3 space-y-1.5 px-3">
-              {CANDIDATES.map((c, i) => (
-                <button
-                  key={c.addr}
-                  onClick={() => {
-                    setCand(i)
-                    setSelected('reacq')
-                    setView('cold')
-                  }}
-                  className={cn(
-                    'w-full rounded-xl border px-3 py-2.5 text-left transition-colors',
-                    cand === i ? 'border-ember/40 bg-ember/[0.06]' : 'border-line hover:bg-white/[0.03]',
-                  )}
-                >
-                  <div className="flex items-center gap-2">
-                    <span className="k-mono text-[13px] text-text">{c.addr.slice(0, 8)}…{c.addr.slice(-4)}</span>
-                    <span className="text-[11.5px] text-dim">withdrew {c.out} USDT · {c.after} later</span>
-                    <span className={cn('k-num ml-auto text-[14.5px]', i === 0 ? 'text-ember' : 'text-muted')}>{Math.round(c.score * 100)}%</span>
-                  </div>
-                  <AnimatePresence initial={false}>
-                    {cand === i && (
-                      <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
-                        <div className="space-y-1.5 pt-2.5">
-                          {c.parts.map(([k, v]) => (
-                            <div key={k} className="grid grid-cols-[1fr_90px_32px] items-center gap-2 text-[12px]">
-                              <span className="text-muted">{k}</span>
-                              <Meter value={v} tone="ember" height={4} />
-                              <span className="k-num text-right text-text/80">{Math.round(v * 100)}</span>
-                            </div>
-                          ))}
-                        </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </button>
-              ))}
-            </div>
-            <p className="mt-3 px-5 text-[12px] text-dim">A behavioural match is an investigative lead, not proof of ownership. Confirm with an exchange request before acting.</p>
-          </Card>
-        </Reveal>
-        <Reveal delay={0.1}>
-          <Card className="h-full">
-            <CardHeader title="Hop-by-hop record" tech="what goes into the evidence pack · Route A + Route B" right={<Link to="/evidence" className="k-btn-ghost inline-flex h-7 items-center rounded-lg px-2.5 text-[12.5px]">Add to pack</Link>} />
-            <div className="k-scroll mt-2 overflow-x-auto px-2 pb-3">
-              <table className="w-full min-w-[640px] text-[13.5px]">
-                <thead>
-                  <tr className="text-left text-[12px] text-dim">
-                    <th className="px-3 py-2 font-normal">#</th>
-                    <th className="px-3 py-2 font-normal">Wallet</th>
-                    <th className="px-3 py-2 font-normal">What it is</th>
-                    <th className="px-3 py-2 text-right font-normal">Amount</th>
-                    <th className="px-3 py-2 font-normal">Time</th>
-                    <th className="px-3 py-2 font-normal">Since last hop</th>
-                    <th className="px-3 py-2 font-normal">Signal</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {[...ROUTE_A.trail, ...ROUTE_B.trail.slice(2)].map((h, i) => (
-                    <tr key={`${h.addr}-${i}`} className="border-t border-line hover:bg-white/[0.02]">
-                      <td className="k-num px-3 py-2 text-dim">{i + 1}</td>
-                      <td className="px-2 py-1.5"><Address addr={h.addr} chain={h.chain} /></td>
-                      <td className="px-3 py-2 text-text/85">{h.role}</td>
-                      <td className="k-num px-3 py-2 text-right">{num(h.amt)}</td>
-                      <td className="k-mono px-3 py-2 text-muted">{h.at}</td>
-                      <td className="px-3 py-2">{h.gapSec ? <span className={cn('k-mono', h.gapSec < 60 ? 'text-crimson' : 'text-text/80')}>{mmss(h.gapSec)}</span> : <span className="text-dim">—</span>}</td>
-                      <td className="px-3 py-2"><FlagChip flag={h.flag} /></td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </Card>
-        </Reveal>
-      </div>
-
-      {/* ── bridge · next steps ── */}
-      <div className="grid grid-cols-1 gap-3 xl:grid-cols-[1fr_1.6fr]">
-        <Reveal delay={0.15}>
-          <Card className="h-full pb-5">
-            <CardHeader title="Crossing to another blockchain" tech="TRON → Ethereum bridge link" right={<Chip tone="violet">82% match</Chip>} />
-            <div className="mt-4 flex items-center gap-2 px-5">
-              <ChainBox chain="TRON" amt={1795} at="19:58:41" />
-              <div className="relative flex-1">
-                <div className="h-px w-full bg-gradient-to-r from-crimson via-violet to-sky" />
-                <div className="absolute inset-x-0 -top-2.5 text-center text-[11.5px] text-violet">4 m 38 s · fee 13 USDT</div>
+                ))}
+                <span className="ml-auto flex items-center gap-1.5 text-dim">
+                  <span className="h-px w-5 border-t border-dashed border-muted" /> dashed = inferred, verify before acting
+                </span>
               </div>
-              <ChainBox chain="Ethereum" amt={1782} at="20:03:19" />
+            </Card>
+            <Card className="h-full">
+              <AnimatePresence mode="wait">
+                <motion.div key={selected} initial={{ opacity: 0, x: 8 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -8 }} transition={{ duration: 0.22 }} className="p-5">
+                  <div className="text-[12px] text-dim">Selected wallet</div>
+                  <div className="mt-2 flex items-center gap-3">
+                    <span className="grid size-10 place-items-center rounded-xl [&_svg]:size-4.5" style={{ background: toneA(sel.tone, 0.14), color: toneHex(sel.tone) }}>
+                      {ICON[selected]}
+                    </span>
+                    <div className="min-w-0">
+                      <div className="truncate text-[15.5px] font-medium">{selected === 'reacq' ? 'Re-acquired wallet' : sel.title}</div>
+                      <div className="text-[12.5px] text-dim">{sel.role}</div>
+                    </div>
+                  </div>
+                  {sel.flags && (
+                    <div className="mt-3 flex flex-wrap gap-1.5">
+                      {sel.flags.map((f) => (
+                        <Chip key={f.label} tone={f.tone} dot>
+                          {f.label}
+                        </Chip>
+                      ))}
+                    </div>
+                  )}
+                  <p className="mt-4 text-[14px] leading-relaxed text-text/85">{sel.plain}</p>
+                  <div className="mt-4 divide-y divide-line rounded-xl border border-line px-3">
+                    {(selected === 'reacq' ? CANDIDATES[cand].addr : sel.addr) && (
+                      <KV k="Wallet" v={<Address addr={selected === 'reacq' ? CANDIDATES[cand].addr : sel.addr!} chain={sel.chain} />} />
+                    )}
+                    {sel.chain && <KV k="Blockchain" v={sel.chain} />}
+                    {sel.amt !== undefined && (
+                      <KV k="Amount" v={<span className="k-num">{num(selected === 'reacq' ? CANDIDATES[cand].out : sel.amt)} USDT <span className="text-dim">≈ {inr((selected === 'reacq' ? CANDIDATES[cand].out : sel.amt) * USDT_INR)}</span></span>} />
+                    )}
+                    {sel.at && <KV k="Time (IST)" v={<span className="k-mono">02 Sep · {sel.at}</span>} />}
+                    {selected === 'exchange' && (
+                      <>
+                        <KV k="Jurisdiction" v={EXCHANGE.jurisdiction} />
+                        <KV k="Indian users" v={EXCHANGE.indianUsers} />
+                      </>
+                    )}
+                  </div>
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    {selected === 'exchange' || selected === 'depA' ? (
+                      <Button size="sm" onClick={() => goStep(4)}>
+                        <Gavel /> Why Meridian?
+                      </Button>
+                    ) : selected === 'hub' || selected === 'others' ? (
+                      <Button size="sm" onClick={() => goStep(2)}>
+                        <Users /> How 38 victims pooled here
+                      </Button>
+                    ) : selected === 'bridge' || selected === 'emerge' || selected === 'mixer' || selected === 'reacq' ? (
+                      <Button size="sm" onClick={() => goStep(3)}>
+                        <ArrowRightLeft /> See the bridge & mixer
+                      </Button>
+                    ) : (
+                      <Link to="/watchlists">
+                        <Button size="sm">
+                          <ShieldAlert /> Flag to exchanges
+                        </Button>
+                      </Link>
+                    )}
+                  </div>
+                </motion.div>
+              </AnimatePresence>
+            </Card>
+          </div>
+        )}
+
+        {step === 2 && (
+          <div className="space-y-3">
+            <StageIntro>Two behaviours give a scam away without any training data: money leaves within seconds, and many victims' money pools in one place.</StageIntro>
+            <div className="grid grid-cols-1 gap-3 xl:grid-cols-2">
+              <SweepCard />
+              <ConsolidationCard />
             </div>
-            <div className="mt-4 space-y-2 px-5">
-              {([
-                ['Amount matches after bridge fee', 0.94],
-                ['Timing within bridge settlement window', 0.88],
-                ['No competing withdrawal of same size', 0.71],
-              ] as [string, number][]).map(([k, v]) => (
-                <div key={k} className="grid grid-cols-[1fr_80px_30px] items-center gap-2 text-[12.5px]">
-                  <span className="text-muted">{k}</span>
-                  <Meter value={v} tone="violet" height={4} />
-                  <span className="k-num text-right">{Math.round(v * 100)}</span>
+          </div>
+        )}
+
+        {step === 3 && (
+          <div className="space-y-3">
+            <StageIntro>Part of the money tried to hide: it jumped to another blockchain, and some went into a mixer. Both are followed, and both are labelled as leads to verify.</StageIntro>
+            <div className="grid grid-cols-1 gap-3 xl:grid-cols-2">
+              <BridgeCard />
+              <ColdTrailCard cand={cand} onPick={(i) => { setCand(i); setSelected('reacq'); setView('cold') }} />
+            </div>
+          </div>
+        )}
+
+        {step === 4 && <VerdictStage typology={typology} />}
+
+        {step === 5 && (
+          <div className="space-y-3">
+            <NextSteps />
+            <HopTable />
+          </div>
+        )}
+      </StageFrame>
+
+      {done && (
+        <StageFooter
+          left={
+            step > 1 ? (
+              <Button variant="quiet" onClick={() => goStep(step - 1)}>
+                <ArrowLeft /> {FLOW[step - 1].label}
+              </Button>
+            ) : null
+          }
+          note={<span className="hidden md:inline">Every stage stays one click away on the rail above.</span>}
+          right={
+            step < FLOW.length - 1 ? (
+              <Button variant="ember" onClick={() => goStep(step + 1)}>
+                {FLOW[step + 1].label} <ArrowRight />
+              </Button>
+            ) : (
+              <Link to="/evidence?tab=lawful">
+                <Button variant="ember">
+                  <FileSignature /> Draft the notice <ArrowRight />
+                </Button>
+              </Link>
+            )
+          }
+        />
+      )}
+    </div>
+  )
+}
+
+function StageIntro({ children }: { children: React.ReactNode }) {
+  return <p className="max-w-[900px] text-[14px] leading-relaxed text-muted">{children}</p>
+}
+
+/* ───────── stage 1: the pipeline, big ───────── */
+function RunStage({ stage }: { stage: number }) {
+  const done = stage >= STAGES.length
+  const found = [
+    { k: 'Hops followed', v: Math.min(6, stage), tone: 'teal' as Tone },
+    { k: 'Blockchains', v: stage >= 5 ? 2 : 1, tone: 'violet' as Tone },
+    { k: 'Victims linked', v: stage >= 4 ? 38 : stage >= 2 ? 1 : 0, tone: 'sky' as Tone },
+    { k: 'Exchanges named', v: stage >= 6 ? 1 : 0, tone: 'gold' as Tone },
+  ]
+  return (
+    <div className="grid grid-cols-1 gap-3 xl:grid-cols-[1.3fr_1fr]">
+      <Card className="pb-4">
+        <CardHeader title="Tracing the money" tech="each step lights up when its work is actually done" right={done ? <Chip tone="moss" dot>Done</Chip> : <Chip tone="ember" dot pulse>Working</Chip>} />
+        <ol className="mt-3 space-y-1.5 px-4">
+          {STAGES.map((s, i) => {
+            const state = i < stage ? 'done' : i === stage ? 'run' : 'wait'
+            return (
+              <motion.li
+                key={s.label}
+                layout
+                className={cn(
+                  'flex items-center gap-3 rounded-xl border px-3 py-2.5 transition-colors',
+                  state === 'done' && 'border-line-2 bg-white/[0.03]',
+                  state === 'run' && 'border-ember/40 bg-ember/[0.07]',
+                  state === 'wait' && 'border-line opacity-45',
+                )}
+              >
+                <span className={cn('grid size-7 shrink-0 place-items-center rounded-full text-[12px]', state === 'done' ? 'bg-moss/15 text-moss' : state === 'run' ? 'bg-ember/20 text-ember' : 'bg-white/5 text-dim')}>
+                  {state === 'done' ? <Check className="size-3.5" strokeWidth={3} /> : state === 'run' ? <Loader2 className="size-3.5 animate-spin" /> : i + 1}
+                </span>
+                <div className="min-w-0 flex-1">
+                  <div className="text-[14px] text-text">{s.label}</div>
+                  <div className="text-[12px] text-dim">{s.tech}</div>
                 </div>
-              ))}
+                <span className="k-mono text-[12.5px] text-muted">{state === 'done' ? `${(s.ms / 1000).toFixed(1)} s` : ''}</span>
+              </motion.li>
+            )
+          })}
+        </ol>
+      </Card>
+      <Card variant="glass" className="pb-5">
+        <CardHeader title="Found so far" tech="live counts while the trace runs" />
+        <div className="mt-3 grid grid-cols-2 gap-2 px-4">
+          {found.map((f) => (
+            <div key={f.k} className="rounded-xl border border-line bg-white/[0.02] p-3">
+              <motion.div key={f.v} initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="k-num text-[30px] leading-none" style={{ color: f.v ? toneHex(f.tone) : 'var(--k-dim)' }}>
+                {f.v}
+              </motion.div>
+              <div className="mt-1.5 text-[12.5px] text-muted">{f.k}</div>
             </div>
-            <p className="mt-4 px-5 text-[12px] leading-relaxed text-dim">
-              A bridge does not publish which deposit became which withdrawal. This link comes from timing and amount, so an officer must verify it before acting.
-            </p>
-          </Card>
-        </Reveal>
-        <Reveal delay={0.2}>
-          <NextSteps />
-        </Reveal>
+          ))}
+        </div>
+        <p className="mx-5 mt-4 text-[12.5px] leading-relaxed text-dim">
+          {done ? 'Done — opening the money trail…' : 'Each transfer is checked to happen after the one before it, so the trail can never run backwards in time.'}
+        </p>
+      </Card>
+    </div>
+  )
+}
+
+/* ───────── stage 5: verdict — exchange, risk, crime type, innocence side by side ───────── */
+function VerdictStage({ typology }: { typology: { data: TypologyOut | null; error: string | null } }) {
+  return (
+    <div className="space-y-3">
+      <Card variant="glass" className="p-5">
+        <div className="flex flex-wrap items-center justify-between gap-6">
+          <div className="min-w-0">
+            <div className="text-[12.5px] text-muted">The money was cashed in at</div>
+            <div className="k-num text-[26px] leading-tight text-text">{EXCHANGE.name}</div>
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              <Chip tone="gold" dot>Crypto exchange (VASP)</Chip>
+              <Chip>{EXCHANGE.jurisdiction}</Chip>
+              <Chip tone="crimson" dot>Not registered with FIU-IND</Chip>
+            </div>
+            <Link to="/attribution" className="mt-3 inline-flex items-center gap-1 text-[13px] text-text hover:text-ember">
+              Full working on the Attribution screen <ArrowRight className="size-3.5" />
+            </Link>
+          </div>
+          <div className="flex flex-wrap items-start gap-5">
+            <Ring value={ATTRIBUTION_P} tone="gold" sub="attribution" note="How sure it's Meridian" />
+            <Ring value={RISK.score} tone="crimson" sub={`risk · ${RISK.band}`} note="How likely a scam flow" />
+            <TypologyRing data={typology.data} size={112} />
+            <Ring value={INNOCENCE_SCORE} tone="moss" sub="innocence" note="Chance the wallet is innocent" />
+          </div>
+        </div>
+      </Card>
+      <div className="grid grid-cols-1 gap-3 xl:grid-cols-[1.4fr_1fr]">
+        <TypologyCard data={typology.data} error={typology.error} />
+        <Card className="h-full pb-5">
+          <CardHeader title="Is this wallet innocent?" tech="devil's-advocate check · starts at 0.50 and moves with each fact" />
+          <ul className="mt-3 space-y-1.5 px-4">
+            {INNOCENCE.filter((f) => f.v !== 0).map((f) => (
+              <li key={f.plain} className="flex items-start gap-2.5 rounded-lg border border-line bg-white/[0.015] px-2.5 py-2 text-[13px]">
+                <span className={cn('k-num mt-px w-11 shrink-0 text-right', f.v > 0 ? 'text-moss' : 'text-crimson')}>{f.v > 0 ? '+' : '−'}{Math.abs(f.v).toFixed(2)}</span>
+                <span className="leading-snug text-text/90">{f.plain}</span>
+              </li>
+            ))}
+          </ul>
+          <p className="mx-5 mt-3 text-[12px] leading-snug text-dim">A low score does not prove guilt — the account holder may be a tricked money mule. Confirm through KYC before naming anyone.</p>
+        </Card>
       </div>
     </div>
+  )
+}
+
+function Ring({ value, tone, sub, note }: { value: number; tone: Tone; sub: string; note: string }) {
+  return (
+    <div className="flex flex-col items-center gap-1.5">
+      <ScoreRing value={value} tone={tone} size={112} label={value.toFixed(2)} sub={sub} />
+      <div className="max-w-[150px] text-center text-[12px] text-muted">{note}</div>
+    </div>
+  )
+}
+
+/* ───────── stage 4 cards ───────── */
+function BridgeCard() {
+  return (
+    <Card className="h-full pb-5">
+      <CardHeader title="Crossing to another blockchain" tech="TRON → Ethereum bridge link" right={<Chip tone="violet">82% match</Chip>} />
+      <div className="mt-4 flex items-center gap-2 px-5">
+        <ChainBox chain="TRON" amt={1795} at="19:58:41" />
+        <div className="relative flex-1">
+          <div className="h-px w-full bg-gradient-to-r from-crimson via-violet to-sky" />
+          <div className="absolute inset-x-0 -top-2.5 text-center text-[11.5px] text-violet">4 m 38 s · fee 13 USDT</div>
+        </div>
+        <ChainBox chain="Ethereum" amt={1782} at="20:03:19" />
+      </div>
+      <div className="mt-4 space-y-2 px-5">
+        {([
+          ['Amount matches after bridge fee', 0.94],
+          ['Timing within bridge settlement window', 0.88],
+          ['No competing withdrawal of same size', 0.71],
+        ] as [string, number][]).map(([k, v]) => (
+          <div key={k} className="grid grid-cols-[1fr_80px_30px] items-center gap-2 text-[12.5px]">
+            <span className="text-muted">{k}</span>
+            <Meter value={v} tone="violet" height={4} />
+            <span className="k-num text-right">{Math.round(v * 100)}</span>
+          </div>
+        ))}
+      </div>
+      <p className="mt-4 px-5 text-[12px] leading-relaxed text-dim">
+        A bridge does not publish which deposit became which withdrawal. This link comes from timing and amount, so an officer must verify it before acting.
+      </p>
+    </Card>
+  )
+}
+
+function ColdTrailCard({ cand, onPick }: { cand: number; onPick: (i: number) => void }) {
+  return (
+    <Card variant="glass" className="h-full pb-4">
+      <CardHeader title="Trail went cold? We pick it up again" tech="cold-trail re-acquisition · behavioural matching past a mixer" right={<Chip tone="ember">New</Chip>} />
+      <p className="px-5 pt-2 text-[13px] leading-relaxed text-muted">
+        400 USDT entered a mixer, which hides who withdraws what. Instead of stopping, ANVESHAK compares every withdrawal that followed against this operator's habits.
+      </p>
+      <div className="mt-3 space-y-1.5 px-3">
+        {CANDIDATES.map((c, i) => (
+          <button
+            key={c.addr}
+            onClick={() => onPick(i)}
+            className={cn('w-full rounded-xl border px-3 py-2.5 text-left transition-colors', cand === i ? 'border-ember/40 bg-ember/[0.06]' : 'border-line hover:bg-white/[0.03]')}
+          >
+            <div className="flex items-center gap-2">
+              <span className="k-mono text-[13px] text-text">{c.addr.slice(0, 8)}…{c.addr.slice(-4)}</span>
+              <span className="truncate text-[11.5px] text-dim">withdrew {c.out} USDT · {c.after} later</span>
+              <span className={cn('k-num ml-auto text-[14.5px]', i === 0 ? 'text-ember' : 'text-muted')}>{Math.round(c.score * 100)}%</span>
+            </div>
+            <AnimatePresence initial={false}>
+              {cand === i && (
+                <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
+                  <div className="space-y-1.5 pt-2.5">
+                    {c.parts.map(([k, v]) => (
+                      <div key={k} className="grid grid-cols-[1fr_90px_32px] items-center gap-2 text-[12px]">
+                        <span className="text-muted">{k}</span>
+                        <Meter value={v} tone="ember" height={4} />
+                        <span className="k-num text-right text-text/80">{Math.round(v * 100)}</span>
+                      </div>
+                    ))}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </button>
+        ))}
+      </div>
+      <p className="mt-3 px-5 text-[12px] text-dim">A behavioural match is an investigative lead, not proof of ownership. Confirm with an exchange request before acting.</p>
+    </Card>
+  )
+}
+
+/* ───────── stage 6: evidence record ───────── */
+function HopTable() {
+  return (
+    <Card>
+      <CardHeader title="Hop-by-hop record" tech="what goes into the evidence pack · Route A + Route B" right={<Link to="/evidence" className="k-btn-ghost inline-flex h-7 items-center rounded-lg px-2.5 text-[12.5px]">Open evidence pack</Link>} />
+      <div className="k-scroll mt-2 overflow-x-auto px-2 pb-3">
+        <table className="w-full min-w-[640px] text-[13.5px]">
+          <thead>
+            <tr className="text-left text-[12px] text-dim">
+              <th className="px-3 py-2 font-normal">#</th>
+              <th className="px-3 py-2 font-normal">Wallet</th>
+              <th className="px-3 py-2 font-normal">What it is</th>
+              <th className="px-3 py-2 text-right font-normal">Amount</th>
+              <th className="px-3 py-2 font-normal">Time</th>
+              <th className="px-3 py-2 font-normal">Since last hop</th>
+              <th className="px-3 py-2 font-normal">Signal</th>
+            </tr>
+          </thead>
+          <tbody>
+            {[...ROUTE_A.trail, ...ROUTE_B.trail.slice(2)].map((h, i) => (
+              <tr key={`${h.addr}-${i}`} className="border-t border-line hover:bg-white/[0.02]">
+                <td className="k-num px-3 py-2 text-dim">{i + 1}</td>
+                <td className="px-2 py-1.5"><Address addr={h.addr} chain={h.chain} /></td>
+                <td className="px-3 py-2 text-text/85">{h.role}</td>
+                <td className="k-num px-3 py-2 text-right">{num(h.amt)}</td>
+                <td className="k-mono px-3 py-2 text-muted">{h.at}</td>
+                <td className="px-3 py-2">{h.gapSec ? <span className={cn('k-mono', h.gapSec < 60 ? 'text-crimson' : 'text-text/80')}>{mmss(h.gapSec)}</span> : <span className="text-dim">—</span>}</td>
+                <td className="px-3 py-2"><FlagChip flag={h.flag} /></td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </Card>
   )
 }
 
@@ -637,7 +826,7 @@ function ConsolidationCard() {
 
 function NextSteps() {
   const steps: { to: string; icon: React.ReactNode; title: string; sub: string; tone: Tone; primary?: boolean }[] = [
-    { to: '/evidence', icon: <FileSignature />, title: 'Draft the lawful request', sub: 'Pre-filled notice to Meridian · officer review', tone: 'ember', primary: true },
+    { to: '/evidence?tab=lawful', icon: <FileSignature />, title: 'Draft the lawful request', sub: 'Pre-filled notice to Meridian · officer review', tone: 'ember', primary: true },
     { to: '/interdiction', icon: <Zap />, title: 'Warn the next exchange', sub: 'Pre-emptive freeze alert · 6 min ETA', tone: 'gold' },
     { to: '/watchlists', icon: <ShieldAlert />, title: 'Flag wallets to all exchanges', sub: 'Broadcast 5 wallets · 6 exchanges', tone: 'crimson' },
     { to: '/fiat', icon: <ArrowRightLeft />, title: 'Follow the rupee exit', sub: 'P2P orders → mule bank accounts', tone: 'sky' },

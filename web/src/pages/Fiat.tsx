@@ -1,7 +1,8 @@
 import * as React from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { AnimatePresence, motion } from 'motion/react'
 import {
+  ArrowLeftRight,
   ArrowRight,
   Banknote,
   Building2,
@@ -12,6 +13,7 @@ import {
   Landmark,
   MapPin,
   Network,
+  Route,
   ScanSearch,
   Send,
   ShieldAlert,
@@ -34,6 +36,7 @@ import {
   Reveal,
   Sparkline,
   Stat,
+  SubTabs,
   toneA,
   toneHex,
   type FlowEdge,
@@ -127,6 +130,21 @@ const TILES: { k: string; v: React.ReactNode; s: string; tone: Tone; spark: numb
 ]
 
 export default function FiatPage() {
+  // lifted so switching tabs keeps what the officer picked
+  const [flowSel, setFlowSel] = React.useState('m1')
+  const [matchSel, setMatchSel] = React.useState('r1')
+  const [freezeSent, setFreezeSent] = React.useState(false)
+  const [, setParams] = useSearchParams()
+  const openFreeze = () =>
+    setParams(
+      (p) => {
+        const n = new URLSearchParams(p)
+        n.set('tab', 'freeze')
+        return n
+      },
+      { replace: true },
+    )
+
   return (
     <div className="space-y-4">
       <Reveal>
@@ -149,21 +167,21 @@ export default function FiatPage() {
                   <ScanSearch /> Attribution & risk
                 </Button>
               </Link>
-              <a href="#freeze" className="k-btn-ghost inline-flex h-9 items-center gap-1.5 rounded-[10px] px-3.5 text-[14px] font-medium hover:bg-raise">
+              <button
+                type="button"
+                onClick={openFreeze}
+                className="k-btn-ghost inline-flex h-9 items-center gap-1.5 rounded-[10px] px-3.5 text-[14px] font-medium hover:bg-raise"
+              >
                 <FileText className="size-3.5" /> Bank freeze draft
-              </a>
+              </button>
             </>
           }
         />
       </Reveal>
 
-      <Reveal delay={0.04}>
-        <HowItLeaves />
-      </Reveal>
-
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
         {TILES.map((t, i) => (
-          <Reveal key={t.k} delay={0.06 + i * 0.05}>
+          <Reveal key={t.k} delay={0.04 + i * 0.04}>
             <Card variant="speckle" grain className="h-[128px] p-4">
               <div className="relative flex items-start justify-between gap-2">
                 <div className="text-[13px] leading-snug text-muted">{t.k}</div>
@@ -183,22 +201,41 @@ export default function FiatPage() {
         ))}
       </div>
 
-      <Reveal delay={0.1}>
-        <FlowCard />
-      </Reveal>
-
-      <Reveal delay={0.1}>
-        <MatchEngine />
-      </Reveal>
-
-      <div className="grid grid-cols-1 gap-3 xl:grid-cols-[1.15fr_1fr]">
-        <Reveal delay={0.1}>
-          <MuleNetwork />
-        </Reveal>
-        <Reveal delay={0.15}>
-          <FreezeDraft />
-        </Reveal>
-      </div>
+      <SubTabs
+        tabs={[
+          {
+            key: 'route',
+            label: 'Wallet to ATM',
+            icon: Route,
+            render: () => (
+              <div className="space-y-3">
+                <HowItLeaves />
+                <FlowCard sel={flowSel} setSel={setFlowSel} />
+              </div>
+            ),
+          },
+          {
+            key: 'match',
+            label: 'Sale ↔ bank credit',
+            icon: ArrowLeftRight,
+            badge: `${FIAT_STATS.ordersMatched}/${FIAT_STATS.ordersTotal}`,
+            render: () => <MatchEngine sel={matchSel} onSel={setMatchSel} />,
+          },
+          {
+            key: 'mules',
+            label: 'Shared mule accounts',
+            icon: Landmark,
+            badge: SHARED_TOP.length,
+            render: (go) => <MuleNetwork onFreeze={() => go('freeze')} />,
+          },
+          {
+            key: 'freeze',
+            label: 'Freeze request',
+            icon: FileText,
+            render: () => <FreezeDraft sent={freezeSent} onSend={() => setFreezeSent(true)} />,
+          },
+        ]}
+      />
     </div>
   )
 }
@@ -263,8 +300,7 @@ function HowItLeaves() {
 }
 
 /* ───────────────────────── Flow graph + side panel ───────────────────────── */
-function FlowCard() {
-  const [sel, setSel] = React.useState<string>('m1')
+function FlowCard({ sel, setSel }: { sel: string; setSel: (id: string) => void }) {
   const info = FLOW_INFO[sel]
   const node = NODES.find((n) => n.id === sel)!
   return (
@@ -338,7 +374,7 @@ function FlowCard() {
 }
 
 /* ───────────────────────── Mule network ───────────────────────── */
-function MuleNetwork() {
+function MuleNetwork({ onFreeze }: { onFreeze: () => void }) {
   const accent: Record<string, Tone> = {}
   MULE_MATRIX[0].forEach((v, c) => {
     if (v > 0) accent[`0-${c}`] = 'ember'
@@ -407,6 +443,9 @@ function MuleNetwork() {
           <p className="mt-3 text-[12px] leading-snug text-dim">
             Freezing <span className="text-text">XXXX4821</span> alone would cover money from 6 victims in at least 5 states.
           </p>
+          <button type="button" onClick={onFreeze} className="mt-2 flex items-center gap-1.5 text-[13.5px] text-text/90 hover:text-text">
+            Bank freeze draft <ArrowRight className="size-3.5" />
+          </button>
         </div>
       </div>
     </Card>
@@ -414,10 +453,9 @@ function MuleNetwork() {
 }
 
 /* ───────────────────────── Freeze request draft ───────────────────────── */
-function FreezeDraft() {
-  const [sent, setSent] = React.useState(false)
+function FreezeDraft({ sent, onSend }: { sent: boolean; onSend: () => void }) {
   return (
-    <Card variant="glass" className="h-full pb-5" id="freeze">
+    <Card variant="glass" className="mx-auto max-w-[880px] pb-5" id="freeze">
       <CardHeader
         title="Bank account freeze request"
         tech="pre-filled from matched evidence pairs · Sahyadri Co-operative Bank"
@@ -428,7 +466,7 @@ function FreezeDraft() {
         <ShieldAlert className="size-3.5 shrink-0" />
         Draft for officer review — not legal advice. Section reference to be verified.
       </div>
-      <div className="mx-5 mt-3 max-h-[300px] overflow-y-auto rounded-xl border border-line bg-black/25 p-4 text-[13.5px] leading-relaxed text-text/85 k-scroll">
+      <div className="mx-5 mt-3 rounded-xl border border-line bg-black/25 p-4 text-[13.5px] leading-relaxed text-text/85">
         <div className="text-[12px] text-dim">To</div>
         <div>The Nodal Officer, Sahyadri Co-operative Bank</div>
         <div className="mt-2 text-[12px] text-dim">Subject</div>
@@ -454,7 +492,7 @@ function FreezeDraft() {
         <p className="max-w-[300px] text-[12px] leading-snug text-dim">
           Bank statements arrive via lawful request; in this prototype they are simulated.
         </p>
-        <Button onClick={() => setSent(true)} disabled={sent}>
+        <Button onClick={onSend} disabled={sent}>
           {sent ? <Check /> : <Send />}
           {sent ? `Sent to ${CASE.officer} for review` : 'Send to officer for review'}
         </Button>

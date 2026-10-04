@@ -2,7 +2,7 @@ import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { AnimatePresence, motion } from 'motion/react'
 import { Fingerprint, Globe2, Mail, ScanSearch, Sigma, TrendingUp } from 'lucide-react'
-import { Button, Card, CardHeader, Chip, DemoChip, PageHeader, Reveal, Stat, toneHex } from '@/components/kit'
+import { Button, Card, CardHeader, Chip, DemoChip, PageHeader, Reveal, Stat, SubTabs, toneHex } from '@/components/kit'
 import { Switch } from '@/components/animate-ui/components/radix/switch'
 import { CASE, EXCHANGE } from '@/data/demo'
 import { cn } from '@/lib/utils'
@@ -13,6 +13,8 @@ import { SectionTitle } from './attributionintel/ui'
 
 export default function AttributionIntelPage() {
   const [report, setReport] = React.useState('R-04')
+  // lifted so the source toggles survive switching tabs
+  const [uplift, setUplift] = React.useState<Record<string, boolean>>({ tr: true, osint: true })
   const likely = TR_CANDIDATES.filter((c) => c.verdict !== 'none').length
   const credible = REPORTS.filter((r) => credOf(r) >= 0.7).length
   const countries = new Set(REPORTS.filter((r) => r.cc !== '—' && credOf(r) >= 0.7).map((r) => r.cc)).size
@@ -65,65 +67,99 @@ export default function AttributionIntelPage() {
         ))}
       </div>
 
-      {/* ── Section A: Travel Rule ── */}
-      <Reveal delay={0.1}>
-        <SectionTitle
-          eyebrow="Source 1 · Travel Rule cross-reference"
-          title="The identity may already exist in a compliance message"
-          tech="Instead of tracing hop by hop, match amount, time and address against the records that compliant exchanges must keep — then ask the right exchange for the right record."
-          tone="gold"
-        />
-      </Reveal>
-      <div className="grid grid-cols-1 gap-3 xl:grid-cols-[1.4fr_1fr]">
-        <Reveal delay={0.12}>
-          <HowItWorks />
-        </Reveal>
-        <Reveal delay={0.16}>
-          <Eligibility />
-        </Reveal>
-      </div>
-      <Reveal delay={0.1}>
-        <Candidates />
-      </Reveal>
-      <Reveal delay={0.1}>
-        <HonestyNote />
-      </Reveal>
-
-      {/* ── Section B: OSINT ── */}
-      <Reveal delay={0.1}>
-        <SectionTitle
-          eyebrow="Source 2 · OSINT crowd intelligence"
-          title="Victims abroad often name the wallet first"
-          tech="Public scam-report databases, community forums and explorer comments — cross-referenced against every wallet on the trace, scored for credibility, never taken on trust."
-          tone="sky"
-        />
-      </Reveal>
-      <Reveal delay={0.12}>
-        <OsintScan selected={report} onSelect={setReport} />
-      </Reveal>
-      <div className="grid grid-cols-1 gap-3 xl:grid-cols-[1.5fr_1fr]">
-        <Reveal delay={0.1}>
-          <EarlyWarning />
-        </Reveal>
-        <Reveal delay={0.15}>
-          <Countries />
-        </Reveal>
-      </div>
-      <div className="grid grid-cols-1 gap-3 xl:grid-cols-[1fr_1.3fr]">
-        <Reveal delay={0.1}>
-          <Credibility selected={report} />
-        </Reveal>
-        <Reveal delay={0.15}>
-          <Uplift />
-        </Reveal>
-      </div>
+      <SubTabs
+        tabs={[
+          {
+            key: 'travel-rule',
+            label: 'Exchange compliance records',
+            icon: Mail,
+            badge: likely,
+            render: (go) => (
+              <div className="space-y-3">
+                <SectionTitle
+                  eyebrow="Source 1 · Travel Rule cross-reference"
+                  title="The identity may already exist in a compliance message"
+                  tech="Instead of tracing hop by hop, match amount, time and address against the records that compliant exchanges must keep — then ask the right exchange for the right record."
+                  tone="gold"
+                  right={
+                    <Button variant="quiet" size="sm" onClick={() => go('osint')}>
+                      Next: public scam reports →
+                    </Button>
+                  }
+                />
+                <div className="grid grid-cols-1 gap-3 xl:grid-cols-[1.4fr_1fr]">
+                  <Reveal delay={0.05}>
+                    <HowItWorks />
+                  </Reveal>
+                  <Reveal delay={0.1}>
+                    <Eligibility />
+                  </Reveal>
+                </div>
+                <Reveal delay={0.1}>
+                  <Candidates />
+                </Reveal>
+                <Reveal delay={0.1}>
+                  <HonestyNote />
+                </Reveal>
+              </div>
+            ),
+          },
+          {
+            key: 'osint',
+            label: 'Public scam reports',
+            icon: ScanSearch,
+            badge: credible,
+            render: (go) => (
+              <div className="space-y-3">
+                <SectionTitle
+                  eyebrow="Source 2 · OSINT crowd intelligence"
+                  title="Victims abroad often name the wallet first"
+                  tech="Public scam-report databases, community forums and explorer comments — cross-referenced against every wallet on the trace, scored for credibility, never taken on trust."
+                  tone="sky"
+                  right={
+                    <Button variant="quiet" size="sm" onClick={() => go('confidence')}>
+                      Next: what it adds up to →
+                    </Button>
+                  }
+                />
+                <Reveal delay={0.05}>
+                  <OsintScan selected={report} onSelect={setReport} />
+                </Reveal>
+                <div className="grid grid-cols-1 gap-3 xl:grid-cols-[1fr_1fr]">
+                  <Reveal delay={0.1}>
+                    <Credibility selected={report} />
+                  </Reveal>
+                  <Reveal delay={0.15}>
+                    <Countries />
+                  </Reveal>
+                </div>
+                <Reveal delay={0.1}>
+                  <EarlyWarning />
+                </Reveal>
+              </div>
+            ),
+          },
+          {
+            key: 'confidence',
+            label: 'What it adds up to',
+            icon: TrendingUp,
+            render: () => (
+              <div className="space-y-3">
+                <p className="text-[13.5px] text-muted">Both sources fed into the same confidence model as the Attribution screen — switch either one off to see what it contributes.</p>
+                <Reveal delay={0.05}>
+                  <Uplift on={uplift} setOn={setUplift} />
+                </Reveal>
+              </div>
+            ),
+          },
+        ]}
+      />
     </div>
   )
 }
 
 /* ───────────── How the two sources move attribution confidence ───────────── */
-function Uplift() {
-  const [on, setOn] = React.useState<Record<string, boolean>>({ tr: true, osint: true })
+function Uplift({ on, setOn }: { on: Record<string, boolean>; setOn: React.Dispatch<React.SetStateAction<Record<string, boolean>>> }) {
   const baseMiss = BASE_SIGNALS.reduce((p, s) => p * (1 - s.w * s.c), 1)
   const base = 1 - baseMiss
   const active = NEW_SIGNALS.filter((s) => on[s.key])

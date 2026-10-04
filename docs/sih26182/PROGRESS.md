@@ -2,6 +2,27 @@
 
 Newest first. Update at the end of every session.
 
+## 2026-10-04 (later) · Dhruv + Claude · Typology detection, staged trace, sub-tabs everywhere
+**Did:**
+- Backend `app/typology/`: on-chain crime typology (fraud/scam, ransomware, darknet market, terror-financing
+  *indicators*, layering/other) — glass-box score = Σ weight × signal with every term returned, bands
+  strong/present/not indicated, mandatory disclaimer. `POST /api/v1/typology/assess`,
+  `GET /api/v1/typology/cases/{id}` (signals derived from stored hops). 490 → 524 tests.
+- Live Trace is now a 6-stage flow with transitions (Run → Money trail → How it moved → Bridge & mixer →
+  Verdict → Act); `?step=` deep links; the trace finishes before results open; Verdict shows attribution,
+  risk, **typology** and innocence side by side; Act holds lawful actions + the hop record.
+- Attribution: typology ring beside the risk score and innocence ring in the hero; sub-tabs Why this
+  exchange · Risk score · Crime type · Innocence check · What would flip it.
+- New kit pieces: `SubTabs` (URL-synced, animated underline tabs) and `StageRail`/`StageFrame`.
+- 15 more screens split into sub-tabs (Fingerprint, Fiat, National memory, Syndicates, FIR dedup,
+  Interdiction, Watchlists, Risk diffusion, Evidence — with its own **Lawful actions** tab — Cross-border,
+  Compliance, Assurance, Officer feedback, Audit, Travel Rule & OSINT). Every card kept; 0 console errors.
+- ANVESHAK SIH 26182 deck built on the team template (`deck/ANVESHAK_SIH26182.pptx` + `.pdf`).
+
+**Next:**
+- Typology signals for ransomware/darknet/terror lists need real label feeds (currently 0 unless supplied).
+- Verify the official PS 26182 title and team ID on the deck.
+
 ## 2026-10-04 · Dhruv + Claude · Backend started (intake + national memory), intake rebuilt as a staged wizard
 **Did:**
 - Backend `app/intake/`: rule-based entity extraction for Hindi/English/Hinglish complaints (amounts incl.
@@ -48,6 +69,8 @@ Newest first. Update at the end of every session.
 | Mobile pass on every screen | no horizontal overflow on all 20 screens at 375px; visual polish at phone size not yet reviewed screen-by-screen |
 | `web/src/api/` mock/HTTP layer | started — intake, national memory, case queue go through it (`VITE_USE_MOCK`); other 19 screens still import data directly |
 | Backend for 26182 (new modules) | 2 of 11 done: `intake/`, `memory/` (490 tests) → `BACKEND.md` |
+| Typology detection (5 classes, glass-box) | backend + Trace/Attribution UI done |
+| Live Trace as a 6-stage flow; sub-tabs on 16 screens | done |
 | Smart Intake as a 5-stage wizard | done — mock and live backend both verified in the browser |
 | Legal section references verified | not started (BNSS §94/§106, BSA §63, BNS/IT Act sections in drafts) |
 | Cross-border country data verified | not started (treaty basis, languages, turnaround per country are illustrative) |

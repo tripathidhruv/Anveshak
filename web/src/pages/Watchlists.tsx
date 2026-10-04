@@ -12,6 +12,7 @@ import {
   Play,
   Radio,
   ShieldCheck,
+  SlidersHorizontal,
   Snowflake,
   Webhook,
   Zap,
@@ -30,6 +31,7 @@ import {
   Reveal,
   Sparkline,
   Stat,
+  SubTabs,
   toneA,
   toneHex,
   useCountdown,
@@ -86,6 +88,11 @@ export default function WatchlistsPage() {
   const nextUid = React.useRef(INITIAL)
   const lastPush = React.useRef(0)
   const [pushed, setPushed] = React.useState(0)
+  // lifted so switching sub-tabs keeps the officer's choices and the golden-hour clock
+  const rules = useRules()
+  const [acted, setActed] = React.useState<Acted>(null)
+  const [reviewed, setReviewed] = React.useState(false)
+  const freezeLeft = useCountdown(38 * 60)
 
   React.useEffect(() => {
     if (paused) return
@@ -159,61 +166,89 @@ export default function WatchlistsPage() {
         </div>
       </Reveal>
 
-      {/* ── Live feed + rules ── */}
-      <div className="grid grid-cols-1 gap-3 xl:grid-cols-[1.65fr_1fr]">
-        <Reveal delay={0.1}>
-          <Card variant="glass" className="h-full pb-3">
-            <CardHeader
-              title="Live broadcast to exchanges"
-              tech="watchlist push · signed webhook per exchange · ack dots: moss = received, gold = pending, red = failed"
-              right={paused ? <Chip tone="gold" dot>Paused</Chip> : <Chip tone="ember" dot pulse>Live</Chip>}
-            />
-            <div className="mt-3 hidden grid-cols-[minmax(0,1.3fr)_64px_minmax(0,1fr)_minmax(0,1.25fr)] gap-3 px-5 pb-1 text-[11.5px] uppercase tracking-[0.08em] text-dim md:grid">
-              <span>Wallet</span>
-              <span>Risk</span>
-              <span>Why flagged</span>
-              <span>Delivered to</span>
-            </div>
-            <ul className="space-y-1.5 px-3 pt-1">
-              <AnimatePresence initial={false}>
-                {feed.map((f) => (
-                  <FeedRow key={f.uid} item={f} tick={tick} fresh={tick - f.born < 2} />
-                ))}
-              </AnimatePresence>
-            </ul>
-            <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 px-5 text-[12px] text-dim">
-              {EXCHANGES.map((e) => (
-                <span key={e.id} className="inline-flex items-center gap-1">
-                  <span className="k-mono text-muted">{e.monogram}</span> {e.name}
-                </span>
-              ))}
-            </div>
-          </Card>
-        </Reveal>
-        <Reveal delay={0.15}>
-          <RulesCard />
-        </Reveal>
-      </div>
-
-      {/* ── Webhook health + exchange preview ── */}
-      <div className="grid grid-cols-1 gap-3 xl:grid-cols-[1.25fr_1fr]">
-        <Reveal delay={0.1}>
-          <WebhookHealth />
-        </Reveal>
-        <Reveal delay={0.15}>
-          <ExchangePreview item={feed[0]} />
-        </Reveal>
-      </div>
-
-      {/* ── Sanctions + freeze ── */}
-      <div className="grid grid-cols-1 gap-3 xl:grid-cols-[1.6fr_1fr]">
-        <Reveal delay={0.1}>
-          <SanctionsTable />
-        </Reveal>
-        <Reveal delay={0.15}>
-          <FreezeCheck />
-        </Reveal>
-      </div>
+      <SubTabs
+        tabs={[
+          {
+            key: 'live',
+            label: 'Live broadcast',
+            icon: Radio,
+            render: () => (
+              <div className="grid grid-cols-1 gap-3 xl:grid-cols-[1.65fr_1fr]">
+              <Reveal delay={0.1}>
+                <Card variant="glass" className="h-full pb-3">
+                  <CardHeader
+                    title="Live broadcast to exchanges"
+                    tech="watchlist push · signed webhook per exchange · ack dots: moss = received, gold = pending, red = failed"
+                    right={paused ? <Chip tone="gold" dot>Paused</Chip> : <Chip tone="ember" dot pulse>Live</Chip>}
+                  />
+                  <div className="mt-3 hidden grid-cols-[minmax(0,1.3fr)_64px_minmax(0,1fr)_minmax(0,1.25fr)] gap-3 px-5 pb-1 text-[11.5px] uppercase tracking-[0.08em] text-dim md:grid">
+                    <span>Wallet</span>
+                    <span>Risk</span>
+                    <span>Why flagged</span>
+                    <span>Delivered to</span>
+                  </div>
+                  <ul className="space-y-1.5 px-3 pt-1">
+                    <AnimatePresence initial={false}>
+                      {feed.map((f) => (
+                        <FeedRow key={f.uid} item={f} tick={tick} fresh={tick - f.born < 2} />
+                      ))}
+                    </AnimatePresence>
+                  </ul>
+                  <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 px-5 text-[12px] text-dim">
+                    {EXCHANGES.map((e) => (
+                      <span key={e.id} className="inline-flex items-center gap-1">
+                        <span className="k-mono text-muted">{e.monogram}</span> {e.name}
+                      </span>
+                    ))}
+                  </div>
+                </Card>
+              </Reveal>
+                <Reveal delay={0.15}>
+                  <ExchangePreview item={feed[0]} acted={acted} setActed={setActed} />
+                </Reveal>
+              </div>
+            ),
+          },
+          {
+            key: 'rules',
+            label: 'Rules & delivery',
+            icon: SlidersHorizontal,
+            render: () => (
+              <div className="grid grid-cols-1 gap-3 xl:grid-cols-[1fr_1.25fr]">
+                <Reveal delay={0.1}>
+                  <RulesCard r={rules} />
+                </Reveal>
+                <Reveal delay={0.15}>
+                  <WebhookHealth />
+                </Reveal>
+              </div>
+            ),
+          },
+          {
+            key: 'sanctions',
+            label: 'Sanctions check',
+            icon: ShieldCheck,
+            badge: reviewed ? undefined : 1,
+            render: () => (
+              <Reveal delay={0.1}>
+                <SanctionsTable reviewed={reviewed} setReviewed={setReviewed} />
+              </Reveal>
+            ),
+          },
+          {
+            key: 'freeze',
+            label: 'Freeze at the source',
+            icon: Snowflake,
+            render: () => (
+              <div className="max-w-[720px]">
+                <Reveal delay={0.1}>
+                  <FreezeCheck left={freezeLeft} />
+                </Reveal>
+              </div>
+            ),
+          },
+        ]}
+      />
     </div>
   )
 }
@@ -287,11 +322,16 @@ function FeedRow({ item, tick, fresh }: { item: FeedItem; tick: number; fresh: b
 }
 
 /* ───────── Auto-flag rules ───────── */
-function RulesCard() {
+function useRules() {
   const [auto, setAuto] = React.useState(true)
   const [predicted, setPredicted] = React.useState(true)
   const [sanctions, setSanctions] = React.useState(true)
   const [t, setT] = React.useState(0.8)
+  return { auto, setAuto, predicted, setPredicted, sanctions, setSanctions, t, setT }
+}
+
+function RulesCard({ r: rs }: { r: ReturnType<typeof useRules> }) {
+  const { auto, setAuto, predicted, setPredicted, sanctions, setSanctions, t, setT } = rs
 
   const scored = auto ? SCORED_TODAY.filter((s) => s >= t).length : 0
   const pred = auto && predicted ? PREDICTED_TODAY.filter((s) => s >= t).length : 0
@@ -455,8 +495,9 @@ function WebhookHealth() {
 }
 
 /* ───────── What the exchange sees ───────── */
-function ExchangePreview({ item }: { item: FeedItem }) {
-  const [acted, setActed] = React.useState<{ uid: number; what: 'ack' | 'hold' } | null>(null)
+type Acted = { uid: number; what: 'ack' | 'hold' } | null
+
+function ExchangePreview({ item, acted, setActed }: { item: FeedItem; acted: Acted; setActed: (a: Acted) => void }) {
   const done = acted && acted.uid === item.uid ? acted.what : null
   const maxW = Math.max(...item.factors.map((f) => f.w))
   return (
@@ -541,7 +582,7 @@ function ExchangePreview({ item }: { item: FeedItem }) {
 /* ───────── Sanctions screening ───────── */
 type ScreenRow = Hop & { route: 'A' | 'B' }
 
-function SanctionsTable() {
+function SanctionsTable({ reviewed, setReviewed }: { reviewed: boolean; setReviewed: React.Dispatch<React.SetStateAction<boolean>> }) {
   const seen = new Set<string>()
   const rows: ScreenRow[] = []
   for (const h of ROUTE_A.trail) {
@@ -553,8 +594,6 @@ function SanctionsTable() {
     seen.add(h.addr)
     rows.push({ ...h, route: 'B' })
   }
-  const [reviewed, setReviewed] = React.useState(false)
-
   return (
     <Card className="h-full pb-3">
       <CardHeader
@@ -643,8 +682,7 @@ function SanctionsTable() {
 }
 
 /* ───────── Stablecoin freeze check ───────── */
-function FreezeCheck() {
-  const left = useCountdown(38 * 60)
+function FreezeCheck({ left }: { left: number }) {
   const pctLeft = (left / 3600) * 100
   const balanceINR = HUB.amt * USDT_INR
   const steps = [

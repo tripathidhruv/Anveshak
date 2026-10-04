@@ -12,6 +12,9 @@ import {
   Minus,
   Scale,
   ShieldQuestion,
+  SlidersHorizontal,
+  Tags,
+  TrendingUp,
   Users,
   X,
 } from 'lucide-react'
@@ -27,6 +30,7 @@ import {
   PageHeader,
   Reveal,
   ScoreRing,
+  SubTabs,
   toneA,
   toneHex,
 } from '@/components/kit'
@@ -49,10 +53,13 @@ import {
   score as riskScore,
 } from './attribution/model'
 import { WhatIf } from './attribution/WhatIf'
+import type { TypologyOut } from '@/api'
+import { TypologyCard, TypologyRing, useTypology } from './attribution/typology'
 
 const DEPOSIT = ROUTE_A.trail.find((h) => h.flag === 'EXCHANGE')!
 
 export default function AttributionPage() {
+  const typology = useTypology(CASE.id)
   return (
     <div className="space-y-4">
       <Reveal>
@@ -74,7 +81,7 @@ export default function AttributionPage() {
                   <Fingerprint /> Back to trace
                 </Button>
               </Link>
-              <Link to="/evidence">
+              <Link to="/evidence?tab=lawful">
                 <Button variant="ember">
                   <FileText /> Draft notice to Meridian
                 </Button>
@@ -85,45 +92,65 @@ export default function AttributionPage() {
       </Reveal>
 
       <Reveal delay={0.05}>
-        <Hero />
+        <Hero typology={typology.data} />
       </Reveal>
 
-      <div className="grid grid-cols-1 gap-3 xl:grid-cols-[1.45fr_1fr]">
-        <Reveal delay={0.1}>
-          <EvidenceCard />
-        </Reveal>
-        <div className="space-y-3">
-          <Reveal delay={0.15}>
-            <HonestyCard />
-          </Reveal>
-          <Reveal delay={0.2}>
-            <CandidatesCard />
-          </Reveal>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 gap-3 xl:grid-cols-[1.45fr_1fr]">
-        <Reveal delay={0.1}>
-          <Waterfall />
-        </Reveal>
-        <Reveal delay={0.15}>
-          <RulesVsMl />
-        </Reveal>
-      </div>
-
-      <Reveal delay={0.1}>
-        <WhatIf />
-      </Reveal>
-
-      <Reveal delay={0.1}>
-        <InnocenceCard />
-      </Reveal>
+      <SubTabs
+        tabs={[
+          {
+            key: 'why',
+            label: 'Why this exchange',
+            icon: Building2,
+            render: () => (
+              <div className="grid grid-cols-1 gap-3 xl:grid-cols-[1.45fr_1fr]">
+                <EvidenceCard />
+                <div className="space-y-3">
+                  <HonestyCard />
+                  <CandidatesCard />
+                </div>
+              </div>
+            ),
+          },
+          {
+            key: 'risk',
+            label: 'Risk score',
+            icon: TrendingUp,
+            badge: RISK.score.toFixed(2),
+            render: () => (
+              <div className="grid grid-cols-1 gap-3 xl:grid-cols-[1.45fr_1fr]">
+                <Waterfall />
+                <RulesVsMl />
+              </div>
+            ),
+          },
+          {
+            key: 'typology',
+            label: 'Crime type',
+            icon: Tags,
+            badge: typology.data ? typology.data.classes[0].name.split(' /')[0] : undefined,
+            render: () => (
+              <div className="grid grid-cols-1 gap-3 xl:grid-cols-[1.45fr_1fr]">
+                <TypologyCard data={typology.data} error={typology.error} />
+                <TypologyMeaning />
+              </div>
+            ),
+          },
+          {
+            key: 'innocence',
+            label: 'Innocence check',
+            icon: ShieldQuestion,
+            badge: INNOCENCE_SCORE.toFixed(2),
+            render: () => <InnocenceCard />,
+          },
+          { key: 'whatif', label: 'What would flip it', icon: SlidersHorizontal, render: () => <WhatIf /> },
+        ]}
+      />
     </div>
   )
 }
 
 /* ───────────────────────── Hero ───────────────────────── */
-function Hero() {
+function Hero({ typology }: { typology: TypologyOut | null }) {
   return (
     <Card variant="glass" className="p-5">
       <div className="flex flex-wrap items-center justify-between gap-6">
@@ -164,12 +191,17 @@ function Hero() {
 
         <div className="flex flex-wrap items-center gap-6">
           <div className="flex flex-col items-center gap-1.5">
-            <ScoreRing value={ATTRIBUTION_P} tone="gold" size={124} label={ATTRIBUTION_P.toFixed(2)} sub="attribution" />
+            <ScoreRing value={ATTRIBUTION_P} tone="gold" size={112} label={ATTRIBUTION_P.toFixed(2)} sub="attribution" />
             <div className="text-[12px] text-muted">How sure we are it's Meridian</div>
           </div>
           <div className="flex flex-col items-center gap-1.5">
-            <ScoreRing value={RISK.score} tone="crimson" size={124} label={RISK.score.toFixed(2)} sub={`risk · ${RISK.band}`} />
+            <ScoreRing value={RISK.score} tone="crimson" size={112} label={RISK.score.toFixed(2)} sub={`risk · ${RISK.band}`} />
             <div className="text-[12px] text-muted">How likely this is a scam flow</div>
+          </div>
+          <TypologyRing data={typology} />
+          <div className="flex flex-col items-center gap-1.5">
+            <ScoreRing value={INNOCENCE_SCORE} tone="moss" size={112} label={INNOCENCE_SCORE.toFixed(2)} sub="innocence" />
+            <div className="text-[12px] text-muted">Chance the wallet is innocent</div>
           </div>
         </div>
       </div>
@@ -587,3 +619,30 @@ function FactorList({
   )
 }
 
+
+/* ───────────────────────── What the crime type changes ───────────────────────── */
+function TypologyMeaning() {
+  const rows: { tone: 'crimson' | 'ember' | 'gold' | 'sky' | 'violet'; k: string; v: string }[] = [
+    { tone: 'crimson', k: 'Fraud / scam', v: 'Cyber cell leads; freeze notice to the exchange; victims linked through national memory.' },
+    { tone: 'ember', k: 'Layering', v: 'Add the bridge and mixer hops to the evidence pack; consider a suspicious-transaction report to FIU-IND.' },
+    { tone: 'gold', k: 'Ransomware', v: 'Check public ransomware lists and the victim organisation; CERT-In usually needs to know.' },
+    { tone: 'sky', k: 'Darknet market', v: 'Look for repeat buyer and vendor wallets; coordinate with the narcotics unit.' },
+    { tone: 'violet', k: 'Terror-financing indicators', v: 'Never acted on by this tool alone — escalate to a specialist unit for review.' },
+  ]
+  return (
+    <Card className="h-full pb-5">
+      <CardHeader title="What the crime type changes" tech="who gets involved next · guidance for the officer, not a legal finding" />
+      <ul className="mt-3 space-y-2 px-4">
+        {rows.map((r) => (
+          <li key={r.k} className="flex items-start gap-3 rounded-xl border border-line bg-white/[0.015] px-3 py-2.5">
+            <span className="mt-1.5 size-2 shrink-0 rounded-full" style={{ background: toneHex(r.tone) }} />
+            <div className="min-w-0">
+              <div className="text-[13.5px] text-text">{r.k}</div>
+              <div className="text-[12.5px] leading-snug text-muted">{r.v}</div>
+            </div>
+          </li>
+        ))}
+      </ul>
+    </Card>
+  )
+}
