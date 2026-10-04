@@ -8,6 +8,7 @@ venv/
 .env.*
 !.env.example
 !.env.development
+!.env.live
 *.key
 *.pem
 .vscode/

@@ -1,0 +1,272 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+/* ───────────────────────── KAIZEN design tokens ─────────────────────────
+   Every colour in the app derives from here. Semantics are fixed:
+   ember   = brand / primary action
+   crimson = criminal path · high risk
+   gold    = exchange (where money can be recovered)
+   teal    = on-chain hop
+   violet  = cross-chain bridge
+   sky     = victim / origin
+   moss    = safe · done · verified
+*/
+:root {
+  --k-frame: #070708;
+  --k-bg: #0b0b0c;
+  --k-sidebar: #0d0d0e;
+  --k-card: #141415;
+  --k-card-2: #1a1a1c;
+  --k-raise: #212124;
+  --k-line: rgba(255, 255, 255, 0.07);
+  --k-line-2: rgba(255, 255, 255, 0.12);
+
+  --k-text: #f4f4f5;
+  --k-muted: #8b8b90;
+  --k-dim: #5c5c62;
+
+  --k-ember: #ff4f12;
+  --k-ember-2: #ff7a3d;
+  --k-crimson: #e5322d;
+  --k-gold: #f5a524;
+  --k-teal: #2dd4bf;
+  --k-violet: #a78bfa;
+  --k-sky: #60a5fa;
+  --k-moss: #4ade80;
+
+  --k-radius: 18px;
+
+  /* shadcn bridge (Animate UI components read these) */
+  --background: var(--k-bg);
+  --foreground: var(--k-text);
+  --card: var(--k-card);
+  --card-foreground: var(--k-text);
+  --popover: #18181a;
+  --popover-foreground: var(--k-text);
+  --primary: var(--k-ember);
+  --primary-foreground: #ffffff;
+  --secondary: var(--k-raise);
+  --secondary-foreground: var(--k-text);
+  --muted: rgba(255, 255, 255, 0.04);
+  --muted-foreground: var(--k-muted);
+  --accent: rgba(255, 255, 255, 0.06);
+  --accent-foreground: var(--k-text);
+  --destructive: var(--k-crimson);
+  --border: var(--k-line);
+  --input: rgba(255, 255, 255, 0.08);
+  --ring: rgba(255, 79, 18, 0.55);
+  --radius: 0.75rem;
+}
+
+@theme inline {
+  --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --font-display: 'Space Grotesk', 'Inter', sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+  --font-heading: var(--font-display);
+
+  --color-frame: var(--k-frame);
+  --color-bg: var(--k-bg);
+  --color-sidebar: var(--k-sidebar);
+  --color-card: var(--k-card);
+  --color-card-2: var(--k-card-2);
+  --color-raise: var(--k-raise);
+  --color-line: var(--k-line);
+  --color-line-2: var(--k-line-2);
+  --color-text: var(--k-text);
+  --color-muted: var(--k-muted);
+  --color-dim: var(--k-dim);
+  --color-ember: var(--k-ember);
+  --color-ember-2: var(--k-ember-2);
+  --color-crimson: var(--k-crimson);
+  --color-gold: var(--k-gold);
+  --color-teal: var(--k-teal);
+  --color-violet: var(--k-violet);
+  --color-sky: var(--k-sky);
+  --color-moss: var(--k-moss);
+
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-foreground: var(--foreground);
+  --color-background: var(--background);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  html {
+    color-scheme: dark;
+  }
+  html,
+  body,
+  #root {
+    min-height: 100%;
+  }
+  body {
+    background: var(--k-frame);
+    color: var(--k-text);
+    font-family: var(--font-sans);
+    font-feature-settings: 'cv11', 'ss01', 'ss03';
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  ::selection {
+    background: rgba(255, 79, 18, 0.35);
+  }
+  :focus-visible {
+    outline: 2px solid var(--k-ember);
+    outline-offset: 2px;
+  }
+}
+
+/* ───────────── surfaces ───────────── */
+@layer components {
+  /* Standard card: vertical gradient, hairline border, top inner highlight */
+  .k-card {
+    position: relative;
+    border-radius: var(--k-radius);
+    background: linear-gradient(180deg, #161618 0%, #111112 100%);
+    border: 1px solid var(--k-line);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.05),
+      0 20px 40px -24px rgba(0, 0, 0, 0.8);
+  }
+  /* Raised / glass card with soft spotlight (Vaulto right-panel look) */
+  .k-card-glass {
+    position: relative;
+    border-radius: var(--k-radius);
+    background:
+      radial-gradient(120% 80% at 50% -10%, rgba(255, 255, 255, 0.09) 0%, rgba(255, 255, 255, 0) 55%),
+      linear-gradient(180deg, #1b1b1d 0%, #121213 100%);
+    border: 1px solid var(--k-line-2);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.08),
+      0 30px 60px -30px rgba(0, 0, 0, 0.9);
+  }
+  /* Grain texture overlay (the speckled ETH/EURO tiles) */
+  .k-grain::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    opacity: 0.35;
+    mix-blend-mode: overlay;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 0.9 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+  }
+  /* Top-right speckle glow (grain fading in from the corner) */
+  .k-speckle {
+    background:
+      radial-gradient(90% 90% at 100% 0%, rgba(255, 255, 255, 0.10) 0%, rgba(255, 255, 255, 0) 60%),
+      linear-gradient(180deg, #1a1a1c 0%, #111112 100%);
+  }
+  .k-dashed {
+    border-radius: var(--k-radius);
+    border: 1.5px dashed rgba(255, 255, 255, 0.16);
+    background: transparent;
+  }
+  .k-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    border-radius: 999px;
+    border: 1px solid var(--k-line-2);
+    background: rgba(255, 255, 255, 0.04);
+    padding: 0.125rem 0.5rem;
+    font-size: 12px;
+    line-height: 1.4;
+  }
+  .k-eyebrow {
+    font-size: 12.5px;
+    letter-spacing: 0.02em;
+    color: var(--k-muted);
+  }
+  .k-num {
+    font-family: var(--font-display);
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    font-variant-numeric: tabular-nums;
+  }
+  .k-mono {
+    font-family: var(--font-mono);
+    font-size: 0.92em;
+    letter-spacing: -0.01em;
+  }
+  .k-btn-ember {
+    background: linear-gradient(180deg, #ff6a2c 0%, #ff4f12 55%, #e8410a 100%);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.35),
+      0 8px 24px -8px rgba(255, 79, 18, 0.7);
+    color: #fff;
+  }
+  .k-btn-ghost {
+    background: linear-gradient(180deg, #202022 0%, #18181a 100%);
+    border: 1px solid var(--k-line-2);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    color: var(--k-text);
+  }
+  .k-grid-bg {
+    background-image:
+      linear-gradient(rgba(255, 255, 255, 0.045) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 255, 255, 0.045) 1px, transparent 1px);
+    background-size: 22px 22px;
+  }
+  .k-scroll::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  .k-scroll::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 99px;
+  }
+  .k-scroll::-webkit-scrollbar-track {
+    background: transparent;
+  }
+}
+
+@keyframes k-pulse-ring {
+  0% { transform: scale(0.6); opacity: 0.9; }
+  100% { transform: scale(2.4); opacity: 0; }
+}
+@keyframes k-dash {
+  to { stroke-dashoffset: -40; }
+}
+@keyframes k-shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.k-pulse-ring { animation: k-pulse-ring 1.8s cubic-bezier(0.2, 0.6, 0.3, 1) infinite; }
+.k-flow-dash { stroke-dasharray: 6 14; animation: k-dash 1.6s linear infinite; }
+.k-shimmer {
+  background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.08) 50%, transparent 100%);
+  background-size: 200% 100%;
+  animation: k-shimmer 2.2s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
