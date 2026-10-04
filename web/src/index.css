@@ -253,15 +253,16 @@
     inset: 0;
     border-radius: inherit;
     pointer-events: none;
-    opacity: 0.35;
+    opacity: 0.12;
     mix-blend-mode: overlay;
     background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 0.9 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
   }
   /* Top-right speckle glow (grain fading in from the corner) */
+  /* stat tiles: the lightest glass in the app — a faint corner sheen over an almost-clear fill */
   .k-speckle {
     background:
-      radial-gradient(90% 90% at 100% 0%, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0) 60%),
-      var(--k-glass);
+      radial-gradient(90% 90% at 100% 0%, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0) 60%),
+      linear-gradient(180deg, rgba(255, 255, 255, 0.035) 0%, rgba(255, 255, 255, 0.012) 100%);
   }
   .k-dashed {
     border-radius: var(--k-radius);
