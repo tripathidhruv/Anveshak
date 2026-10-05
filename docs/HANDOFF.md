@@ -1,6 +1,6 @@
 # You just joined ANVESHAK — start here
 
-ANVESHAK traces crypto fraud from a wallet address to a named exchange and a signed legal notice, in under a minute. Built for SIH 2026, PS 26183.
+ANVESHAK traces crypto fraud from a wallet address to a named exchange and a signed legal notice, in under a minute. Built for SIH 2026, PS 26182.
 
 ## Read in this order
 1. `CLAUDE.md` — project context, design tokens, non-negotiable rules

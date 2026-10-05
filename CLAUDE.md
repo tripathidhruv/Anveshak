@@ -5,7 +5,7 @@ ANVESHAK traces cryptocurrency fraud from a victim's complaint to the exchange
 where the stolen funds were cashed out, and produces a court-ready evidence
 pack plus a pre-filled legal notice.
 
-Built for **Smart India Hackathon 2026, Problem Statement 26183**
+Built for **Smart India Hackathon 2026, Problem Statement 26182**
 (cryptocurrency fraud detection and exchange attribution).
 Team: ANVESHAK. Owner: Dhruv Tripathi (@tripathidhruv).
 
