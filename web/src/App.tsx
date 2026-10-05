@@ -8,7 +8,6 @@ import Trace from '@/pages/Trace'
 import Attribution from '@/pages/Attribution'
 import AttributionIntel from '@/pages/AttributionIntel'
 import Fingerprint from '@/pages/Fingerprint'
-import Fiat from '@/pages/Fiat'
 import Interdiction from '@/pages/Interdiction'
 import NationalMemory from '@/pages/NationalMemory'
 import Syndicates from '@/pages/Syndicates'
@@ -41,7 +40,6 @@ const router = createBrowserRouter([
           { path: 'fingerprint', element: <Fingerprint /> },
         ],
       },
-      { path: 'fiat', element: <Fiat /> },
       { path: 'interdiction', element: <Interdiction /> },
       {
         path: 'network',

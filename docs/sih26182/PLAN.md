@@ -25,7 +25,7 @@ a new investigator console in `web/`. See `FRONTEND.md`, `BACKEND.md` and `PROGR
 
 ## Feature set (what we're building)
 
-Grouped by the 10 sidebar sections of the new console. Items marked **★** are innovations none of the
+Grouped by the sidebar sections (9 since Rupee Exit Trail was removed on 2026-10-05) of the new console. Items marked **★** are innovations none of the
 12 rival repos reviewed have. Items marked **(picked)** are the five extra innovations Dhruv chose on 2026-10-03.
 
 ### 1. Command Center
@@ -57,9 +57,7 @@ Grouped by the 10 sidebar sections of the new console. Items marked **★** are 
   with per-report credibility scoring.
 - Operator habits: behavioural similarity between cases (radar, ranking, active hours).
 
-### 5. Rupee Exit Trail ★
-- Correlates P2P crypto sell orders with UPI/IMPS credits into mule bank accounts (amount, time,
-  counterparty reuse). Mule-account network. Bank freeze request draft.
+### 5. ~~Rupee Exit Trail~~ — removed from scope on 2026-10-05 (Dhruv)
 
 ### 6. National Graph
 - **(picked) ★ SAHYOG national memory:** every wallet ever submitted becomes part of a permanent national

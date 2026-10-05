@@ -57,7 +57,7 @@ function nextStep(c: CaseRow, hasExchange: boolean): Next {
     case 'Traced':
       return hasExchange && c.recover !== 'lost'
         ? { label: 'Draft the freeze notice', to: '/evidence', icon: FileText, why: 'The exchange holding the money is known. Ask it to freeze.' }
-        : { label: 'Review the trace', to: '/trace', icon: Route, why: c.recover === 'lost' ? 'Money was cashed out — check the rupee exit trail.' : 'No exchange identified yet.' }
+        : { label: 'Review the trace', to: '/trace', icon: Route, why: c.recover === 'lost' ? 'Money was cashed out — ask the exchange for the withdrawal records.' : 'No exchange identified yet.' }
     case 'Notice sent':
       return { label: "Track the exchange's reply", to: '/evidence/compliance', icon: Radio, why: 'Notice delivered — watch the response deadline.' }
     case 'Frozen':

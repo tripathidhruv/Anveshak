@@ -2,6 +2,12 @@
 
 Newest first. Update at the end of every session.
 
+## 2026-10-05 · Rupee Exit Trail removed, top bar trimmed
+- Removed the Rupee Exit Trail screen (`/fiat`, `pages/Fiat.tsx`, `pages/fiat/`), its nav item and links; it
+  is out of scope (plan + backend docs marked). Nav is now 9 sections.
+- Removed the apps-grid, notifications and messages icons from the top bar (they did nothing).
+- Video script (`deck/ANVESHAK_VIDEO_SCRIPT.md`) and the deck updated to match.
+
 ## 2026-10-04 (evening) · Liquid-glass restyle + three themes
 - Every surface (cards, buttons, pills, sidebar, top bar, section tabs) is now frosted glass over a themed
   glow backdrop with fine grain; bigger radii, pill buttons.
@@ -63,7 +69,7 @@ Newest first. Update at the end of every session.
 - `txHash` and `platform` from intake aren't stored (no `Case` columns yet).
 - No OCR/screenshot input yet (Tesseract not wired).
 - `GET /api/v1/cases` maps only status/recoverability; risk, syndicate and exchange stay empty in live mode.
-- Remaining backend modules in order: syndicates/dedup → routing → diffusion → intel → interdiction → fiat → compliance → assurance.
+- Remaining backend modules in order: syndicates/dedup → routing → diffusion → intel → interdiction → compliance → assurance.
 - Commit `web/`, docs and the backend changes (still uncommitted).
 
 ## Status board

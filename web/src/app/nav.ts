@@ -1,7 +1,6 @@
 import type { LucideIcon } from 'lucide-react'
 import {
   Activity,
-  Banknote,
   BadgeCheck,
   Brain,
   FileSignature,
@@ -72,7 +71,6 @@ export const NAV: NavGroup[] = [
           { to: '/attribution/fingerprint', label: 'Operator habits', tech: 'behavioural similarity', icon: Fingerprint },
         ],
       },
-      { to: '/fiat', label: 'Rupee Exit Trail', tech: 'P2P ↔ UPI mule correlation', icon: Banknote },
     ],
   },
   {

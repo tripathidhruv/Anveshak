@@ -829,7 +829,7 @@ function NextSteps() {
     { to: '/evidence?tab=lawful', icon: <FileSignature />, title: 'Draft the lawful request', sub: 'Pre-filled notice to Meridian · officer review', tone: 'ember', primary: true },
     { to: '/interdiction', icon: <Zap />, title: 'Warn the next exchange', sub: 'Pre-emptive freeze alert · 6 min ETA', tone: 'gold' },
     { to: '/watchlists', icon: <ShieldAlert />, title: 'Flag wallets to all exchanges', sub: 'Broadcast 5 wallets · 6 exchanges', tone: 'crimson' },
-    { to: '/fiat', icon: <ArrowRightLeft />, title: 'Follow the rupee exit', sub: 'P2P orders → mule bank accounts', tone: 'sky' },
+    { to: '/network/syndicates', icon: <Users />, title: 'Open the syndicate', sub: 'SYN-07 · 38 linked cases · 11 states', tone: 'sky' },
   ]
   return (
     <Card variant="glass" className="h-full pb-4">

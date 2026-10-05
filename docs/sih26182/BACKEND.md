@@ -60,10 +60,7 @@ Each item: purpose → approach → API sketch. All endpoints under `/api/v1`.
   address, credibility score (corroboration, age, consistency with on-chain behaviour).
 - `GET /intel/travel-rule?trace_id=`, `GET /intel/osint/{addr}`, `POST /intel/osint/scan`.
 
-### 6. Rupee exit (`fiat/`)
-- Ingest bank statements obtained by lawful request (CSV/PDF parsers), match P2P orders ↔ credits on
-  amount, time window and counterparty reuse; mule-account graph; freeze-request draft.
-- `POST /fiat/statements`, `GET /fiat/matches?case_id=`, `GET /fiat/mules`.
+### 6. ~~Rupee exit (`fiat/`)~~ — removed from scope on 2026-10-05
 
 ### 7. Pre-emptive freeze (`interdiction/`)
 - Next-hop predictor from syndicate route history (empirical transition probabilities + time-to-deposit
@@ -95,7 +92,7 @@ Each item: purpose → approach → API sketch. All endpoints under `/api/v1`.
 
 ## Data model additions (sketch)
 `memory_wallet`, `memory_edge`, `memory_event(provenance)`, `syndicate`, `syndicate_link`,
-`fir`, `fir_merge`, `osint_report`, `travel_rule_check`, `bank_statement`, `fiat_match`,
+`fir`, `fir_merge`, `osint_report`, `travel_rule_check`,
 `interdiction_alert`, `notice_sla`, `routing_rule`, `feedback_verdict`, `model_version`.
 
 ## Phases
@@ -103,7 +100,7 @@ Each item: purpose → approach → API sketch. All endpoints under `/api/v1`.
    `web/src/api/`, serve the current mock data from FastAPI fixtures. The frontend switches by env var.
 2. **Wire reused modules:** trace, detectors, attribution, risk, sanctions, evidence, legal, audit.
 3. **New modules in impact order:** memory → syndicates/dedup → routing → diffusion → intel →
-   interdiction → fiat → compliance → assurance → intake.
+   interdiction → compliance → assurance → intake.
 4. **Hardening:** auth/roles on every route, rate limits, audit on every read of the national graph,
    Docker Compose live run, backtest on held-out synthetic cases.
 

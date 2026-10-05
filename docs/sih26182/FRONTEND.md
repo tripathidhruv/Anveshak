@@ -55,14 +55,13 @@ web/src/
   pages/          one file per screen, plus a lowercase folder per screen for page-local data/components
 ```
 
-## Information architecture (10 sidebar items, tabs inside)
+## Information architecture (9 sidebar items, tabs inside)
 | Sidebar | Route | Tabs |
 |---|---|---|
 | Command Center | `/` | — |
 | Cases | `/cases` | Case queue · Smart intake (`/cases/new`) |
 | Live Trace | `/trace` | — |
 | Attribution | `/attribution` | Exchange & risk · Travel Rule & OSINT (`/intel`) · Operator habits (`/fingerprint`) |
-| Rupee Exit Trail | `/fiat` | — |
 | National Graph | `/network` | National memory · Syndicates (`/syndicates`) · FIR dedup & routing (`/dedup`) |
 | Pre-emptive Freeze | `/interdiction` | — |
 | Sanctions & Broadcast | `/watchlists` | Broadcast & screening · Proximity risk (`/diffusion`) |
@@ -82,7 +81,6 @@ Old flat paths (`/intake`, `/syndicates`, `/jurisdiction`, `/fingerprint`, `/com
 | Exchange & risk | `pages/Attribution.tsx` | counterfactual what-if sliders/presets recompute the score live |
 | Travel Rule & OSINT | `pages/AttributionIntel.tsx` | eligibility checker, scan public sources |
 | Operator habits | `pages/Fingerprint.tsx` | pick operator → radar morph + breakdown |
-| Rupee Exit Trail | `pages/Fiat.tsx` | match-engine row → evidence pair + timeline, re-run matching |
 | National memory | `pages/NationalMemory.tsx` | check a wallet against the national graph |
 | Syndicates | `pages/Syndicates.tsx` | toggle evidence types → links and confidence recompute |
 | FIR dedup & routing | `pages/Jurisdiction.tsx` | India tile map filter, FIR A/B comparison, merge & route |

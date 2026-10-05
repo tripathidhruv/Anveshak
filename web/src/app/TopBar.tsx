@@ -1,5 +1,5 @@
 import { useLocation } from 'react-router-dom'
-import { Bell, Command, LayoutGrid, Menu, MessageSquareText, Search } from 'lucide-react'
+import { Command, Menu, Search } from 'lucide-react'
 import { DemoChip } from '@/components/kit'
 import { ThemeSwitch } from './ThemeSwitch'
 import { sectionFor, tabFor } from './nav'
@@ -39,16 +39,6 @@ export function TopBar({ onSearch, onMenu }: { onSearch: () => void; onMenu: () 
         <DemoChip className="hidden sm:inline-flex" />
         <button onClick={onSearch} className="grid size-9 place-items-center rounded-lg text-muted hover:bg-white/5 hover:text-text md:hidden" aria-label="Search">
           <Search className="size-4" />
-        </button>
-        <button className="hidden size-9 place-items-center rounded-lg text-muted hover:bg-white/5 hover:text-text sm:grid" aria-label="Apps">
-          <LayoutGrid className="size-4" />
-        </button>
-        <button className="relative grid size-9 place-items-center rounded-lg text-muted hover:bg-white/5 hover:text-text" aria-label="Notifications">
-          <Bell className="size-4" />
-          <span className="absolute right-2 top-2 size-1.5 rounded-full bg-ember shadow-[0_0_8px_var(--k-ember)]" />
-        </button>
-        <button className="hidden size-9 place-items-center rounded-lg text-muted hover:bg-white/5 hover:text-text sm:grid" aria-label="Messages">
-          <MessageSquareText className="size-4" />
         </button>
         <div className="ml-1 flex items-center gap-2.5">
           <div className="grid size-9 place-items-center rounded-full border border-line-2 bg-white/[0.08] backdrop-blur text-[12.5px] font-semibold text-text">

@@ -40,10 +40,10 @@ Left column = what to say. Right column = what's on screen.
 
 ---
 
-**[1:10 – 1:20] RUPEE EXIT & NATIONAL GRAPH**
-> Rupee Exit Trail follows the money out of crypto into UPI mule accounts. National Graph links complaints from many states into one gang — and picks the state that should lead.
+**[1:10 – 1:20] NATIONAL GRAPH**
+> National Graph links complaints from many states into one gang, so a single trace can close dozens of cases — and it picks the state that should lead.
 
-*Screen: crypto → bank flow → syndicate graph → India map with duplicate FIRs.*
+*Screen: syndicate graph → India map with duplicate FIRs → "lead state" recommendation.*
 
 ---
 
