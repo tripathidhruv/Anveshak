@@ -4,7 +4,7 @@
 
 <p align="center"><em>The seeker.</em> The police get a wallet address. ANVESHAK names the exchange that holds the KYC,<br/>shows exactly why, routes the right legal request to the right country, and tracks it until the money is frozen.</p>
 
-Built for **Smart India Hackathon 2026, Problem Statement 26182** — automated attribution of unknown cryptocurrency
+Built for **Smart India Hackathon 2026, Problem Statement ** — automated attribution of unknown cryptocurrency
 wallets to the nearest Virtual Asset Service Provider (VASP), including stronger cross-border investigations.
 
 The name: *anveṣaka* (Sanskrit) — one who searches, an investigator. The logo is an "A" drawn as a money trail:
